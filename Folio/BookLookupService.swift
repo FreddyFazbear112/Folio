@@ -35,9 +35,11 @@ struct BookLookupService {
     func searchCatalogue(query: String) async throws -> [CatalogueBook] {
         let clean = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return [] }
-        async let libraryTask = searchOpenLibrary(clean)
-        async let publicDomainTask = searchGutendex(clean)
-        let (libraryBooks, publicBooks) = try await (libraryTask, publicDomainTask)
+        async let libraryTask = try? searchOpenLibrary(clean)
+        async let publicDomainTask = try? searchGutendex(clean)
+        let (libraryResult, publicResult) = await (libraryTask, publicDomainTask)
+        let libraryBooks = libraryResult ?? []
+        let publicBooks = publicResult ?? []
         var results = publicBooks
         for item in libraryBooks {
             if !results.contains(where: { $0.title.localizedCaseInsensitiveCompare(item.title) == .orderedSame && $0.author.localizedCaseInsensitiveCompare(item.author) == .orderedSame }) {
@@ -62,10 +64,11 @@ struct BookLookupService {
         let cover = doc.cover_i.map { "https://covers.openlibrary.org/b/id/\($0)-L.jpg" }
         // ISBN identifies the print edition; independently check whether the same
         // work also exists as a lawful public-domain download.
-        if let publicEdition = try? await searchGutendex(title).first(where: {
+        let publicEditions = (try? await searchGutendex(title)) ?? []
+        if let publicEdition = publicEditions.first(where: {
             $0.title.localizedCaseInsensitiveCompare(title) == .orderedSame
         }) {
-            return CatalogueBook(id: publicEdition.id, title: title, author: author, coverURL: cover,
+            return CatalogueBook(id: publicEdition.id, title: title, author: author, coverURL: cover ?? publicEdition.coverURL,
                 isbn: doc.isbn?.first ?? clean, publicationYear: doc.first_publish_year,
                 downloadableURL: publicEdition.downloadableURL, format: publicEdition.format,
                 sourceLabel: publicEdition.sourceLabel)
@@ -115,9 +118,10 @@ struct BookLookupService {
         return response.results.compactMap { item in
             let epub = item.formats["application/epub+zip"]
             let pdf = item.formats["application/pdf"]
+            let cover = item.formats["image/jpeg"]
             guard let link = epub ?? pdf, let downloadURL = URL(string: link) else { return nil }
             return CatalogueBook(id: "gutenberg-\(item.id)", title: item.title, author: item.authors.first?.name ?? "Unknown author",
-                coverURL: nil, isbn: nil, publicationYear: nil, downloadableURL: downloadURL,
+                coverURL: cover, isbn: nil, publicationYear: nil, downloadableURL: downloadURL,
                 format: epub == nil ? "PDF" : "EPUB", sourceLabel: "Project Gutenberg · Public domain")
         }
     }
