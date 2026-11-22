@@ -937,6 +937,7 @@ private struct FirstBookTutorialView: View {
 private struct FolioLibraryHome: View {
     @EnvironmentObject private var library: LibraryStore
     @State private var selectedBook: Book?
+    @State private var selectedReaderBook: Book?
     @State private var showingAddBook = false
     @State private var showingTour = false
     @State private var openAddAfterTour = false
@@ -987,6 +988,14 @@ private struct FolioLibraryHome: View {
         .sheet(item: $selectedBook) { book in
             BookDetailView(book: book).environmentObject(library)
                 .presentationDetents([.large]).presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(item: $selectedReaderBook) { book in
+            if let name = book.digitalFileName {
+                let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(name)
+                Folio3DBookReader(url: url, title: book.title, coverURL: book.coverURL, initialPage: book.currentPage ?? 1) { page, total in
+                    library.updateReadingDetails(book, currentPage: page, totalPages: total, note: book.readingNote)
+                }
+            }
         }
         .sheet(isPresented: $showingTour, onDismiss: {
             if openAddAfterTour { openAddAfterTour = false; showingAddBook = true }
@@ -1239,6 +1248,14 @@ private struct FolioLibraryHome: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .highPriorityGesture(TapGesture(count: 2).onEnded {
+                            guard book.digitalFileName != nil else {
+                                selectedBook = book
+                                return
+                            }
+                            selectedReaderBook = book
+                            SoundEffects.pageTurn()
+                        })
                     }
                     Button { showingAddBook = true } label: {
                         VStack(spacing: 11) {
