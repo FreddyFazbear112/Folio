@@ -116,8 +116,9 @@ struct CommunityService {
         if apiBaseURL != nil {
             _ = try await request("v1/posts", method: "POST",
                 body: ["title": post.title, "book": post.book, "body": post.body,
-                       "postType": post.title.contains("review") ? "review" : "note",
-                       "rating": 5], authenticated: true)
+                       "name": post.name,
+                       "postType": post.title.localizedCaseInsensitiveContains("review") ? "review" : "note",
+                       "rating": Int(String(post.title.components(separatedBy: "·").last?.trimmingCharacters(in: .whitespaces).prefix(1) ?? "")) ?? 5], authenticated: true)
             return
         }
         guard let db else { throw CommunityAPIError.setupRequired }
