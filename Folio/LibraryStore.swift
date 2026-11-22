@@ -16,11 +16,14 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func add(title: String, author: String, status: ReadingStatus, coverURL: String? = nil, isbn: String? = nil) {
+    @discardableResult
+    func add(title: String, author: String, status: ReadingStatus, coverURL: String? = nil, isbn: String? = nil) -> UUID? {
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanAuthor = author.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanTitle.isEmpty else { return }
-        books.insert(Book(title: cleanTitle, author: cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor, status: status, colorIndex: books.count % 6, coverURL: coverURL, isbn: isbn?.filter(\.isNumber)), at: 0)
+        guard !cleanTitle.isEmpty else { return nil }
+        let book = Book(title: cleanTitle, author: cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor, status: status, colorIndex: books.count % 6, coverURL: coverURL, isbn: isbn?.filter(\.isNumber))
+        books.insert(book, at: 0)
+        return book.id
     }
 
     func update(_ book: Book, status: ReadingStatus) {
