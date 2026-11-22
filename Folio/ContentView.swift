@@ -483,8 +483,8 @@ private struct BookDetailView: View {
     }
 
     private func verifyBarcode(_ code: String) async {
-        let clean = code.filter(\.isNumber)
-        if let isbn = savedBook.isbn, isbn == clean {
+        let clean = code.uppercased().filter { $0.isNumber || $0 == "X" }
+        if let isbn = savedBook.isbn, isbn.uppercased() == clean {
             library.verifyOwnership(book, scannedISBN: clean)
             return
         }
