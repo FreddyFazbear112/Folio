@@ -2,11 +2,13 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /profile-images/{userId}.jpg {
+      // Profile photos are intentionally public so reader profiles can display them.
       allow read: if true;
-      allow write: if request.auth != null
+      allow create, update: if request.auth != null
         && request.auth.uid == userId
         && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.contentType == 'image/jpeg';
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
