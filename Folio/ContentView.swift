@@ -576,6 +576,7 @@ private struct FolioReadingCopyView: View {
     @State private var totalPages = 0
     @State private var sepia = true
     @State private var focusMode = false
+    @State private var textFontSize: CGFloat = 19
 
     var body: some View {
         ZStack {
@@ -598,6 +599,21 @@ private struct FolioReadingCopyView: View {
                                 .font(.system(size: 12, design: .serif)).lineLimit(1)
                         }
                         Spacer()
+                        if !["pdf", "epub"].contains(url.pathExtension.lowercased()) {
+                            HStack(spacing: 3) {
+                                Button { textFontSize = max(14, textFontSize - 1) } label: {
+                                    Image(systemName: "textformat.size.smaller")
+                                        .frame(width: 30, height: 34)
+                                }
+                                Button { textFontSize = min(30, textFontSize + 1) } label: {
+                                    Image(systemName: "textformat.size.larger")
+                                        .frame(width: 30, height: 34)
+                                }
+                            }
+                            .font(.system(size: 13, weight: .medium))
+                            .background(.white.opacity(0.45), in: Capsule())
+                            .accessibilityElement(children: .contain)
+                        }
                         Button { withAnimation(.easeInOut(duration: 0.2)) { sepia.toggle() } } label: {
                             Image(systemName: sepia ? "moon" : "sun.max")
                                 .font(.system(size: 14))
@@ -617,7 +633,7 @@ private struct FolioReadingCopyView: View {
                 } else if fileType == "epub" {
                     FolioEPUBReader(url: url, sepia: sepia, initialChapter: max(0, initialPage - 1), onProgress: onProgress)
                 } else {
-                    FolioTextReader(url: url, sepia: sepia)
+                    FolioTextReader(url: url, sepia: sepia, fontSize: textFontSize)
                 }
                 if fileType == "pdf" && !focusMode {
                     VStack(spacing: 10) {
@@ -675,6 +691,7 @@ private struct FolioReadingCopyView: View {
 private struct FolioTextReader: UIViewRepresentable {
     let url: URL
     let sepia: Bool
+    let fontSize: CGFloat
 
     func makeUIView(context: Context) -> UITextView {
         let view = UITextView()
@@ -688,7 +705,7 @@ private struct FolioTextReader: UIViewRepresentable {
         view.textColor = sepia
             ? UIColor(red: 0.18, green: 0.20, blue: 0.17, alpha: 1)
             : UIColor(red: 0.94, green: 0.92, blue: 0.87, alpha: 1)
-        view.font = UIFont(name: "Georgia", size: 19) ?? .systemFont(ofSize: 19)
+        view.font = UIFont(name: "Georgia", size: fontSize) ?? .systemFont(ofSize: fontSize)
         view.text = "Opening your document…"
         do {
             let data = try Data(contentsOf: url)
@@ -712,9 +729,16 @@ private struct FolioTextReader: UIViewRepresentable {
         view.backgroundColor = sepia
             ? UIColor(red: 0.91, green: 0.87, blue: 0.78, alpha: 1)
             : UIColor(red: 0.12, green: 0.13, blue: 0.13, alpha: 1)
-        view.textColor = sepia
+        let ink = sepia
             ? UIColor(red: 0.18, green: 0.20, blue: 0.17, alpha: 1)
             : UIColor(red: 0.94, green: 0.92, blue: 0.87, alpha: 1)
+        view.textColor = ink
+        view.font = UIFont(name: "Georgia", size: fontSize) ?? .systemFont(ofSize: fontSize)
+        if view.attributedText.length > 0 {
+            let styled = NSMutableAttributedString(attributedString: view.attributedText)
+            styled.addAttributes([.font: view.font ?? UIFont.systemFont(ofSize: fontSize), .foregroundColor: ink], range: NSRange(location: 0, length: styled.length))
+            view.attributedText = styled
+        }
     }
 }
 
