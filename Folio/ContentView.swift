@@ -674,7 +674,7 @@ private struct BookDetailView: View {
 }
 
 private struct FolioReadingCopyView: View {
-    @Environment(\\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var dismiss
     let url: URL
     @State private var currentPage = 1
     @State private var totalPages = 0
@@ -727,7 +727,7 @@ private struct FolioReadingCopyView: View {
                                 currentPage = max(1, currentPage - 1)
                                 SoundEffects.pageTurn()
                             } label: { Image(systemName: "chevron.left") }
-                            Text(totalPages > 0 ? "PAGE \\(currentPage) OF \\(totalPages)" : "OPENING BOOK")
+                            Text(totalPages > 0 ? "PAGE \(currentPage) OF \(totalPages)" : "OPENING BOOK")
                                 .font(.system(size: 9, weight: .semibold, design: .monospaced)).tracking(1.1)
                             Button {
                                 currentPage = min(max(totalPages, 1), currentPage + 1)
