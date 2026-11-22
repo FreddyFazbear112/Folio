@@ -63,6 +63,13 @@ struct Folio3DBookReader: View {
                         if value.translation.width < -35 { turn(1) }
                         if value.translation.width > 35 { turn(-1) }
                     })
+                } else if let loadError {
+                    VStack(spacing: 12) {
+                        Image(systemName: "doc.badge.ellipsis").font(.system(size: 30, weight: .ultraLight))
+                        Text("This reading copy couldn't be opened").font(.system(size: 18, design: .serif))
+                        Text(loadError).font(.system(size: 11)).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
+                    }
+                    .foregroundStyle(.white).frame(height: 390).padding(.horizontal, 30)
                 } else {
                     ProgressView("Preparing your book…").tint(.white).foregroundStyle(.white)
                         .frame(height: 390)
