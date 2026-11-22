@@ -318,91 +318,137 @@ private struct BookDetailView: View {
     private var readyToRead: Bool { savedBook.ownedISBN != nil && savedBook.digitalFileName != nil }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                Text(book.title).font(.system(size: 25, design: .serif)).multilineTextAlignment(.center)
-                Text(book.author.uppercased()).font(.system(size: 10, weight: .medium)).tracking(1.4).foregroundStyle(.secondary)
-                BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1), coverURL: book.coverURL, backCoverURL: savedBook.backCoverURL).frame(height: 250)
-                Text("Drag to turn your book around").font(.system(size: 12, design: .serif).italic()).foregroundStyle(.secondary)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(spacing: 5) {
+                    Text(book.title)
+                        .font(.system(size: 29, weight: .regular, design: .serif))
+                        .tracking(-0.7)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.82)
+                    Text(book.author.uppercased())
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(2.2)
+                        .foregroundStyle(folioInk.opacity(0.48))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("YOUR READING COPY").font(.system(size: 9, weight: .semibold)).tracking(1.5).foregroundStyle(folioInk.opacity(0.5))
+                VStack(spacing: 8) {
+                    BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1), coverURL: book.coverURL, backCoverURL: savedBook.backCoverURL)
+                        .frame(height: 225)
+                    Text("TURN THE BOOK TO EXPLORE IT")
+                        .font(.system(size: 9, weight: .medium))
+                        .tracking(1.7)
+                        .foregroundStyle(folioInk.opacity(0.42))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.30))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 12) {
+                    sectionLabel("YOUR READING COPY")
                     if savedBook.ownedISBN != nil {
-                        Label("Physical edition verified", systemImage: "checkmark.seal.fill").font(.system(size: 12, design: .serif)).foregroundStyle(.green)
+                        Label("Physical edition verified", systemImage: "checkmark.seal.fill")
+                            .font(.system(size: 13, design: .serif))
+                            .foregroundStyle(Color(red: 0.30, green: 0.43, blue: 0.32))
                     } else {
-                        Text("Scan the barcode on your physical copy to verify the edition.")
-                            .font(.system(size: 12, design: .serif)).foregroundStyle(.secondary)
-                        Button { scanning = true } label: {
-                            Label("Scan my book's barcode", systemImage: "barcode.viewfinder")
-                                .frame(maxWidth: .infinity).padding(11).background(folioInk).foregroundStyle(folioPaper).clipShape(Capsule())
-                        }
+                        Text("Verify the edition with the barcode on your physical copy.")
+                            .font(.system(size: 14, design: .serif))
+                            .foregroundStyle(folioInk.opacity(0.65))
+                        actionRow("Scan barcode", symbol: "barcode.viewfinder", prominent: true) { scanning = true }
                     }
                     if let name = savedBook.digitalFileName {
-                        Label(name, systemImage: "doc.text").font(.system(size: 11, design: .serif)).lineLimit(1)
+                        Label(name, systemImage: "doc.text")
+                            .font(.system(size: 12, design: .serif))
+                            .foregroundStyle(folioInk.opacity(0.62))
+                            .lineLimit(1)
                     }
-                    Button { importing = true } label: {
-                        Label(savedBook.digitalFileName == nil ? "Import my EPUB or PDF" : "Replace reading copy", systemImage: "square.and.arrow.down")
-                            .frame(maxWidth: .infinity).padding(11).background(.white.opacity(0.7)).foregroundStyle(folioInk).clipShape(Capsule())
+                    actionRow(savedBook.digitalFileName == nil ? "Import an EPUB or PDF" : "Replace reading copy", symbol: "square.and.arrow.down") { importing = true }
+                    actionRow("Open reader", symbol: "book.pages", prominent: true, disabled: !readyToRead) { openReader() }
+                    if !readyToRead {
+                        Text("Available after you've verified your copy and imported its digital file.")
+                            .font(.system(size: 11, design: .serif))
+                            .foregroundStyle(folioInk.opacity(0.48))
                     }
-                    Button {
-                        openReader()
-                    } label: {
-                        Label("Open reading room", systemImage: "book.pages")
-                            .frame(maxWidth: .infinity).padding(12).background(readyToRead ? folioInk : folioInk.opacity(0.3)).foregroundStyle(folioPaper).clipShape(Capsule())
+                    if let message {
+                        Text(message).font(.system(size: 12, design: .serif)).foregroundStyle(.secondary)
                     }
-                    .disabled(!readyToRead)
-                    if let message { Text(message).font(.system(size: 11, design: .serif)).foregroundStyle(.secondary) }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("READING SESSION").font(.system(size: 9, weight: .semibold)).tracking(1.5).foregroundStyle(folioInk.opacity(0.5))
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
+                        sectionLabel("READING SESSION")
+                        Spacer()
+                        Text(timerStart == nil ? "TAKE YOUR TIME" : "SESSION IN PROGRESS")
+                            .font(.system(size: 9, weight: .medium))
+                            .tracking(1)
+                            .foregroundStyle(folioInk.opacity(0.42))
+                    }
+                    HStack(alignment: .center) {
                         TimelineView(.periodic(from: .now, by: 1)) { _ in
                             let seconds = Int(elapsed + (timerStart.map { Date().timeIntervalSince($0) } ?? 0))
                             Text(String(format: "%02d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60))
-                                .font(.system(size: 26, design: .serif).monospacedDigit())
+                                .font(.system(size: 31, design: .serif).monospacedDigit())
+                                .foregroundStyle(folioInk)
                         }
                         Spacer()
-                        Button(timerStart == nil ? "Start" : "Pause") {
+                        Button(timerStart == nil ? "Start session" : "Pause") {
                             if let start = timerStart { elapsed += Date().timeIntervalSince(start); timerStart = nil }
                             else { timerStart = Date() }
                             SoundEffects.softTap()
-                        }.font(.system(size: 12, weight: .medium))
+                        }
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(folioInk)
                     }
                 }
-                .padding(14).background(.white.opacity(0.55)).clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(17)
+                .background(Color.white.opacity(0.58))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("A LITTLE READING JOURNAL").font(.system(size: 9, weight: .semibold)).tracking(1.5).foregroundStyle(folioInk.opacity(0.5))
+                VStack(alignment: .leading, spacing: 12) {
+                    sectionLabel("READING JOURNAL")
                     HStack(spacing: 10) {
-                        TextField("Current page", text: $currentPageText).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
-                        Text("of").foregroundStyle(.secondary)
-                        TextField("Total pages", text: $totalPagesText).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                        TextField("Page", text: $currentPageText).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                        Text("of").font(.system(size: 13, design: .serif)).foregroundStyle(.secondary)
+                        TextField("Total", text: $totalPagesText).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
                     }
                     if let total = Int(totalPagesText), total > 0, let current = Int(currentPageText) {
                         ProgressView(value: min(Double(max(current, 0)), Double(total)), total: Double(total)).tint(folioInk)
                     }
-                    TextField("A thought, a favourite line, a note to yourself…", text: $readingNote, axis: .vertical)
-                        .lineLimit(2...4).font(.system(size: 13, design: .serif)).padding(10).background(.white.opacity(0.55)).clipShape(RoundedRectangle(cornerRadius: 5))
+                    TextField("A thought to remember…", text: $readingNote, axis: .vertical)
+                        .lineLimit(2...4)
+                        .font(.system(size: 14, design: .serif))
+                        .padding(12)
+                        .background(Color.white.opacity(0.58))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
                     Button {
                         library.updateReadingDetails(book, currentPage: Int(currentPageText), totalPages: Int(totalPagesText), note: readingNote)
                         SoundEffects.softTap()
                     } label: {
-                        Text("Save my reading notes").font(.system(size: 12, weight: .medium)).foregroundStyle(folioPaper)
-                            .frame(maxWidth: .infinity).padding(.vertical, 11).background(folioInk).clipShape(Capsule())
+                        Text("Save journal entry")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(folioInk)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Picker("Reading status", selection: Binding(get: { savedBook.status }, set: { library.update(book, status: $0) })) {
-                    ForEach(ReadingStatus.allCases) { status in Text(status.rawValue).tag(status) }
-                }.pickerStyle(.segmented)
-                Button(role: .destructive) { library.remove(book); dismiss() } label: {
-                    Label("Remove from my shelf", systemImage: "trash").font(.system(size: 12, weight: .medium))
+                VStack(alignment: .leading, spacing: 10) {
+                    sectionLabel("ON YOUR SHELF")
+                    Picker("Reading status", selection: Binding(get: { savedBook.status }, set: { library.update(book, status: $0) })) {
+                        ForEach(ReadingStatus.allCases) { status in Text(status.rawValue).tag(status) }
+                    }.pickerStyle(.segmented)
+                    Button(role: .destructive) { library.remove(book); dismiss() } label: {
+                        Label("Remove from shelf", systemImage: "trash").font(.system(size: 12, weight: .medium))
+                    }
+                    .padding(.top, 5)
                 }
             }
-            .padding(22)
+            .padding(.horizontal, 22)
+            .padding(.top, 14)
+            .padding(.bottom, 34)
         }
         .background(folioPaper.ignoresSafeArea())
         .onAppear {
@@ -426,6 +472,34 @@ private struct BookDetailView: View {
         .sheet(isPresented: $reading) {
             if let readerURL { FolioReadingCopyView(url: readerURL) }
         }
+    }
+
+    private func sectionLabel(_ value: String) -> some View {
+        Text(value)
+            .font(.system(size: 9, weight: .semibold))
+            .tracking(1.8)
+            .foregroundStyle(folioInk.opacity(0.48))
+    }
+
+    private func actionRow(_ title: String, symbol: String, prominent: Bool = false, disabled: Bool = false, action: @escaping () -> Void) -> some View {
+        Button {
+            action()
+            SoundEffects.softTap()
+        } label: {
+            HStack(spacing: 11) {
+                Image(systemName: symbol).font(.system(size: 15, weight: .medium))
+                Text(title).font(.system(size: 14, weight: .medium))
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.system(size: 11, weight: .medium)).opacity(0.55)
+            }
+            .foregroundStyle(prominent ? folioPaper : folioInk)
+            .padding(.horizontal, 15)
+            .padding(.vertical, 14)
+            .background(prominent ? folioInk.opacity(disabled ? 0.28 : 1) : Color.white.opacity(0.68))
+            .clipShape(RoundedRectangle(cornerRadius: 9))
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
     }
 
     private func verifyBarcode(_ code: String) async {
