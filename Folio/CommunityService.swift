@@ -2,11 +2,12 @@ import Foundation
 import FirebaseFirestore
 import FirebaseStorage
 import FirebaseAuth
+import FirebaseCore
 
 /// Community data is served by Folio's own API when FOLIO_API_BASE_URL is
 /// configured in the app's Info.plist. Firestore remains a migration fallback.
 struct CommunityService {
-    private let db = Firestore.firestore()
+    private var db: Firestore? { FirebaseApp.app() == nil ? nil : Firestore.firestore() }
     private var apiBaseURL: URL? {
         guard let raw = Bundle.main.object(forInfoDictionaryKey: "FOLIO_API_BASE_URL") as? String,
               !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -65,6 +66,7 @@ struct CommunityService {
                                   body: ["name": name, "bio": bio, "avatarURL": avatarURL ?? ""], authenticated: true)
             return
         }
+        guard let db else { throw CommunityAPIError.setupRequired }
         try await db.collection("profiles").document(userID).setData([
             "name": name, "bio": bio, "avatarURL": avatarURL ?? "",
             "updatedAt": FieldValue.serverTimestamp()
@@ -77,12 +79,14 @@ struct CommunityService {
             let response = try JSONDecoder().decode(ProfileResponse.self, from: data)
             return (response.profile.name, response.profile.bio, response.profile.avatarURL)
         }
+        guard let db else { throw CommunityAPIError.setupRequired }
         let snapshot = try await db.collection("profiles").document(userID).getDocument()
         guard snapshot.exists, let data = snapshot.data() else { return nil }
         return (data["name"] as? String ?? "", data["bio"] as? String ?? "", data["avatarURL"] as? String)
     }
 
     func uploadAvatar(_ data: Data, userID: String) async throws -> URL {
+        guard FirebaseApp.app() != nil else { throw CommunityAPIError.setupRequired }
         let reference = Storage.storage().reference().child("profile-images/\(userID).jpg")
         let metadata = StorageMetadata()
         metadata.contentType = "image/jpeg"
@@ -95,6 +99,7 @@ struct CommunityService {
             let data = try await request("v1/posts")
             return try JSONDecoder().decode(FeedResponse.self, from: data).posts.map(\.communityPost)
         }
+        guard let db else { throw CommunityAPIError.setupRequired }
         let snapshot = try await db.collection("posts").order(by: "createdAt", descending: true).limit(to: 60).getDocuments()
         return snapshot.documents.compactMap { document in
             let data = document.data()
@@ -115,6 +120,7 @@ struct CommunityService {
                        "rating": 5], authenticated: true)
             return
         }
+        guard let db else { throw CommunityAPIError.setupRequired }
         try await db.collection("posts").addDocument(data: [
             "authorID": userID, "name": post.name, "handle": post.handle, "title": post.title,
             "book": post.book, "body": post.body, "likes": 0, "mark": post.mark,
@@ -128,6 +134,7 @@ struct CommunityService {
                                   body: ["body": text], authenticated: true)
             return
         }
+        guard let db else { throw CommunityAPIError.setupRequired }
         try await db.collection("posts").document(postID).collection("comments").addDocument(data: [
             "authorID": userID, "displayName": displayName, "body": text,
             "createdAt": FieldValue.serverTimestamp()
@@ -139,6 +146,7 @@ struct CommunityService {
             let data = try await request("v1/posts/\(postID)/comments")
             return try JSONDecoder().decode(CommentsResponse.self, from: data).comments.map { "\($0.displayName): \($0.body)" }
         }
+        guard let db else { throw CommunityAPIError.setupRequired }
         let snapshot = try await db.collection("posts").document(postID).collection("comments")
             .order(by: "createdAt").limit(to: 100).getDocuments()
         return snapshot.documents.compactMap { doc in
@@ -153,6 +161,7 @@ struct CommunityService {
             _ = try await request("v1/posts/\(postID)/like", method: liked ? "PUT" : "DELETE", authenticated: true)
             return
         }
+        guard let db else { throw CommunityAPIError.setupRequired }
         guard let uid = Auth.auth().currentUser?.uid else { throw CommunityAPIError.signInRequired }
         let ref = db.collection("posts").document(postID)
         if liked {
@@ -168,7 +177,7 @@ enum CommunityAPIError: LocalizedError {
     case server(String)
     var errorDescription: String? {
         switch self {
-        case .signInRequired: return "Sign in to use the Reading Room."
+        case .signInRequired: return "Sign in to use the Reading Room."\n        case .setupRequired: return "Connect Firebase or configure the Folio API to enable online features."
         case .server(let message): return message
         }
     }
