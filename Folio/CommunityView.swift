@@ -71,7 +71,7 @@ struct CommunityView: View {
                             if isReview {
                                 TextField("Book title and author", text: $reviewBook)
                                 Picker("Your rating", selection: $rating) {
-                                    ForEach(1...5, id: \\.self) { value in
+                                    ForEach(1...5, id: \.self) { value in
                                         Text(String(repeating: "★", count: value)).tag(value)
                                     }
                                 }
@@ -167,7 +167,7 @@ struct CommunityView: View {
         defer { isPublishing = false }
         let clean = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = readerName.isEmpty ? (user.displayName ?? "A Folio reader") : readerName
-        let post = CommunityPost(id: UUID().uuidString, name: displayName, handle: "@reader", title: isReview ? "A reader’s review · \\(rating)/5" : "A note from my reading journal", book: isReview ? reviewBook : "Currently reading", body: clean, likes: 0, mark: String(displayName.prefix(1)))
+        let post = CommunityPost(id: UUID().uuidString, name: displayName, handle: "@reader", title: isReview ? "A reader’s review · \(rating)/5" : "A note from my reading journal", book: isReview ? reviewBook : "Currently reading", body: clean, likes: 0, mark: String(displayName.prefix(1)))
         do {
             try await CommunityService().publish(post, userID: user.uid)
             draft = ""
