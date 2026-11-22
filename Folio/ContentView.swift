@@ -1,6 +1,7 @@
 import SwiftUI
 import PDFKit
 import UniformTypeIdentifiers
+import QuickLook
 
 private let folioPaper = Color(red: 0.96, green: 0.94, blue: 0.89)
 private let folioInk = Color(red: 0.18, green: 0.20, blue: 0.17)
