@@ -6,6 +6,8 @@ struct ProfileView: View {
     @AppStorage("folio.readerName") private var name = "A fellow reader"
     @AppStorage("folio.readerBio") private var bio = "Collecting stories, one page at a time."
     @State private var photo: PhotosPickerItem?
+    @State private var isSaving = false
+    @State private var profileMessage: String?
     @AppStorage("folio.avatarBase64") private var avatarBase64 = ""
 
     var body: some View {
@@ -65,6 +67,20 @@ struct ProfileView: View {
                                 Text(auth.isConfigured ? "Sign in to keep your reading identity with you." : "Connect Firebase to enable Google sign-in.")
                                     .font(.system(size: 11, design: .serif)).foregroundStyle(.secondary)
                             }
+                            Button {
+                                Task { await saveProfile() }
+                            } label: {
+                                HStack {
+                                    if isSaving { ProgressView() }
+                                    Text("Save profile")
+                                }
+                                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .background(Color(red: 0.18, green: 0.20, blue: 0.17))
+                                .foregroundStyle(Color(red: 0.96, green: 0.94, blue: 0.89))
+                                .clipShape(Capsule())
+                            }
+                            .disabled(isSaving)
+                            if let profileMessage { Text(profileMessage).font(.system(size: 11)).foregroundStyle(.secondary) }
                             if let error = auth.errorMessage {
                                 Text(error).font(.system(size: 11)).foregroundStyle(.red)
                             }
@@ -76,9 +92,39 @@ struct ProfileView: View {
             }
             .navigationTitle("Your profile")
             .navigationBarTitleDisplayMode(.inline)
+            .task(id: auth.user?.uid) { await loadProfile() }
             .onChange(of: photo) { _, item in
                 Task { if let data = try? await item?.loadTransferable(type: Data.self) { avatarBase64 = data.base64EncodedString() } }
             }
+        }
+    }
+
+    @MainActor
+    private func loadProfile() async {
+        guard let user = auth.user else { return }
+        do {
+            if let profile = try await CommunityService().loadProfile(userID: user.uid) {
+                if !profile.name.isEmpty { name = profile.name }
+                bio = profile.bio
+            }
+        } catch {
+            profileMessage = "Your profile is saved on this device. Cloud sync is unavailable."
+        }
+    }
+
+    @MainActor
+    private func saveProfile() async {
+        guard let user = auth.user else {
+            profileMessage = "Saved on this device. Sign in to sync your profile."
+            return
+        }
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            try await CommunityService().saveProfile(name: name, bio: bio, userID: user.uid)
+            profileMessage = "Your reader profile is saved."
+        } catch {
+            profileMessage = "Couldn't sync your profile. Please try again."
         }
     }
 }
