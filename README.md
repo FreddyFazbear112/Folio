@@ -27,10 +27,10 @@ Google authentication and shared community data require a Firebase project you c
 1. Create a project in the [Firebase Console](https://console.firebase.google.com/).
 2. Add an iOS app with bundle identifier `com.folio.app`.
 3. Enable **Google** under Authentication → Sign-in method.
-4. Create a Cloud Firestore database.
+4. Create a Cloud Firestore database and enable Firebase Storage.
 5. Download `GoogleService-Info.plist` and add it to the `Folio` app target in Xcode (the app checks for this file at launch).
 6. In the Xcode target's **Info → URL Types**, add the value of `REVERSED_CLIENT_ID` from that plist as a URL scheme. This is required for Google Sign-In to return to Folio.
-7. Publish the repository's `firestore.rules` file to your Firebase project's Firestore Rules tab.
+7. Publish the repository's `firestore.rules` file to your Firebase project's Firestore Rules tab and `storage.rules` to Storage Rules. You can deploy both with `firebase deploy --only firestore:rules,storage` after installing and signing into the Firebase CLI.
 
 Do not commit private credentials or service-account keys. The Firebase client plist contains app identifiers and client configuration, not an administrative service-account key; keep your Firebase security rules restrictive.
 
@@ -40,7 +40,7 @@ Without Firebase configuration, the local bookshelf and sample reading-room cont
 
 - The initial social feed contains sample posts so the screen has life before a Firebase project is connected. New posts and comments use Firestore after sign-in.
 - Book covers are represented as original 3D book objects and stylized bookshelf spines; real cover-art fetching is a future enhancement.
-- Profile photo selection is stored locally on the device; Google account photos are shown as a fallback. Reader name and bio sync to Firestore when signed in.
+- Profile photos are resized, stored locally, and uploaded to Firebase Storage when signed in; reader name and bio sync to Firestore.
 - ISBN lookup depends on network access to Open Library.
 - Google Sign-In needs the Firebase plist and reversed client URL scheme described above.
 
