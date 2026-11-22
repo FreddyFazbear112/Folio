@@ -360,6 +360,11 @@ private struct BookDetailView: View {
         }
         .padding(22)
         .background(folioPaper.ignoresSafeArea())
+        .onAppear {
+            currentPageText = book.currentPage.map { String($0) } ?? ""
+            totalPagesText = book.totalPages.map { String($0) } ?? ""
+            readingNote = book.readingNote ?? ""
+        }
     }
 }
 
@@ -375,7 +380,7 @@ private struct FirstBookTutorialView: View {
     private let steps: [(symbol: String, eyebrow: String, title: String, detail: String)] = [
         ("barcode.viewfinder", "A GOOD PLACE TO BEGIN", "Find your book.", "Tap the plus button to search by ISBN, scan the barcode on the back, or type the title yourself."),
         ("books.vertical", "MAKE IT YOURS", "Give it a shelf.", "Choose To Read, Reading, or Read. Folio keeps your little library saved on this device."),
-        ("bookmark", "PICK UP WHERE YOU LEFT OFF", "Come back anytime.", "Open a book on your shelf to change its reading status. You can add more details as your reading life grows.")
+        ("bookmark", "PICK UP WHERE YOU LEFT OFF", "Come back anytime.", "Open a book to update your reading status, keep track of pages, and save a private thought or favourite line.")
     ]
 
     var body: some View {
