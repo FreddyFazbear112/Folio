@@ -38,17 +38,17 @@ NSColor(calibratedRed: 0.96, green: 0.79, blue: 0.48, alpha: 0.9).setFill()
 star.fill()
 
 // Open book silhouette, warm gilded edges.
-let book = NSBezierPath()
+let book = CGMutablePath()
 book.move(to: CGPoint(x: 512, y: 306))
-book.curve(to: CGPoint(x: 256, y: 382), controlPoint1: CGPoint(x: 414, y: 334), controlPoint2: CGPoint(x: 326, y: 352))
-book.line(to: CGPoint(x: 256, y: 650))
+book.addCurve(to: CGPoint(x: 256, y: 382), controlPoint1: CGPoint(x: 414, y: 334), controlPoint2: CGPoint(x: 326, y: 352))
+book.addLine(to: CGPoint(x: 256, y: 650))
 book.curve(to: CGPoint(x: 492, y: 584), controlPoint1: CGPoint(x: 342, y: 628), controlPoint2: CGPoint(x: 426, y: 590))
 book.curve(to: CGPoint(x: 512, y: 574), controlPoint1: CGPoint(x: 501, y: 578), controlPoint2: CGPoint(x: 507, y: 574))
 book.curve(to: CGPoint(x: 532, y: 584), controlPoint1: CGPoint(x: 517, y: 574), controlPoint2: CGPoint(x: 523, y: 578))
 book.curve(to: CGPoint(x: 768, y: 650), controlPoint1: CGPoint(x: 598, y: 590), controlPoint2: CGPoint(x: 682, y: 628))
 book.line(to: CGPoint(x: 768, y: 382))
 book.curve(to: CGPoint(x: 512, y: 306), controlPoint1: CGPoint(x: 698, y: 352), controlPoint2: CGPoint(x: 610, y: 334))
-book.close()
+book.closeSubpath()
 context.saveGState()
 context.setShadow(offset: CGSize(width: 0, height: -18), blur: 35, color: NSColor.black.withAlphaComponent(0.55).cgColor)
 let gold = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [
@@ -56,7 +56,7 @@ let gold = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [
     NSColor(calibratedRed: 0.68, green: 0.43, blue: 0.19, alpha: 1).cgColor,
     NSColor(calibratedRed: 0.96, green: 0.76, blue: 0.42, alpha: 1).cgColor
 ] as CFArray, locations: [0, 0.5, 1])!
-context.addPath(book.cgPath)
+context.addPath(book)
 context.clip()
 context.drawLinearGradient(gold, start: CGPoint(x: 256, y: 650), end: CGPoint(x: 768, y: 306), options: [])
 context.restoreGState()
