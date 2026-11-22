@@ -44,6 +44,13 @@ struct AddBookView: View {
                     TextField("Title", text: $title)
                     TextField("Author", text: $author)
                 }
+                if !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Section("A LITTLE PREVIEW") {
+                        BookPreview3D(title: title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1))
+                            .frame(height: 165)
+                            .listRowInsets(EdgeInsets())
+                    }
+                }
                 Section("YOUR SHELF") {
                     Picker("Reading status", selection: $status) {
                         ForEach(ReadingStatus.allCases) { item in Text(item.rawValue).tag(item) }
