@@ -22,7 +22,19 @@ final class LibraryStore: ObservableObject {
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanAuthor = author.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanTitle.isEmpty else { return nil }
-        let book = Book(title: cleanTitle, author: cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor, status: status, colorIndex: books.count % 6, coverURL: coverURL, isbn: isbn?.filter(\.isNumber))
+        let normalizedAuthor = cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor
+        let cleanISBN = isbn?.filter(\.isNumber)
+        if let existing = books.first(where: { candidate in
+            if let cleanISBN, !cleanISBN.isEmpty,
+               candidate.isbn?.filter(\.isNumber) == cleanISBN || candidate.ownedISBN?.filter(\.isNumber) == cleanISBN {
+                return true
+            }
+            return candidate.title.localizedCaseInsensitiveCompare(cleanTitle) == .orderedSame
+                && candidate.author.localizedCaseInsensitiveCompare(normalizedAuthor) == .orderedSame
+        }) {
+            return existing.id
+        }
+        let book = Book(title: cleanTitle, author: normalizedAuthor, status: status, colorIndex: books.count % 6, coverURL: coverURL, isbn: cleanISBN)
         books.insert(book, at: 0)
         return book.id
     }
