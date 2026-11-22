@@ -64,8 +64,9 @@ final class LibraryStore: ObservableObject {
         books[index].digitalFileName = fileName
     }
 
-    func updateEdition(_ book: Book, spineColorHex: String?, backCoverURL: String?) {
+    func updateEdition(_ book: Book, coverURL: String?, spineColorHex: String?, backCoverURL: String?) {
         guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
+        books[index].coverURL = coverURL
         books[index].spineColorHex = spineColorHex
         books[index].backCoverURL = backCoverURL
     }
