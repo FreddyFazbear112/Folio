@@ -23,11 +23,7 @@ struct CommunityView: View {
     @State private var selectedForComments: CommunityPost?
     @State private var isPublishing = false
     @State private var notice: String?
-    @State private var posts = [
-        CommunityPost(id: "sample-1", name: "Mara Ellis", handle: "@mara.reads", title: "A book that stayed with me", book: "Piranesi · Susanna Clarke", body: "Finished this in two quiet evenings. It feels like finding a note from another world tucked inside a familiar book.", likes: 28, mark: "M"),
-        CommunityPost(id: "sample-2", name: "Theo Park", handle: "@theopark", title: "The Sunday reading club", book: "The Secret History · Donna Tartt", body: "Do you think the atmosphere is the real narrator here? I keep thinking about the first chapter.", likes: 16, mark: "T"),
-        CommunityPost(id: "sample-3", name: "June Rivera", handle: "@junepages", title: "A small recommendation", book: "Small Things Like These · Claire Keegan", body: "For anyone who wants a short book that somehow makes the whole room feel different.", likes: 41, mark: "J")
-    ]
+    @State private var posts: [CommunityPost] = []
 
     var body: some View {
         NavigationStack {
@@ -51,7 +47,22 @@ struct CommunityView: View {
                                     .foregroundStyle(.white).clipShape(Circle())
                             }
                         }
-                        ForEach(posts) { post in postCard(post) }
+                        if posts.isEmpty {
+                            VStack(spacing: 10) {
+                                Image(systemName: "text.book.closed").font(.system(size: 27, weight: .light))
+                                Text("A quiet room, for now.").font(.system(size: 20, design: .serif))
+                                Text(auth.user == nil ? "Sign in to share the first real reading note." : "No one has posted yet. You could be the first.")
+                                    .font(.system(size: 12, design: .serif)).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                                if auth.user != nil {
+                                    Button("Write the first note") { showingComposer = true }
+                                        .font(.system(size: 12, weight: .medium)).padding(.top, 4)
+                                }
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 46)
+                            .foregroundStyle(Color(red: 0.25, green: 0.27, blue: 0.23))
+                        } else {
+                            ForEach(posts) { post in postCard(post) }
+                        }
                     }
                     .foregroundStyle(Color(red: 0.18, green: 0.20, blue: 0.17))
                     .padding(22)
@@ -151,10 +162,8 @@ struct CommunityView: View {
 
     @MainActor
     private func refreshFeed() async {
-        guard auth.user != nil, auth.isConfigured else { return }
         do {
-            let remote = try await CommunityService().fetchPosts()
-            if !remote.isEmpty { posts = remote }
+            posts = try await CommunityService().fetchPosts()
         } catch {
             notice = "The community feed is temporarily unavailable."
         }
@@ -167,7 +176,8 @@ struct CommunityView: View {
         defer { isPublishing = false }
         let clean = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = readerName.isEmpty ? (user.displayName ?? "A Folio reader") : readerName
-        let post = CommunityPost(id: UUID().uuidString, name: displayName, handle: "@reader", title: isReview ? "A reader’s review · \(rating)/5" : "A note from my reading journal", book: isReview ? reviewBook : "Currently reading", body: clean, likes: 0, mark: String(displayName.prefix(1)))
+        let handle = "@" + String(displayName.lowercased().filter { $0.isLetter || $0.isNumber }.prefix(18))
+        let post = CommunityPost(id: UUID().uuidString, name: displayName, handle: handle, title: isReview ? "A reader’s review · \(rating)/5" : "A note from my reading journal", book: isReview ? reviewBook : "Currently reading", body: clean, likes: 0, mark: String(displayName.prefix(1)))
         do {
             try await CommunityService().publish(post, userID: user.uid)
             draft = ""
