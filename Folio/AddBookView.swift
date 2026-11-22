@@ -304,6 +304,10 @@ struct AddBookView: View {
         notice = nil
         defer { searchingISBN = false }
         do {
+            guard BookLookupService.isValidISBN(isbn) else {
+                notice = "Enter a valid 10- or 13-digit ISBN, including its check digit."
+                return
+            }
             if let match = try await service.lookup(isbn: isbn) {
                 results = [match]
             } else {
