@@ -58,8 +58,19 @@ struct BookLookupService {
         let (data, _) = try await URLSession.shared.data(for: request)
         let response = try JSONDecoder().decode(OpenLibraryResponse.self, from: data)
         guard let doc = response.docs.first, let title = doc.title else { return nil }
-        return CatalogueBook(id: doc.key ?? clean, title: title, author: doc.author_name?.first ?? "Unknown author",
-            coverURL: doc.cover_i.map { "https://covers.openlibrary.org/b/id/\($0)-L.jpg" },
+        let author = doc.author_name?.first ?? "Unknown author"
+        let cover = doc.cover_i.map { "https://covers.openlibrary.org/b/id/\($0)-L.jpg" }
+        // ISBN identifies the print edition; independently check whether the same
+        // work also exists as a lawful public-domain download.
+        if let publicEdition = try? await searchGutendex(title).first(where: {
+            $0.title.localizedCaseInsensitiveCompare(title) == .orderedSame
+        }) {
+            return CatalogueBook(id: publicEdition.id, title: title, author: author, coverURL: cover,
+                isbn: doc.isbn?.first ?? clean, publicationYear: doc.first_publish_year,
+                downloadableURL: publicEdition.downloadableURL, format: publicEdition.format,
+                sourceLabel: publicEdition.sourceLabel)
+        }
+        return CatalogueBook(id: doc.key ?? clean, title: title, author: author, coverURL: cover,
             isbn: doc.isbn?.first ?? clean, publicationYear: doc.first_publish_year,
             downloadableURL: nil, format: nil, sourceLabel: "Open Library")
     }
