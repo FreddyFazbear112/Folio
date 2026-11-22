@@ -1,7 +1,6 @@
 import SwiftUI
 import WebKit
 import ZIPFoundation
-import FoundationXML
 
 private struct FolioEPUBChapter: Identifiable {
     let id: String
