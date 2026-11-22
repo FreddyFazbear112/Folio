@@ -1,6 +1,6 @@
 # Folio
 
-A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and native Apple frameworks. Its online community backend is being moved into the self-hostable Folio API.
+A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and native Apple frameworks, with a self-hostable Folio API for its online community.
 
 ## Included in the current build
 
@@ -15,20 +15,20 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 - Tactile system sound feedback
 - Reader profile editing, persistent local photo picker, and cloud-synced name/bio
 - Firebase Authentication integration with Google Sign-In
-- Community API service source for posts, book reviews, comments, likes, and reader profiles (deployment and app migration still required)
+- Folio API client for posts, book reviews, comments, likes, and reader profiles, with Firestore migration fallback
 - Guided first-book walkthrough with ISBN scan, catalogue lookup, or manual entry
 - Private per-book reading journal with page progress and saved notes
 - Live Activity and Home Screen widget support
 
 ## Open in Xcode
 
-Open `Folio.xcodeproj`, let Swift Package Manager resolve Firebase and Google Sign-In, then select your connected iPhone and configure your Personal Team for signing.
+Open `Folio.xcodeproj`, let Swift Package Manager resolve Firebase, Google Sign-In, and ZIPFoundation, then select your connected iPhone and configure your Personal Team for signing.
 
 ## Online services and the Folio server
 
 The repository now includes `server/`, a self-hostable Node.js API with PostgreSQL storage. It provides public reading-room feed reads and authenticated endpoints for publishing posts, comments, likes, and reader profiles. Firebase Authentication is currently used only as the identity-token issuer for API requests; the data API and database are Folio-owned and can be hosted independently.
 
-The server source is committed, but it is **not deployed or connected to the iPhone app yet**. A public API requires a host, a domain/HTTPS endpoint, a PostgreSQL database, and a Firebase Admin service-account credential stored only on the server. Never put the service-account JSON in the iOS app or commit it to Git.
+The iOS client is integrated with the Folio API and selects it when `FOLIO_API_BASE_URL` is configured. The server source is committed, but it is **not deployed**, so shared online features are not live until you provide hosting, an HTTPS endpoint, PostgreSQL, and a Firebase Admin service-account credential stored only on the server. Never put the service-account JSON in the iOS app or commit it to Git.
 
 To run it yourself:
 
