@@ -35,7 +35,8 @@ private struct FolioTabs: View {
             FolioLibraryHome(
                 selectBook: { selectedBook = $0 },
                 addBook: { showingAddBook = true },
-                openLibrary: { selectedTab = 1 }
+                openLibrary: { selectedTab = 1 },
+                openMore: { selectedTab = 4 }
             )
             .tabItem { Label("Home", systemImage: "house") }
             .tag(0)
@@ -1033,6 +1034,7 @@ private struct FolioLibraryHome: View {
     let selectBook: (Book) -> Void
     let addBook: () -> Void
     let openLibrary: () -> Void
+    let openMore: () -> Void
 
     private var currentlyReading: Book? { library.books.first(where: { $0.status == .reading }) }
     private var recentBooks: [Book] { Array(library.books.prefix(8)) }
@@ -1069,7 +1071,7 @@ private struct FolioLibraryHome: View {
                 .tracking(-0.8)
                 .foregroundStyle(FolioPalette.cream)
             Spacer()
-            Button(action: addBook) {
+            Button(action: openMore) {
                 Image(systemName: "person.crop.circle")
                     .font(.system(size: 21, weight: .regular))
                     .foregroundStyle(FolioPalette.gold)
