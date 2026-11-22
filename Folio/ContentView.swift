@@ -282,6 +282,9 @@ private struct ShelfListView: View {
 private struct BookDetailView: View {
     @EnvironmentObject private var library: LibraryStore
     @Environment(\.dismiss) private var dismiss
+    @State private var currentPageText = ""
+    @State private var totalPagesText = ""
+    @State private var readingNote = ""
     let book: Book
 
     var body: some View {
@@ -291,6 +294,55 @@ private struct BookDetailView: View {
             BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1))
                 .frame(height: 270)
             Text("Drag to turn your book around").font(.system(size: 12, design: .serif).italic()).foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("A LITTLE READING JOURNAL")
+                    .font(.system(size: 9, weight: .semibold)).tracking(1.5)
+                    .foregroundStyle(folioInk.opacity(0.5))
+                HStack(spacing: 10) {
+                    TextField("Current page", text: $currentPageText)
+                        .keyboardType(.numberPad)
+                        .textFieldStyle(.roundedBorder)
+                    Text("of")
+                        .font(.system(size: 13, design: .serif))
+                        .foregroundStyle(.secondary)
+                    TextField("Total pages", text: $totalPagesText)
+                        .keyboardType(.numberPad)
+                        .textFieldStyle(.roundedBorder)
+                }
+                if let total = Int(totalPagesText), total > 0, let current = Int(currentPageText) {
+                    ProgressView(value: min(Double(max(current, 0)), Double(total)), total: Double(total))
+                        .tint(folioInk)
+                    Text("\(min(max(current, 0), total)) of \(total) pages")
+                        .font(.system(size: 11, design: .serif)).foregroundStyle(.secondary)
+                }
+                TextField("A thought, a favourite line, a note to yourself…", text: $readingNote, axis: .vertical)
+                    .lineLimit(2...4)
+                    .font(.system(size: 13, design: .serif))
+                    .padding(10)
+                    .background(.white.opacity(0.55))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                Button {
+                    library.updateReadingDetails(
+                        book,
+                        currentPage: Int(currentPageText),
+                        totalPages: Int(totalPagesText),
+                        note: readingNote
+                    )
+                    SoundEffects.softTap()
+                } label: {
+                    Text("Save my reading notes")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(folioPaper)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(folioInk)
+                        .clipShape(Capsule())
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 4)
+
             Picker("Reading status", selection: Binding(
                 get: { library.books.first(where: { $0.id == book.id })?.status ?? book.status },
                 set: { library.update(book, status: $0); SoundEffects.softTap() }
