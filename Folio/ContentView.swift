@@ -174,108 +174,165 @@ private struct FolioHeader: View {
 private struct BookGrid: View {
     let books: [Book]
     let select: (Book) -> Void
+
+    private var rows: [[Book]] {
+        stride(from: 0, to: books.count, by: 3).map { start in
+            Array(books[start..<min(start + 3, books.count)])
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 15) {
             HStack(alignment: .firstTextBaseline) {
-                Text("On your shelf").font(.system(size: 23, design: .serif))
+                Text("Your collection")
+                    .font(.system(size: 25, weight: .regular, design: .serif))
+                    .tracking(-0.5)
                 Spacer()
-                Text("\(books.count) BOOKS").font(.system(size: 9, weight: .medium)).tracking(1.4).foregroundStyle(folioInk.opacity(0.5))
+                Text(String(format: "%02d", books.count) + " VOLUMES")
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(1.7)
+                    .foregroundStyle(folioInk.opacity(0.45))
             }
+
             if books.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "books.vertical").font(.system(size: 30, weight: .ultraLight))
-                    Text("A little room for a new story.").font(.system(size: 15, design: .serif).italic())
+                VStack(spacing: 13) {
+                    Image(systemName: "books.vertical")
+                        .font(.system(size: 34, weight: .ultraLight))
+                    Text("Your shelves are waiting.")
+                        .font(.system(size: 17, design: .serif).italic())
+                    Text("Add a book and its cover will find a place here.")
+                        .font(.system(size: 12, design: .serif))
+                        .foregroundStyle(folioInk.opacity(0.48))
                 }
-                .foregroundStyle(folioInk.opacity(0.55))
-                .frame(maxWidth: .infinity, minHeight: 180)
+                .foregroundStyle(folioInk.opacity(0.62))
+                .frame(maxWidth: .infinity, minHeight: 205)
+                .background(Color.white.opacity(0.27))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             } else {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 13), GridItem(.flexible(), spacing: 13), GridItem(.flexible(), spacing: 13)], spacing: 25) {
-                ForEach(books) { book in
-                    Button {
-                        select(book)
-                        SoundEffects.pageTurn()
-                    } label: {
-                        BookSpine(book: book)
+                VStack(spacing: 0) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                        HStack(alignment: .bottom, spacing: 13) {
+                            ForEach(row) { book in
+                                Button {
+                                    select(book)
+                                    SoundEffects.pageTurn()
+                                } label: {
+                                    ShelfBookCover(book: book)
+                                }
+                                .buttonStyle(.plain)
+                                .frame(maxWidth: .infinity)
+                            }
+                            if row.count < 3 {
+                                ForEach(0..<(3 - row.count), id: \.self) { _ in
+                                    Color.clear.frame(maxWidth: .infinity)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 15)
+                        .padding(.top, 17)
+                        .padding(.bottom, 8)
+                        .background(Color(red: 0.86, green: 0.79, blue: 0.68))
+                        .overlay(alignment: .bottom) {
+                            Rectangle()
+                                .fill(Color(red: 0.53, green: 0.40, blue: 0.29))
+                                .frame(height: 8)
+                                .overlay(alignment: .top) {
+                                    Rectangle().fill(Color.white.opacity(0.36)).frame(height: 1)
+                                }
+                                .shadow(color: .black.opacity(0.18), radius: 4, y: 3)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
-            }
-            .padding(.horizontal, 12)
-            .padding(.top, 18)
-            .padding(.bottom, 23)
-            .background {
-                ZStack(alignment: .bottom) {
-                    LinearGradient(colors: [Color(red: 0.89, green: 0.84, blue: 0.75), Color(red: 0.78, green: 0.70, blue: 0.59)], startPoint: .top, endPoint: .bottom)
-                    Rectangle().fill(Color(red: 0.60, green: 0.48, blue: 0.36)).frame(height: 9)
-                        .overlay(alignment: .bottom) { Rectangle().fill(Color.white.opacity(0.22)).frame(height: 1) }
-                    Rectangle().fill(Color.black.opacity(0.10)).frame(height: 5).offset(y: -9)
+                .background(Color(red: 0.91, green: 0.86, blue: 0.77))
+                .clipShape(RoundedRectangle(cornerRadius: 7))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7)
+                        .stroke(Color(red: 0.48, green: 0.36, blue: 0.27).opacity(0.22), lineWidth: 1)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 5))
-                .shadow(color: .black.opacity(0.12), radius: 7, x: 0, y: 5)
+                .shadow(color: .black.opacity(0.10), radius: 10, x: 0, y: 6)
             }
-            }
-            Rectangle().fill(folioInk.opacity(0.65)).frame(height: 3)
-            Rectangle().fill(folioInk.opacity(0.12)).frame(height: 2)
         }
         .foregroundStyle(folioInk)
     }
 }
 
-private struct BookSpine: View {
+private struct ShelfBookCover: View {
     let book: Book
-    private let palette: [Color] = [
-        Color(red: 0.43, green: 0.31, blue: 0.27), Color(red: 0.32, green: 0.40, blue: 0.35),
-        Color(red: 0.69, green: 0.48, blue: 0.33), Color(red: 0.37, green: 0.39, blue: 0.51),
-        Color(red: 0.62, green: 0.56, blue: 0.43), Color(red: 0.53, green: 0.34, blue: 0.36)
-    ]
-    private var spineArtwork: some View {
-        VStack(spacing: 5) {
-            Rectangle().fill(.white.opacity(0.42)).frame(height: 1)
-            Text(book.title.uppercased())
-                .font(.system(size: 9, weight: .semibold, design: .serif))
-                .tracking(0.7).multilineTextAlignment(.center).lineLimit(5)
-                .minimumScaleFactor(0.7).foregroundStyle(.white.opacity(0.92))
-                .padding(.horizontal, 5)
-            Spacer(minLength: 2)
-            Rectangle().fill(.white.opacity(0.42)).frame(height: 1)
-            Text("✳").font(.system(size: 11)).foregroundStyle(.white.opacity(0.8))
-        }
-        .padding(.vertical, 10).padding(.horizontal, 4)
+
+    private var coverColor: Color {
+        let colors: [Color] = [
+            Color(red: 0.37, green: 0.27, blue: 0.24),
+            Color(red: 0.25, green: 0.34, blue: 0.29),
+            Color(red: 0.65, green: 0.43, blue: 0.30),
+            Color(red: 0.31, green: 0.34, blue: 0.43),
+            Color(red: 0.56, green: 0.49, blue: 0.37),
+            Color(red: 0.48, green: 0.30, blue: 0.32)
+        ]
+        return colors[abs(book.colorIndex) % colors.count]
     }
 
     var body: some View {
         VStack(spacing: 7) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(palette[book.colorIndex % palette.count].gradient)
-                    .shadow(color: .black.opacity(0.16), radius: 5, x: 2, y: 4)
-                if let coverURL = book.coverURL, let url = URL(string: coverURL) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image.resizable().scaledToFill()
-                        case .failure:
-                            spineArtwork
-                        default:
-                            spineArtwork.overlay { ProgressView().tint(.white.opacity(0.7)) }
+            GeometryReader { proxy in
+                ZStack {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(coverColor.gradient)
+                    if let coverURL = book.coverURL, let url = URL(string: coverURL) {
+                        AsyncImage(url: url) { phase in
+                            if let image = phase.image {
+                                image.resizable().scaledToFill()
+                            } else {
+                                designedCover
+                            }
                         }
+                    } else {
+                        designedCover
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
-                } else {
-                    spineArtwork
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .clipShape(RoundedRectangle(cornerRadius: 3))
+                .overlay(alignment: .leading) {
+                    LinearGradient(colors: [.black.opacity(0.25), .clear, .white.opacity(0.12)], startPoint: .leading, endPoint: .trailing)
+                        .frame(width: 7)
+                }
+                .overlay(alignment: .trailing) {
+                    Rectangle().fill(.black.opacity(0.12)).frame(width: 2)
+                }
+                .shadow(color: .black.opacity(0.25), radius: 5, x: 3, y: 4)
             }
-            .frame(height: 154)
-            .clipShape(RoundedRectangle(cornerRadius: 3))
-            .overlay(alignment: .leading) {
-                LinearGradient(colors: [.black.opacity(0.24), .clear, .white.opacity(0.12)], startPoint: .leading, endPoint: .trailing)
-                    .frame(width: 9)
-            }
-            .overlay(alignment: .trailing) { Rectangle().fill(.black.opacity(0.10)).frame(width: 2) }
-            .rotation3DEffect(.degrees(-4), axis: (x: 0, y: 1, z: 0), perspective: 0.7)
-            Text(book.author).font(.system(size: 10, design: .serif)).foregroundStyle(folioInk.opacity(0.7)).lineLimit(1)
+            .aspectRatio(0.68, contentMode: .fit)
+
+            Text(book.title)
+                .font(.system(size: 10, weight: .medium, design: .serif))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(folioInk)
+                .frame(height: 26, alignment: .top)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private var designedCover: some View {
+        VStack(spacing: 8) {
+            Rectangle().fill(Color.white.opacity(0.58)).frame(height: 1)
+            Spacer(minLength: 3)
+            Text(book.title)
+                .font(.system(size: 13, weight: .regular, design: .serif))
+                .multilineTextAlignment(.center)
+                .lineLimit(5)
+                .minimumScaleFactor(0.65)
+                .foregroundStyle(Color.white.opacity(0.95))
+                .padding(.horizontal, 5)
+            Spacer(minLength: 3)
+            Text(book.author.uppercased())
+                .font(.system(size: 6, weight: .medium))
+                .tracking(1)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Color.white.opacity(0.78))
+            Rectangle().fill(Color.white.opacity(0.58)).frame(height: 1)
+        }
+        .padding(8)
     }
 }
 
