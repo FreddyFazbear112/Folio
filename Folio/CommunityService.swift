@@ -21,7 +21,7 @@ struct CommunityService {
     }
 
     func uploadAvatar(_ data: Data, userID: String) async throws -> URL {
-        let reference = Storage.storage().reference().child("profile-images/\\(userID).jpg")
+        let reference = Storage.storage().reference().child("profile-images/\(userID).jpg")
         let metadata = StorageMetadata()
         metadata.contentType = "image/jpeg"
         _ = try await reference.putDataAsync(data, metadata: metadata)
