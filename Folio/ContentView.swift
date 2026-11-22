@@ -1046,17 +1046,16 @@ private struct FolioLibraryHome: View {
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 25) {
+                VStack(alignment: .leading, spacing: 18) {
                     header
                     greetingBlock
                     continueReading
                     shortcuts
                     recentlyAdded
-                    footer
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 30)
+                .padding(.horizontal, 18)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
             .background(FolioPalette.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
@@ -1064,43 +1063,39 @@ private struct FolioLibraryHome: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "book.closed.fill")
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(FolioPalette.gold)
+        HStack {
             Text("Folio")
                 .font(.system(size: 31, weight: .regular, design: .serif))
                 .tracking(-0.8)
                 .foregroundStyle(FolioPalette.cream)
             Spacer()
             Button(action: addBook) {
-                Image(systemName: "plus")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(FolioPalette.background)
+                Image(systemName: "person.crop.circle")
+                    .font(.system(size: 21, weight: .regular))
+                    .foregroundStyle(FolioPalette.gold)
                     .frame(width: 36, height: 36)
-                    .background(FolioPalette.gold, in: Circle())
             }
-            .accessibilityLabel("Import or add a book")
+            .accessibilityLabel("Profile and account")
         }
-        .padding(.top, 4)
+        .padding(.top, 2)
     }
 
     private var greetingBlock: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 1) {
             Text(greeting)
-                .font(.system(size: 15, design: .serif))
-                .foregroundStyle(FolioPalette.muted)
+                .font(.system(size: 17, design: .serif))
+                .foregroundStyle(FolioPalette.cream)
             Text("Reader. 👋")
-                .font(.system(size: 27, weight: .regular, design: .serif))
+                .font(.system(size: 20, weight: .regular, design: .serif))
                 .foregroundStyle(FolioPalette.cream)
         }
-        .padding(.top, 3)
+        .padding(.top, 0)
     }
 
     @ViewBuilder
     private var continueReading: some View {
         VStack(alignment: .leading, spacing: 11) {
-            sectionTitle("CONTINUE READING", action: nil)
+            sectionTitle("Continue Reading", action: nil)
             if let book = currentlyReading {
                 Button { selectBook(book) } label: {
                     HStack(spacing: 14) {
@@ -1108,12 +1103,11 @@ private struct FolioLibraryHome: View {
                             .frame(width: 76, height: 108)
                             .shadow(color: .black.opacity(0.35), radius: 9, x: 3, y: 5)
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("PICK UP WHERE YOU LEFT OFF")
-                                .font(.system(size: 8, weight: .semibold))
-                                .tracking(1.1)
-                                .foregroundStyle(FolioPalette.gold)
+                            Text("Continue Reading")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(FolioPalette.cream)
                             Text(book.title)
-                                .font(.system(size: 20, design: .serif))
+                                .font(.system(size: 17, design: .serif))
                                 .foregroundStyle(FolioPalette.cream)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
@@ -1125,8 +1119,8 @@ private struct FolioLibraryHome: View {
                             if let page = book.currentPage, let total = book.totalPages, total > 0 {
                                 ProgressView(value: min(1, Double(page) / Double(total)))
                                     .tint(FolioPalette.gold)
-                                Text("Page \(page) of \(total)")
-                                    .font(.system(size: 9, design: .rounded).monospacedDigit())
+                                Text("\(Int((Double(page) / Double(total) * 100).rounded()))% • \(max(1, Int(Double(total - page) * 0.06)))h left")
+                                    .font(.system(size: 10, design: .rounded).monospacedDigit())
                                     .foregroundStyle(FolioPalette.muted)
                             } else {
                                 Text(book.digitalFileName == nil ? "Add your digital copy to read" : "Continue your story")
@@ -1175,10 +1169,10 @@ private struct FolioLibraryHome: View {
 
     private var shortcuts: some View {
         VStack(alignment: .leading, spacing: 11) {
-            sectionTitle("YOUR LIBRARY", action: "See all", perform: openLibrary)
+            sectionTitle("Your Library", action: "See all  ›", perform: openLibrary)
             HStack(spacing: 10) {
-                shortcut(title: "All Books", count: "\(library.books.count)", symbol: "books.vertical", action: openLibrary)
-                shortcut(title: "In Progress", count: "\(library.books(for: .reading).count)", symbol: "book.open", action: openLibrary)
+                shortcut(title: "All Books", count: "\(library.books.count)", symbol: "book.closed", action: openLibrary)
+                shortcut(title: "Favorites", count: "\(library.books.filter { $0.isFavorite }.count)", symbol: "star.fill", action: openLibrary)
                 shortcut(title: "Recently Read", count: "\(library.books(for: .finished).count)", symbol: "clock.arrow.circlepath", action: openLibrary)
             }
         }
@@ -1199,17 +1193,16 @@ private struct FolioLibraryHome: View {
                     .font(.system(size: 10, design: .rounded).monospacedDigit())
                     .foregroundStyle(FolioPalette.muted)
             }
-            .frame(maxWidth: .infinity, minHeight: 91, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 91, alignment: .center)
             .padding(12)
             .background(FolioPalette.surface, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(FolioPalette.line, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
 
     private var recentlyAdded: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("RECENTLY ADDED", action: "See all", perform: openLibrary)
+            sectionTitle("Recently Added", action: "See all  ›", perform: openLibrary)
             if recentBooks.isEmpty {
                 Button(action: addBook) {
                     HStack {
