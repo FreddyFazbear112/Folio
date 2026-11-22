@@ -62,7 +62,7 @@ private struct LibraryScreen: View {
             .toolbar(.hidden, for: .navigationBar)
         }
         .onAppear {
-            if library.books.isEmpty && !firstBookTutorialSeen {
+            if !firstBookTutorialSeen {
                 showingFirstBookTutorial = true
             }
         }
@@ -189,18 +189,30 @@ private struct BookGrid: View {
                 .foregroundStyle(folioInk.opacity(0.55))
                 .frame(maxWidth: .infinity, minHeight: 180)
             } else {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 22) {
-                    ForEach(books) { book in
-                        Button {
-                            select(book)
-                            SoundEffects.pageTurn()
-                        } label: {
-                            BookSpine(book: book)
-                        }
-                        .buttonStyle(.plain)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 13), GridItem(.flexible(), spacing: 13), GridItem(.flexible(), spacing: 13)], spacing: 25) {
+                ForEach(books) { book in
+                    Button {
+                        select(book)
+                        SoundEffects.pageTurn()
+                    } label: {
+                        BookSpine(book: book)
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.vertical, 8)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 18)
+            .padding(.bottom, 23)
+            .background {
+                ZStack(alignment: .bottom) {
+                    LinearGradient(colors: [Color(red: 0.89, green: 0.84, blue: 0.75), Color(red: 0.78, green: 0.70, blue: 0.59)], startPoint: .top, endPoint: .bottom)
+                    Rectangle().fill(Color(red: 0.60, green: 0.48, blue: 0.36)).frame(height: 9)
+                        .overlay(alignment: .bottom) { Rectangle().fill(Color.white.opacity(0.22)).frame(height: 1) }
+                    Rectangle().fill(Color.black.opacity(0.10)).frame(height: 5).offset(y: -9)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .shadow(color: .black.opacity(0.12), radius: 7, x: 0, y: 5)
+            }
             }
             Rectangle().fill(folioInk.opacity(0.65)).frame(height: 3)
             Rectangle().fill(folioInk.opacity(0.12)).frame(height: 2)
@@ -255,7 +267,12 @@ private struct BookSpine: View {
             }
             .frame(height: 154)
             .clipShape(RoundedRectangle(cornerRadius: 3))
-            .overlay(alignment: .leading) { Rectangle().fill(.black.opacity(0.16)).frame(width: 4) }
+            .overlay(alignment: .leading) {
+                LinearGradient(colors: [.black.opacity(0.24), .clear, .white.opacity(0.12)], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: 9)
+            }
+            .overlay(alignment: .trailing) { Rectangle().fill(.black.opacity(0.10)).frame(width: 2) }
+            .rotation3DEffect(.degrees(-4), axis: (x: 0, y: 1, z: 0), perspective: 0.7)
             Text(book.author).font(.system(size: 10, design: .serif)).foregroundStyle(folioInk.opacity(0.7)).lineLimit(1)
         }
         .accessibilityElement(children: .combine)
@@ -513,9 +530,11 @@ private struct FirstBookTutorialView: View {
     private let ink = Color(red: 0.18, green: 0.20, blue: 0.17)
 
     private let steps: [(symbol: String, eyebrow: String, title: String, detail: String)] = [
-        ("barcode.viewfinder", "A GOOD PLACE TO BEGIN", "Find your book.", "Tap the plus button to search by ISBN, scan the barcode on the back, or type the title yourself."),
-        ("books.vertical", "MAKE IT YOURS", "Give it a shelf.", "Choose To Read, Reading, or Read. Folio keeps your little library saved on this device."),
-        ("bookmark", "PICK UP WHERE YOU LEFT OFF", "Come back anytime.", "Open a book to update your reading status, keep track of pages, and save a private thought or favourite line.")
+        ("books.vertical.fill", "WELCOME TO YOUR SHELF", "A home for every story.", "Build a personal library that feels like your own little bookshop. Your collection stays on your iPhone."),
+        ("barcode.viewfinder", "FIND YOUR NEXT READ", "Search, scan, or simply type.", "Add a book by ISBN barcode or catalogue search. If a book is hard to find, enter its title and author yourself."),
+        ("bookmark.fill", "MAKE IT YOUR EDITION", "Give every book a place.", "Sort books into To Read, Reading, and Read. Open a book to customise its edition, record pages, and keep private reading notes."),
+        ("book.pages", "READ WHAT YOU OWN", "Bring your own reading copy.", "For books you own, verify the printed ISBN and import your own EPUB or PDF file to open it in Folio. A shelf entry alone does not include a digital book."),
+        ("hourglass", "MAKE TIME FOR STORIES", "Read at your own pace.", "Use the reading timer, keep track of progress, and visit the Reading Room to share genuine notes with other readers.")
     ]
 
     var body: some View {
@@ -578,7 +597,7 @@ private struct FirstBookTutorialView: View {
                     SoundEffects.softTap()
                 } label: {
                     HStack {
-                        Text(page == steps.count - 1 ? "Add my first book" : "Continue")
+                        Text(page == steps.count - 1 ? "Start my collection" : "Continue")
                         Image(systemName: "arrow.right")
                     }
                     .font(.system(size: 14, weight: .medium))
