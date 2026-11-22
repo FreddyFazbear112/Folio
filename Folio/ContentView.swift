@@ -1172,7 +1172,7 @@ private struct FolioLibraryHome: View {
             sectionTitle("Your Library", action: "See all  ›", perform: openLibrary)
             HStack(spacing: 10) {
                 shortcut(title: "All Books", count: "\(library.books.count)", symbol: "book.closed", action: openLibrary)
-                shortcut(title: "Favorites", count: "\(library.books.filter { $0.isFavorite }.count)", symbol: "star.fill", action: openLibrary)
+                shortcut(title: "Favorites", count: "\(library.books.filter { $0.isFavorite == true }.count)", symbol: "star.fill", action: openLibrary)
                 shortcut(title: "Recently Read", count: "\(library.books(for: .finished).count)", symbol: "clock.arrow.circlepath", action: openLibrary)
             }
         }
