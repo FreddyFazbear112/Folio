@@ -196,8 +196,8 @@ private struct CommentSheet: View {
                 }
                 Section("COMMENTS") {
                     if comments.isEmpty { Text("Be the first to add a thoughtful note.").foregroundStyle(.secondary) }
-                    ForEach(Array(comments.enumerated()), id: \.offset) { _, item in
-                        Text(item).font(.system(size: 13, design: .serif))
+                    ForEach(Array(comments.enumerated()), id: \.offset) { item in
+                        Text(item.element).font(.system(size: 13, design: .serif))
                     }
                 }
                 Section {
