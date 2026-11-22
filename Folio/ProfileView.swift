@@ -8,6 +8,8 @@ struct ProfileView: View {
     @State private var photo: PhotosPickerItem?
     @State private var isSaving = false
     @State private var profileMessage: String?
+    @State private var avatarNeedsUpload = false
+    @AppStorage("folio.avatarURL") private var avatarURLString = ""
     @AppStorage("folio.avatarBase64") private var avatarBase64 = ""
 
     var body: some View {
@@ -21,7 +23,7 @@ struct ProfileView: View {
                                 Group {
                                     if let data = Data(base64Encoded: avatarBase64), let image = UIImage(data: data) {
                                         Image(uiImage: image).resizable().scaledToFill()
-                                    } else if let url = auth.user?.photoURL {
+                                    } else if let url = auth.user?.photoURL ?? URL(string: avatarURLString) {
                                         AsyncImage(url: url) { image in image.resizable().scaledToFill() } placeholder: {
                                             Image(systemName: "person.crop.circle.fill").resizable().scaledToFit()
                                         }
@@ -94,7 +96,7 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task(id: auth.user?.uid) { await loadProfile() }
             .onChange(of: photo) { _, item in
-                Task { if let data = try? await item?.loadTransferable(type: Data.self) { avatarBase64 = data.base64EncodedString() } }
+                Task { if let data = try? await item?.loadTransferable(type: Data.self) { avatarBase64 = data.base64EncodedString(); avatarNeedsUpload = true } }
             }
         }
     }
@@ -106,6 +108,7 @@ struct ProfileView: View {
             if let profile = try await CommunityService().loadProfile(userID: user.uid) {
                 if !profile.name.isEmpty { name = profile.name }
                 bio = profile.bio
+                if let url = profile.avatarURL, !url.isEmpty { avatarURLString = url }
             }
         } catch {
             profileMessage = "Your profile is saved on this device. Cloud sync is unavailable."
@@ -121,7 +124,14 @@ struct ProfileView: View {
         isSaving = true
         defer { isSaving = false }
         do {
-            try await CommunityService().saveProfile(name: name, bio: bio, userID: user.uid)
+            var cloudAvatarURL: String? = avatarURLString.isEmpty ? nil : avatarURLString
+            if avatarNeedsUpload, let data = Data(base64Encoded: avatarBase64) {
+                let url = try await CommunityService().uploadAvatar(data, userID: user.uid)
+                cloudAvatarURL = url.absoluteString
+                avatarURLString = url.absoluteString
+                avatarNeedsUpload = false
+            }
+            try await CommunityService().saveProfile(name: name, bio: bio, avatarURL: cloudAvatarURL, userID: user.uid)
             profileMessage = "Your reader profile is saved."
         } catch {
             profileMessage = "Couldn't sync your profile. Please try again."
