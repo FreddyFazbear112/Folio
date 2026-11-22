@@ -236,7 +236,7 @@ private struct BookDetailView: View {
                             .foregroundStyle(folioInk.opacity(0.62)).lineLimit(1)
                         actionRow("Start reading", symbol: "book.pages", prominent: true) { openReader() }
                     } else {
-                        Text("A free digital edition will appear here when the catalogue has one available.")
+                        Text("Add a digital copy you already own. Folio keeps the file on this iPhone and opens it in the reader.")
                             .font(.system(size: 13, design: .serif))
                             .foregroundStyle(folioInk.opacity(0.62))
                     }
@@ -257,7 +257,7 @@ private struct BookDetailView: View {
                             .foregroundStyle(Color(red: 0.30, green: 0.43, blue: 0.32))
                     }
                     if savedBook.digitalFileName == nil {
-                        actionRow("Import a file I already have", symbol: "square.and.arrow.down") { importing = true }
+                        actionRow("Import a digital reading copy", symbol: "square.and.arrow.down") { importing = true }
                     }
                     if let message { Text(message).font(.system(size: 12, design: .serif)).foregroundStyle(.secondary) }
                 }
