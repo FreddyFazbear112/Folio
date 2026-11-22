@@ -60,7 +60,7 @@ struct AddBookView: View {
                 }
                 Section {
                     Button {
-                        library.add(title: title, author: author, status: status, coverURL: coverURL)
+                        library.add(title: title, author: author, status: status, coverURL: coverURL, isbn: isbn)
                         SoundEffects.addBook()
                         dismiss()
                     } label: {
