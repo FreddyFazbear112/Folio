@@ -946,12 +946,12 @@ private struct FolioLibraryHome: View {
     @State private var showingSearch = false
     @AppStorage("folio.productTourSeen.v2") private var tourSeen = false
 
-    private let paper = Color(red: 0.945, green: 0.925, blue: 0.875)
-    private let paperLight = Color(red: 0.975, green: 0.961, blue: 0.925)
-    private let ink = Color(red: 0.12, green: 0.16, blue: 0.14)
-    private let forest = Color(red: 0.12, green: 0.20, blue: 0.17)
-    private let muted = Color(red: 0.43, green: 0.43, blue: 0.37)
-    private let gold = Color(red: 0.76, green: 0.60, blue: 0.36)
+    private let paper = Color(red: 0.075, green: 0.070, blue: 0.064)
+    private let paperLight = Color(red: 0.135, green: 0.125, blue: 0.112)
+    private let ink = Color(red: 0.94, green: 0.91, blue: 0.84)
+    private let forest = Color(red: 0.19, green: 0.23, blue: 0.19)
+    private let muted = Color(red: 0.64, green: 0.60, blue: 0.53)
+    private let gold = Color(red: 0.78, green: 0.61, blue: 0.37)
 
     private var currentlyReading: Book? { library.books.first(where: { $0.status == .reading }) }
     private var recentBooks: [Book] { Array(library.books.prefix(12)) }
