@@ -38,19 +38,91 @@ private struct ShelfListView: View {
     @EnvironmentObject private var library: LibraryStore
     let status: ReadingStatus
     let select: (Book) -> Void
+
+    private let columns = [GridItem(.flexible(), spacing: 18), GridItem(.flexible(), spacing: 18)]
+
     var body: some View {
-        List(library.books(for: status)) { book in
-            Button { select(book) } label: {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(book.title).font(.system(size: 17, design: .serif)).foregroundStyle(folioInk)
-                    Text(book.author).font(.system(size: 12)).foregroundStyle(.secondary)
+        ZStack {
+            folioPaper.ignoresSafeArea()
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("YOUR FOLIO COLLECTION")
+                            .font(.system(size: 8, weight: .semibold)).tracking(2)
+                            .foregroundStyle(folioInk.opacity(0.48))
+                        Text(status.rawValue)
+                            .font(.system(size: 34, design: .serif)).tracking(-0.8)
+                            .foregroundStyle(folioInk)
+                        Text("\(library.books(for: status).count) books in this chapter")
+                            .font(.system(size: 12, design: .serif)).italic()
+                            .foregroundStyle(folioInk.opacity(0.55))
+                    }
+                    if library.books(for: status).isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "book.closed")
+                                .font(.system(size: 30, weight: .ultraLight))
+                            Text("This shelf is waiting.")
+                                .font(.system(size: 21, design: .serif))
+                            Text("Books you mark as \(status.rawValue.lowercased()) will find a home here.")
+                                .font(.system(size: 12, design: .serif))
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(.secondary)
+                        }
+                        .foregroundStyle(folioInk.opacity(0.7))
+                        .frame(maxWidth: .infinity).padding(.vertical, 58)
+                        .background(.white.opacity(0.38), in: RoundedRectangle(cornerRadius: 8))
+                    } else {
+                        LazyVGrid(columns: columns, alignment: .leading, spacing: 22) {
+                            ForEach(library.books(for: status)) { book in
+                                Button { select(book) } label: {
+                                    VStack(alignment: .leading, spacing: 7) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 4).fill(Color(red: 0.39, green: 0.28, blue: 0.22))
+                                            if let address = book.coverURL, let url = URL(string: address) {
+                                                AsyncImage(url: url) { phase in
+                                                    if let image = phase.image { image.resizable().scaledToFill() }
+                                                    else { coverFallback(book) }
+                                                }
+                                            } else { coverFallback(book) }
+                                        }
+                                        .frame(maxWidth: .infinity).aspectRatio(0.69, contentMode: .fit)
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        .overlay(alignment: .leading) {
+                                            LinearGradient(colors: [.black.opacity(0.3), .clear], startPoint: .leading, endPoint: .trailing).frame(width: 8)
+                                        }
+                                        .shadow(color: folioInk.opacity(0.16), radius: 7, x: 3, y: 5)
+                                        Text(book.title)
+                                            .font(.system(size: 13, design: .serif))
+                                            .foregroundStyle(folioInk).lineLimit(2).multilineTextAlignment(.leading)
+                                        Text(book.author.uppercased())
+                                            .font(.system(size: 7, weight: .medium)).tracking(1)
+                                            .foregroundStyle(folioInk.opacity(0.52)).lineLimit(1)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
                 }
-                .padding(.vertical, 5)
+                .padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 36)
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(folioPaper)
-        .navigationTitle(status.rawValue)
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    @ViewBuilder
+    private func coverFallback(_ book: Book) -> some View {
+        VStack(spacing: 7) {
+            Rectangle().fill(.white.opacity(0.45)).frame(height: 1)
+            Spacer(minLength: 0)
+            Text(book.title).font(.system(size: 12, design: .serif))
+                .multilineTextAlignment(.center).lineLimit(5).foregroundStyle(.white)
+            Spacer(minLength: 0)
+            Text(book.author.uppercased()).font(.system(size: 6, weight: .medium))
+                .tracking(0.8).foregroundStyle(.white.opacity(0.8)).lineLimit(2)
+            Rectangle().fill(.white.opacity(0.45)).frame(height: 1)
+        }
+        .padding(8)
     }
 }
 
