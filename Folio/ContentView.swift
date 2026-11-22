@@ -1128,6 +1128,9 @@ private struct FolioLibraryHome: View {
     }
 
     private func coverTint(_ book: Book) -> Color {
+        if let hex = book.spineColorHex, let value = UInt64(hex, radix: 16) {
+            return Color(red: Double((value >> 16) & 0xff) / 255, green: Double((value >> 8) & 0xff) / 255, blue: Double(value & 0xff) / 255)
+        }
         let palette: [Color] = [
             Color(red: 0.35, green: 0.25, blue: 0.22),
             Color(red: 0.22, green: 0.32, blue: 0.27),
