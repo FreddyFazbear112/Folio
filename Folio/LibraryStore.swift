@@ -25,9 +25,8 @@ final class LibraryStore: ObservableObject {
         let normalizedAuthor = cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor
         let cleanISBN = isbn?.filter(\.isNumber)
         if let existing = books.first(where: { candidate in
-            if let cleanISBN, !cleanISBN.isEmpty,
-               candidate.isbn?.filter(\.isNumber) == cleanISBN || candidate.ownedISBN?.filter(\.isNumber) == cleanISBN {
-                return true
+            if let cleanISBN, !cleanISBN.isEmpty {
+                return candidate.isbn?.filter(\.isNumber) == cleanISBN || candidate.ownedISBN?.filter(\.isNumber) == cleanISBN
             }
             return candidate.title.localizedCaseInsensitiveCompare(cleanTitle) == .orderedSame
                 && candidate.author.localizedCaseInsensitiveCompare(normalizedAuthor) == .orderedSame
