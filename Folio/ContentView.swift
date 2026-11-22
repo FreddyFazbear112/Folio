@@ -567,6 +567,7 @@ private struct FolioPDFView: UIViewRepresentable {
         view.autoScales = true
         view.displayMode = .singlePage
         view.displayDirection = .horizontal
+        view.pageShadowsEnabled = true
         view.usePageViewController(true, withViewOptions: nil)
         view.backgroundColor = sepia
             ? UIColor(red: 0.91, green: 0.87, blue: 0.78, alpha: 1)
@@ -596,6 +597,7 @@ private struct FolioPDFView: UIViewRepresentable {
     final class Coordinator: NSObject {
         var parent: FolioPDFView
         weak var pdfView: PDFView?
+        private var lastPageIndex: Int?
         init(_ parent: FolioPDFView) { self.parent = parent }
 
         func observePageChanges() {
@@ -606,6 +608,8 @@ private struct FolioPDFView: UIViewRepresentable {
         @objc private func pageChanged() {
             guard let view = pdfView, let document = view.document, let page = view.currentPage else { return }
             let index = document.index(for: page) + 1
+            if let lastPageIndex, lastPageIndex != index { SoundEffects.pageTurn() }
+            lastPageIndex = index
             DispatchQueue.main.async {
                 self.parent.currentPage = index
                 self.parent.totalPages = document.pageCount
