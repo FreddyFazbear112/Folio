@@ -21,11 +21,11 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func add(title: String, author: String, status: ReadingStatus) {
+    func add(title: String, author: String, status: ReadingStatus, coverURL: String? = nil) {
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanAuthor = author.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanTitle.isEmpty else { return }
-        books.insert(Book(title: cleanTitle, author: cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor, status: status, colorIndex: books.count % 6), at: 0)
+        books.insert(Book(title: cleanTitle, author: cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor, status: status, colorIndex: books.count % 6, coverURL: coverURL), at: 0)
     }
 
     func update(_ book: Book, status: ReadingStatus) {
