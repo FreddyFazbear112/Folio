@@ -231,7 +231,7 @@ private struct BookDetailView: View {
                     Task { await verifyBarcode(code) }
                 }, onCancel: { scanning = false })
                 .ignoresSafeArea()
-                .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel") { scanning = false } } }
+                .toolbar(content: { ToolbarItem(placement: ToolbarItemPlacement.navigationBarLeading) { Button(action: { scanning = false }, label: { Text("Cancel") }) } })
             }
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data, .plainText, .rtf, .html], allowsMultipleSelection: false) { result in
