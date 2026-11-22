@@ -22,5 +22,5 @@ struct Book: Identifiable, Codable, Equatable {
     var digitalFileName: String? = nil
     var spineColorHex: String? = nil
     var backCoverURL: String? = nil
-    var isFavorite: Bool = false
+    var isFavorite: Bool? = nil
 }
