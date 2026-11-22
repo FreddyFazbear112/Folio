@@ -17,8 +17,18 @@ struct ProfileView: View {
         NavigationStack {
             ZStack {
                 Color(red: 0.96, green: 0.94, blue: 0.89).ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: 22) {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 25) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("THE READER'S EDITION").font(.system(size: 9, weight: .semibold)).tracking(2)
+                                Text("Your corner of Folio").font(.system(size: 29, design: .serif))
+                            }
+                            Spacer()
+                            Image(systemName: "leaf").font(.system(size: 18, weight: .light))
+                        }
+                        .foregroundStyle(Color(red: 0.18, green: 0.20, blue: 0.17))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         VStack(spacing: 12) {
                             PhotosPicker(selection: $photo, matching: .images) {
                                 Group {
@@ -33,12 +43,12 @@ struct ProfileView: View {
                                             .foregroundStyle(Color(red: 0.55, green: 0.52, blue: 0.44))
                                     }
                                 }
-                                .frame(width: 104, height: 104).clipShape(Circle())
+                                .frame(width: 108, height: 108).clipShape(Circle()).overlay(Circle().stroke(Color(red: 0.43, green: 0.31, blue: 0.25).opacity(0.3), lineWidth: 1)).padding(5).background(Circle().fill(.white.opacity(0.42)))
                             }
                             Text(name.isEmpty ? "Your reading profile" : name).font(.system(size: 27, design: .serif))
                             Text(auth.user?.email ?? "Not signed in").font(.system(size: 11)).tracking(1.2).foregroundStyle(.secondary)
                         }
-                        .padding(.top, 28)
+                        .padding(.top, 4)
 
                         VStack(alignment: .leading, spacing: 14) {
                             Text("A LITTLE ABOUT YOU").font(.system(size: 10, weight: .semibold)).tracking(1.6)
@@ -46,9 +56,9 @@ struct ProfileView: View {
                             TextField("A line or two about your reading life", text: $bio, axis: .vertical)
                                 .lineLimit(2...4).textFieldStyle(.roundedBorder)
                         }
-                        .padding(18).background(.white.opacity(0.58)).clipShape(RoundedRectangle(cornerRadius: 5))
+                        .padding(19).background(.white.opacity(0.55)).clipShape(RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.black.opacity(0.055), lineWidth: 1))
 
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 14) {
                             Text("YOUR ACCOUNT").font(.system(size: 10, weight: .semibold)).tracking(1.6)
                             if let user = auth.user {
                                 Label(user.isEmailVerified ? "Account connected" : "Google account connected", systemImage: "checkmark.seal")
@@ -89,12 +99,14 @@ struct ProfileView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(19).background(.white.opacity(0.55)).clipShape(RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.black.opacity(0.055), lineWidth: 1))
                     }
-                    .padding(22)
+                    .padding(.horizontal, 22)
+                    .padding(.top, 16)
+                    .padding(.bottom, 36)
                 }
             }
-            .navigationTitle("Your profile")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .task(id: auth.user?.uid) { await loadProfile() }
             .onChange(of: photo) { _, item in
                 Task {
