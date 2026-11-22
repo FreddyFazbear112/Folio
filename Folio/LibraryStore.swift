@@ -16,11 +16,11 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func add(title: String, author: String, status: ReadingStatus, coverURL: String? = nil) {
+    func add(title: String, author: String, status: ReadingStatus, coverURL: String? = nil, isbn: String? = nil) {
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanAuthor = author.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanTitle.isEmpty else { return }
-        books.insert(Book(title: cleanTitle, author: cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor, status: status, colorIndex: books.count % 6, coverURL: coverURL), at: 0)
+        books.insert(Book(title: cleanTitle, author: cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor, status: status, colorIndex: books.count % 6, coverURL: coverURL, isbn: isbn?.filter(\.isNumber)), at: 0)
     }
 
     func update(_ book: Book, status: ReadingStatus) {
@@ -33,6 +33,25 @@ final class LibraryStore: ObservableObject {
         books[index].currentPage = currentPage
         books[index].totalPages = totalPages
         books[index].readingNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func verifyOwnership(_ book: Book, scannedISBN: String) {
+        guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
+        let clean = scannedISBN.filter(\.isNumber)
+        guard !clean.isEmpty else { return }
+        books[index].ownedISBN = clean
+        if books[index].isbn == nil { books[index].isbn = clean }
+    }
+
+    func attachDigitalCopy(_ book: Book, fileName: String) {
+        guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
+        books[index].digitalFileName = fileName
+    }
+
+    func updateEdition(_ book: Book, spineColorHex: String?, backCoverURL: String?) {
+        guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
+        books[index].spineColorHex = spineColorHex
+        books[index].backCoverURL = backCoverURL
     }
 
     func remove(_ book: Book) { books.removeAll { $0.id == book.id } }
