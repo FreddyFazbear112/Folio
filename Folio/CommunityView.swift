@@ -154,8 +154,20 @@ struct CommunityView: View {
             Divider().overlay(Color.black.opacity(0.08))
             HStack {
                 Button {
-                    if liked.contains(post.id) { liked.remove(post.id) } else { liked.insert(post.id) }
+                    guard auth.user != nil else {
+                        notice = "Sign in from your profile to like a reading note."
+                        return
+                    }
+                    let wasLiked = liked.contains(post.id)
+                    if wasLiked { liked.remove(post.id) } else { liked.insert(post.id) }
                     SoundEffects.softTap()
+                    Task {
+                        do { try await CommunityService().setLiked(!wasLiked, postID: post.id) }
+                        catch {
+                            if wasLiked { liked.insert(post.id) } else { liked.remove(post.id) }
+                            notice = error.localizedDescription
+                        }
+                    }
                 } label: {
                     Label("\(post.likes + (liked.contains(post.id) ? 1 : 0))", systemImage: liked.contains(post.id) ? "heart.fill" : "heart")
                 }
