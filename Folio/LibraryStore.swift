@@ -12,12 +12,7 @@ final class LibraryStore: ObservableObject {
            let saved = try? JSONDecoder().decode([Book].self, from: data) {
             books = saved
         } else {
-            books = [
-                Book(title: "The Secret History", author: "Donna Tartt", status: .reading, colorIndex: 0),
-                Book(title: "Piranesi", author: "Susanna Clarke", status: .toRead, colorIndex: 1),
-                Book(title: "Tomorrow, and Tomorrow, and Tomorrow", author: "Gabrielle Zevin", status: .finished, colorIndex: 2),
-                Book(title: "A Room of One's Own", author: "Virginia Woolf", status: .toRead, colorIndex: 3)
-            ]
+            books = []
         }
     }
 
