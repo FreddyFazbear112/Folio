@@ -799,10 +799,11 @@ private struct FolioPDFView: UIViewRepresentable {
         view.backgroundColor = sepia
             ? UIColor(red: 0.91, green: 0.87, blue: 0.78, alpha: 1)
             : UIColor(red: 0.12, green: 0.13, blue: 0.13, alpha: 1)
-        guard let document = view.document, document.pageCount > 0 else { return }
+        guard let document = view.document, document.pageCount > 0,
+              let firstPage = document.page(at: 0) else { return }
         let target = min(max(currentPage - 1, 0), document.pageCount - 1)
-        if document.index(for: view.currentPage ?? document.page(at: 0)!) != target,
-           let page = document.page(at: target) {
+        let visiblePage = view.currentPage ?? firstPage
+        if document.index(for: visiblePage) != target, let page = document.page(at: target) {
             view.go(to: page)
         }
     }
