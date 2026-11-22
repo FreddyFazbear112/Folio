@@ -33,6 +33,8 @@ final class LibraryStore: ObservableObject {
         books[index].status = status
     }
 
+    func remove(_ book: Book) { books.removeAll { $0.id == book.id } }
+
     func books(for status: ReadingStatus) -> [Book] { books.filter { $0.status == status } }
 
     private func save() {
