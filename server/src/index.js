@@ -9,7 +9,10 @@ const app = express();
 const port = Number(process.env.PORT || 8080);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.PGSSLMODE === "require" ? { rejectUnauthorized: true } : undefined });
 
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+} else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
   admin.initializeApp({ credential: admin.credential.applicationDefault() });
 }
 
