@@ -1,4 +1,7 @@
 import SwiftUI
+import PDFKit
+import QuickLook
+import UniformTypeIdentifiers
 
 private let folioPaper = Color(red: 0.96, green: 0.94, blue: 0.89)
 private let folioInk = Color(red: 0.18, green: 0.20, blue: 0.17)
@@ -285,89 +288,221 @@ private struct BookDetailView: View {
     @State private var currentPageText = ""
     @State private var totalPagesText = ""
     @State private var readingNote = ""
+    @State private var scanning = false
+    @State private var importing = false
+    @State private var reading = false
+    @State private var message: String?
+    @State private var readerURL: URL?
+    @State private var timerStart: Date?
+    @State private var elapsed: TimeInterval = 0
     let book: Book
 
+    private var savedBook: Book { library.books.first(where: { $0.id == book.id }) ?? book }
+    private var readyToRead: Bool { savedBook.ownedISBN != nil && savedBook.digitalFileName != nil }
+
     var body: some View {
-        VStack(spacing: 12) {
-            Text(book.title).font(.system(size: 25, design: .serif)).multilineTextAlignment(.center)
-            Text(book.author.uppercased()).font(.system(size: 10, weight: .medium)).tracking(1.4).foregroundStyle(.secondary)
-            BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1))
-                .frame(height: 270)
-            Text("Drag to turn your book around").font(.system(size: 12, design: .serif).italic()).foregroundStyle(.secondary)
+        ScrollView {
+            VStack(spacing: 14) {
+                Text(book.title).font(.system(size: 25, design: .serif)).multilineTextAlignment(.center)
+                Text(book.author.uppercased()).font(.system(size: 10, weight: .medium)).tracking(1.4).foregroundStyle(.secondary)
+                BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1)).frame(height: 250)
+                Text("Drag to turn your book around").font(.system(size: 12, design: .serif).italic()).foregroundStyle(.secondary)
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("A LITTLE READING JOURNAL")
-                    .font(.system(size: 9, weight: .semibold)).tracking(1.5)
-                    .foregroundStyle(folioInk.opacity(0.5))
-                HStack(spacing: 10) {
-                    TextField("Current page", text: $currentPageText)
-                        .keyboardType(.numberPad)
-                        .textFieldStyle(.roundedBorder)
-                    Text("of")
-                        .font(.system(size: 13, design: .serif))
-                        .foregroundStyle(.secondary)
-                    TextField("Total pages", text: $totalPagesText)
-                        .keyboardType(.numberPad)
-                        .textFieldStyle(.roundedBorder)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("YOUR READING COPY").font(.system(size: 9, weight: .semibold)).tracking(1.5).foregroundStyle(folioInk.opacity(0.5))
+                    if savedBook.ownedISBN != nil {
+                        Label("Physical edition verified", systemImage: "checkmark.seal.fill").font(.system(size: 12, design: .serif)).foregroundStyle(.green)
+                    } else {
+                        Text("Scan the barcode on your physical copy to verify the edition.")
+                            .font(.system(size: 12, design: .serif)).foregroundStyle(.secondary)
+                        Button { scanning = true } label: {
+                            Label("Scan my book's barcode", systemImage: "barcode.viewfinder")
+                                .frame(maxWidth: .infinity).padding(11).background(folioInk).foregroundStyle(folioPaper).clipShape(Capsule())
+                        }
+                    }
+                    if let name = savedBook.digitalFileName {
+                        Label(name, systemImage: "doc.text").font(.system(size: 11, design: .serif)).lineLimit(1)
+                    }
+                    Button { importing = true } label: {
+                        Label(savedBook.digitalFileName == nil ? "Import my EPUB or PDF" : "Replace reading copy", systemImage: "square.and.arrow.down")
+                            .frame(maxWidth: .infinity).padding(11).background(.white.opacity(0.7)).foregroundStyle(folioInk).clipShape(Capsule())
+                    }
+                    Button {
+                        openReader()
+                    } label: {
+                        Label("Open reading room", systemImage: "book.pages")
+                            .frame(maxWidth: .infinity).padding(12).background(readyToRead ? folioInk : folioInk.opacity(0.3)).foregroundStyle(folioPaper).clipShape(Capsule())
+                    }
+                    .disabled(!readyToRead)
+                    if let message { Text(message).font(.system(size: 11, design: .serif)).foregroundStyle(.secondary) }
                 }
-                if let total = Int(totalPagesText), total > 0, let current = Int(currentPageText) {
-                    ProgressView(value: min(Double(max(current, 0)), Double(total)), total: Double(total))
-                        .tint(folioInk)
-                    Text("\(min(max(current, 0), total)) of \(total) pages")
-                        .font(.system(size: 11, design: .serif)).foregroundStyle(.secondary)
-                }
-                TextField("A thought, a favourite line, a note to yourself…", text: $readingNote, axis: .vertical)
-                    .lineLimit(2...4)
-                    .font(.system(size: 13, design: .serif))
-                    .padding(10)
-                    .background(.white.opacity(0.55))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
-                Button {
-                    library.updateReadingDetails(
-                        book,
-                        currentPage: Int(currentPageText),
-                        totalPages: Int(totalPagesText),
-                        note: readingNote
-                    )
-                    SoundEffects.softTap()
-                } label: {
-                    Text("Save my reading notes")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(folioPaper)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(folioInk)
-                        .clipShape(Capsule())
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            Picker("Reading status", selection: Binding(
-                get: { library.books.first(where: { $0.id == book.id })?.status ?? book.status },
-                set: { library.update(book, status: $0); SoundEffects.softTap() }
-            )) {
-                ForEach(ReadingStatus.allCases) { status in Text(status.rawValue).tag(status) }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("READING SESSION").font(.system(size: 9, weight: .semibold)).tracking(1.5).foregroundStyle(folioInk.opacity(0.5))
+                    HStack {
+                        TimelineView(.periodic(from: .now, by: 1)) { _ in
+                            let seconds = Int(elapsed + (timerStart.map { Date().timeIntervalSince($0) } ?? 0))
+                            Text(String(format: "%02d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60))
+                                .font(.system(size: 26, design: .serif).monospacedDigit())
+                        }
+                        Spacer()
+                        Button(timerStart == nil ? "Start" : "Pause") {
+                            if let start = timerStart { elapsed += Date().timeIntervalSince(start); timerStart = nil }
+                            else { timerStart = Date() }
+                            SoundEffects.softTap()
+                        }.font(.system(size: 12, weight: .medium))
+                    }
+                }
+                .padding(14).background(.white.opacity(0.55)).clipShape(RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("A LITTLE READING JOURNAL").font(.system(size: 9, weight: .semibold)).tracking(1.5).foregroundStyle(folioInk.opacity(0.5))
+                    HStack(spacing: 10) {
+                        TextField("Current page", text: $currentPageText).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                        Text("of").foregroundStyle(.secondary)
+                        TextField("Total pages", text: $totalPagesText).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                    }
+                    if let total = Int(totalPagesText), total > 0, let current = Int(currentPageText) {
+                        ProgressView(value: min(Double(max(current, 0)), Double(total)), total: Double(total)).tint(folioInk)
+                    }
+                    TextField("A thought, a favourite line, a note to yourself…", text: $readingNote, axis: .vertical)
+                        .lineLimit(2...4).font(.system(size: 13, design: .serif)).padding(10).background(.white.opacity(0.55)).clipShape(RoundedRectangle(cornerRadius: 5))
+                    Button {
+                        library.updateReadingDetails(book, currentPage: Int(currentPageText), totalPages: Int(totalPagesText), note: readingNote)
+                        SoundEffects.softTap()
+                    } label: {
+                        Text("Save my reading notes").font(.system(size: 12, weight: .medium)).foregroundStyle(folioPaper)
+                            .frame(maxWidth: .infinity).padding(.vertical, 11).background(folioInk).clipShape(Capsule())
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Picker("Reading status", selection: Binding(get: { savedBook.status }, set: { library.update(book, status: $0) })) {
+                    ForEach(ReadingStatus.allCases) { status in Text(status.rawValue).tag(status) }
+                }.pickerStyle(.segmented)
+                Button(role: .destructive) { library.remove(book); dismiss() } label: {
+                    Label("Remove from my shelf", systemImage: "trash").font(.system(size: 12, weight: .medium))
+                }
             }
-            .pickerStyle(.segmented)
-            Button(role: .destructive) {
-                library.remove(book)
-                dismiss()
-            } label: {
-                Label("Remove from my shelf", systemImage: "trash").font(.system(size: 12, weight: .medium))
-            }
-            .padding(.top, 5)
+            .padding(22)
         }
-        .padding(22)
         .background(folioPaper.ignoresSafeArea())
         .onAppear {
-            currentPageText = book.currentPage.map { String($0) } ?? ""
-            totalPagesText = book.totalPages.map { String($0) } ?? ""
+            currentPageText = book.currentPage.map(String.init) ?? ""
+            totalPagesText = book.totalPages.map(String.init) ?? ""
             readingNote = book.readingNote ?? ""
+        }
+        .sheet(isPresented: $scanning) {
+            NavigationStack {
+                ISBNScannerView(onScan: { code in
+                    scanning = false
+                    Task { await verifyBarcode(code) }
+                }, onCancel: { scanning = false })
+                .ignoresSafeArea()
+                .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel") { scanning = false } } }
+            }
+        }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data], allowsMultipleSelection: false) { result in
+            importCopy(result)
+        }
+        .sheet(isPresented: $reading) {
+            if let readerURL { FolioReadingCopyView(url: readerURL) }
+        }
+    }
+
+    private func verifyBarcode(_ code: String) async {
+        let clean = code.filter(\.isNumber)
+        if let isbn = savedBook.isbn, isbn == clean {
+            library.verifyOwnership(book, scannedISBN: clean)
+            return
+        }
+        do {
+            if let match = try await BookLookupService().lookup(isbn: clean),
+               match.title.localizedCaseInsensitiveCompare(book.title) == .orderedSame {
+                library.verifyOwnership(book, scannedISBN: clean)
+            } else {
+                message = "That barcode doesn't match this title. Try the ISBN on your copy."
+            }
+        } catch {
+            message = "Couldn't verify the barcode. Check your connection and try again."
+        }
+    }
+
+    private func importCopy(_ result: Result<[URL], Error>) {
+        do {
+            guard let source = try result.get().first else { return }
+            let access = source.startAccessingSecurityScopedResource()
+            defer { if access { source.stopAccessingSecurityScopedResource() } }
+            let ext = source.pathExtension.lowercased()
+            guard ext == "pdf" || ext == "epub" else { message = "Choose an EPUB or PDF file."; return }
+            let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let destination = folder.appendingPathComponent(book.id.uuidString + "." + ext)
+            if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
+            try FileManager.default.copyItem(at: source, to: destination)
+            library.attachDigitalCopy(book, fileName: destination.lastPathComponent)
+            message = "Your reading copy is saved on this iPhone."
+        } catch { message = "Couldn't import that file. Please try again." }
+    }
+
+    private func openReader() {
+        guard let name = savedBook.digitalFileName else { return }
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(name)
+        guard FileManager.default.fileExists(atPath: url.path) else { message = "That file is missing. Please import it again."; return }
+        readerURL = url
+        reading = true
+    }
+}
+
+private struct FolioReadingCopyView: View {
+    @Environment(\.dismiss) private var dismiss
+    let url: URL
+    var body: some View {
+        NavigationStack {
+            Group {
+                if url.pathExtension.lowercased() == "pdf" {
+                    FolioPDFView(url: url)
+                } else {
+                    FolioEPUBPreview(url: url)
+                }
+            }
+            .navigationTitle(url.deletingPathExtension().lastPathComponent)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }
     }
 }
 
+private struct FolioPDFView: UIViewRepresentable {
+    let url: URL
+    func makeUIView(context: Context) -> PDFView {
+        let view = PDFView()
+        view.autoScales = true
+        view.displayMode = .singlePage
+        view.displayDirection = .horizontal
+        view.usePageViewController(true, withViewOptions: nil)
+        view.document = PDFDocument(url: url)
+        return view
+    }
+    func updateUIView(_ view: PDFView, context: Context) {}
+}
+
+private struct FolioEPUBPreview: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let controller = QLPreviewController()
+        controller.dataSource = context.coordinator
+        return controller
+    }
+    func updateUIViewController(_ controller: QLPreviewController, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator(url: url) }
+    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        let url: URL
+        init(url: URL) { self.url = url }
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem { url as NSURL }
+    }
+}
 
 private struct FirstBookTutorialView: View {
     @Environment(\.dismiss) private var dismiss
