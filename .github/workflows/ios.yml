@@ -1,4 +1,5 @@
 name: Folio iPhone sideload build
+run-name: Folio iPhone build retry
 
 on:
   push:
