@@ -17,4 +17,9 @@ struct Book: Identifiable, Codable, Equatable {
     var currentPage: Int? = nil
     var totalPages: Int? = nil
     var readingNote: String? = nil
+    var isbn: String? = nil
+    var ownedISBN: String? = nil
+    var digitalFileName: String? = nil
+    var spineColorHex: String? = nil
+    var backCoverURL: String? = nil
 }
