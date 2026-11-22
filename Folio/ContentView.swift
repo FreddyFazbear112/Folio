@@ -535,6 +535,7 @@ private struct BookDetailView: View {
             let ext = source.pathExtension.lowercased()
             guard ["pdf", "epub", "txt", "rtf", "html", "htm"].contains(ext) else { message = "Choose an EPUB, PDF, TXT, RTF, or HTML reading file."; return }
             let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let previousFileName = savedBook.digitalFileName
             let destination = folder.appendingPathComponent(book.id.uuidString + "." + ext)
             let stagedCopy = folder.appendingPathComponent("\(book.id.uuidString)-\(UUID().uuidString).import")
             defer { try? FileManager.default.removeItem(at: stagedCopy) }
@@ -545,6 +546,9 @@ private struct BookDetailView: View {
                 try FileManager.default.moveItem(at: stagedCopy, to: destination)
             }
             library.attachDigitalCopy(book, fileName: destination.lastPathComponent)
+            if let previousFileName, previousFileName != destination.lastPathComponent {
+                try? FileManager.default.removeItem(at: folder.appendingPathComponent(previousFileName))
+            }
             message = "Your reading copy is saved on this iPhone."
         } catch { message = "Couldn't import that file. Please try again." }
     }
