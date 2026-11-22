@@ -53,6 +53,7 @@ struct Folio3DBookReader: View {
                         rightPage: renderedPage(page, in: document),
                         cover: coverImage ?? coverArtwork,
                         isOpen: isOpen,
+                        pageNumber: page,
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
                     )
@@ -122,9 +123,9 @@ struct Folio3DBookReader: View {
         guard next != page else { return }
         guard !turning else { return }
         turning = true
-        withAnimation(.easeInOut(duration: 0.22)) { page = next }
+        page = next
         SoundEffects.pageTurn()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) { turning = false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.62) { turning = false }
     }
 
     private func renderedPage(_ number: Int, in document: PDFDocument) -> UIImage? {
@@ -166,6 +167,7 @@ private struct SceneBookStage: UIViewRepresentable {
     let rightPage: UIImage?
     let cover: UIImage?
     let isOpen: Bool
+    let pageNumber: Int
     let paper: UIColor
     var onTapCover: () -> Void
 
@@ -183,16 +185,29 @@ private struct SceneBookStage: UIViewRepresentable {
         view.addGestureRecognizer(tap)
         context.coordinator.onTap = onTapCover
         context.coordinator.coverPivot = view.scene?.rootNode.childNode(withName: "cover-hinge", recursively: true)
+        context.coordinator.lastPageNumber = pageNumber
+        context.coordinator.lastLeftPage = leftPage
+        context.coordinator.lastRightPage = rightPage
         return view
     }
 
     func updateUIView(_ view: SCNView, context: Context) {
         context.coordinator.onTap = onTapCover
         guard let scene = view.scene else { return }
+        if let previousPage = context.coordinator.lastPageNumber,
+           previousPage != pageNumber {
+            let movingForward = pageNumber > previousPage
+            let turningImage = movingForward ? context.coordinator.lastRightPage : context.coordinator.lastLeftPage
+            let reverseImage = movingForward ? context.coordinator.lastLeftPage : context.coordinator.lastRightPage
+            animatePageTurn(in: scene, movingForward: movingForward, front: turningImage, reverse: reverseImage)
+        }
         scene.rootNode.childNode(withName: "left-page", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = leftPage ?? paper
         scene.rootNode.childNode(withName: "right-page", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = rightPage ?? paper
         scene.rootNode.childNode(withName: "paper-block", recursively: true)?.geometry?.materials.forEach { $0.diffuse.contents = paper }
         if let cover { scene.rootNode.childNode(withName: "front-cover", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = cover }
+        context.coordinator.lastPageNumber = pageNumber
+        context.coordinator.lastLeftPage = leftPage
+        context.coordinator.lastRightPage = rightPage
         if let hinge = context.coordinator.coverPivot {
             SCNTransaction.begin()
             SCNTransaction.animationDuration = 0.65
@@ -201,10 +216,58 @@ private struct SceneBookStage: UIViewRepresentable {
         }
     }
 
+    /// Adds a temporary paper leaf at the spine and rotates it across the book.
+    /// The static page surfaces underneath are already updated with the next PDF
+    /// pages, so the real document remains the source of every visible page.
+    private func animatePageTurn(in scene: SCNScene, movingForward: Bool, front: UIImage?, reverse: UIImage?) {
+        guard let front else { return }
+        let frontMaterial = SCNMaterial()
+        frontMaterial.diffuse.contents = front
+        frontMaterial.lightingModel = .lambert
+        frontMaterial.roughness.contents = 0.92
+
+        // The pivot stays on the spine; the page itself is offset to the
+        // fore-edge, which makes the sheet sweep across the book rather
+        // than spin around its own centre.
+        let hinge = SCNNode()
+        hinge.position = SCNVector3(0, 0, 0.075)
+        let leaf = SCNNode(geometry: SCNPlane(width: 2.85, height: 4.17))
+        leaf.geometry?.materials = [frontMaterial]
+        leaf.position.x = movingForward ? 1.425 : -1.425
+        leaf.castsShadow = true
+        leaf.renderingOrder = 10
+        hinge.addChildNode(leaf)
+
+        if let reverse {
+            let backMaterial = SCNMaterial()
+            backMaterial.diffuse.contents = reverse
+            backMaterial.lightingModel = .lambert
+            backMaterial.roughness.contents = 0.92
+            let back = SCNNode(geometry: SCNPlane(width: 2.85, height: 4.17))
+            back.geometry?.materials = [backMaterial]
+            back.position.z = -0.002
+            back.eulerAngles.y = .pi
+            leaf.addChildNode(back)
+        }
+        scene.rootNode.addChildNode(hinge)
+
+        let flip = SCNAction.rotateTo(
+            x: 0,
+            y: movingForward ? -.pi : .pi,
+            z: 0,
+            duration: 0.58,
+            usesShortestUnitArc: false
+        )
+        flip.timingMode = .easeInEaseOut
+        hinge.runAction(flip) { [weak hinge] in
+            DispatchQueue.main.async { hinge?.removeFromParentNode() }
+        }
+    }
+
     private func makeScene() -> SCNScene {
         let scene = SCNScene()
         let root = scene.rootNode
-        let paperBlock = SCNBox(width: 3.0, height: 4.25, length: 0.16, chamferRadius: 0.035)
+        let paperBlock = SCNBox(width: 5.82, height: 4.25, length: 0.20, chamferRadius: 0.045)
         let blockMaterial = SCNMaterial()
         blockMaterial.diffuse.contents = paper
         paperBlock.materials = Array(repeating: blockMaterial, count: 6)
@@ -226,13 +289,13 @@ private struct SceneBookStage: UIViewRepresentable {
             root.addChildNode(node)
             return node
         }
-        pageNode("left-page", x: -0.75)
-        pageNode("right-page", x: 0.75)
+        pageNode("left-page", x: -1.45)
+        pageNode("right-page", x: 1.45)
 
         let hinge = SCNNode()
         hinge.name = "cover-hinge"
         hinge.position = SCNVector3(0, 0, 0.09)
-        let coverPlane = SCNPlane(width: 1.53, height: 4.32)
+        let coverPlane = SCNPlane(width: 2.96, height: 4.34)
         let coverMaterial = SCNMaterial()
         coverMaterial.diffuse.contents = cover ?? paper
         coverMaterial.isDoubleSided = true
@@ -240,7 +303,7 @@ private struct SceneBookStage: UIViewRepresentable {
         coverPlane.materials = [coverMaterial]
         let coverNode = SCNNode(geometry: coverPlane)
         coverNode.name = "front-cover"
-        coverNode.position.x = 0.765
+        coverNode.position.x = 1.48
         hinge.addChildNode(coverNode)
         root.addChildNode(hinge)
 
@@ -257,7 +320,7 @@ private struct SceneBookStage: UIViewRepresentable {
         camera.fieldOfView = 34
         let cameraNode = SCNNode()
         cameraNode.camera = camera
-        cameraNode.position = SCNVector3(0, 0, 11.8)
+        cameraNode.position = SCNVector3(0, 0, 13.0)
         root.addChildNode(cameraNode)
         return scene
     }
@@ -265,6 +328,9 @@ private struct SceneBookStage: UIViewRepresentable {
     final class Coordinator: NSObject {
         var onTap: (() -> Void)?
         weak var coverPivot: SCNNode?
+        var lastPageNumber: Int?
+        var lastLeftPage: UIImage?
+        var lastRightPage: UIImage?
         @objc func tapped() { onTap?() }
     }
 }
