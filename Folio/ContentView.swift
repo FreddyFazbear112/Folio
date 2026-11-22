@@ -263,6 +263,7 @@ private struct BookDetailView: View {
                             message = "Reading session: " + String(format: "%d min", Int(elapsed / 60))
                             UserDefaults.standard.removeObject(forKey: timerElapsedKey)
                             UserDefaults.standard.removeObject(forKey: timerStartedKey)
+                            elapsed = 0
                         }
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(folioInk.opacity(0.56))
@@ -289,8 +290,19 @@ private struct BookDetailView: View {
                         .background(Color.white.opacity(0.58))
                         .clipShape(RoundedRectangle(cornerRadius: 7))
                     Button {
-                        library.updateReadingDetails(book, currentPage: Int(currentPageText), totalPages: Int(totalPagesText), note: readingNote)
-                        SoundEffects.softTap()
+                        let current = Int(currentPageText)
+                        let total = Int(totalPagesText)
+                        if let current, current < 1 {
+                            message = "Page number must be at least 1."
+                        } else if let current, let total, current > total {
+                            message = "Current page can't be greater than the total pages."
+                        } else if let total, total < 1 {
+                            message = "Total pages must be at least 1."
+                        } else {
+                            library.updateReadingDetails(book, currentPage: current, totalPages: total, note: readingNote)
+                            message = "Your reading note has been saved."
+                            SoundEffects.softTap()
+                        }
                     } label: {
                         Text("Save journal entry")
                             .font(.system(size: 13, weight: .medium))
