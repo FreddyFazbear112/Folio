@@ -870,11 +870,55 @@ private struct FirstBookTutorialView: View {
                 .padding(.top, 22)
 
                 Spacer()
-                Image(systemName: steps[page].symbol)
-                    .font(.system(size: 52, weight: .ultraLight))
-                    .foregroundStyle(ink)
-                    .frame(height: 90)
-                    .padding(.bottom, 34)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(LinearGradient(colors: [Color(red: 0.16, green: 0.20, blue: 0.17), Color(red: 0.075, green: 0.09, blue: 0.08)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    Circle().stroke(Color(red: 0.79, green: 0.63, blue: 0.40).opacity(0.18), lineWidth: 1)
+                        .frame(width: 235, height: 235).offset(x: 115, y: -72)
+                    HStack(spacing: 0) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(LinearGradient(colors: [Color(red: 0.55, green: 0.36, blue: 0.24), Color(red: 0.24, green: 0.18, blue: 0.15)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .overlay(alignment: .leading) { Rectangle().fill(Color.white.opacity(0.17)).frame(width: 3) }
+                            .overlay {
+                                VStack(spacing: 12) {
+                                    Image(systemName: steps[page].symbol).font(.system(size: 29, weight: .ultraLight))
+                                    Text("FOLIO").font(.system(size: 11, weight: .semibold, design: .serif)).tracking(2.5)
+                                }.foregroundStyle(Color(red: 0.94, green: 0.83, blue: 0.66))
+                            }
+                            .frame(width: 112, height: 158)
+                            .rotation3DEffect(.degrees(-13), axis: (x: 0, y: 1, z: 0), perspective: 0.65)
+                            .shadow(color: .black.opacity(0.42), radius: 17, x: 8, y: 12)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(["YOUR SHELF", "SCAN AN EDITION", "MAKE IT YOURS", "OPEN THE STORY", "A READING RITUAL"][page])
+                                .font(.system(size: 8, weight: .bold)).tracking(1.2)
+                                .foregroundStyle(Color(red: 0.85, green: 0.70, blue: 0.48))
+                            ForEach(0..<5, id: \.self) { line in
+                                Capsule().fill(Color.white.opacity(line == 0 ? 0.56 : 0.17))
+                                    .frame(width: CGFloat([91, 74, 86, 62, 78][line]), height: 3)
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "bookmark.fill").font(.system(size: 12)).foregroundStyle(Color(red: 0.85, green: 0.70, blue: 0.48))
+                        }
+                        .padding(13).frame(width: 120, height: 158, alignment: .leading)
+                        .background(Color(red: 0.88, green: 0.83, blue: 0.73))
+                        .rotation3DEffect(.degrees(8), axis: (x: 0, y: 1, z: 0), perspective: 0.65)
+                        .shadow(color: .black.opacity(0.3), radius: 14, x: -5, y: 10)
+                    }
+                    .offset(y: 3)
+                    VStack {
+                        HStack {
+                            Text("A LITTLE GUIDE").font(.system(size: 8, weight: .bold)).tracking(1.8)
+                            Spacer()
+                            Text("0\(page + 1) / 05").font(.system(size: 8, weight: .medium, design: .monospaced))
+                        }
+                        Spacer()
+                    }
+                    .foregroundStyle(Color.white.opacity(0.55)).padding(17)
+                }
+                .frame(height: 250)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(color: ink.opacity(0.14), radius: 18, x: 0, y: 10)
+                .padding(.bottom, 30)
 
                 Text(steps[page].eyebrow)
                     .font(.system(size: 9, weight: .semibold))
