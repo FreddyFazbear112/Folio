@@ -305,7 +305,7 @@ private struct BookDetailView: View {
             VStack(spacing: 14) {
                 Text(book.title).font(.system(size: 25, design: .serif)).multilineTextAlignment(.center)
                 Text(book.author.uppercased()).font(.system(size: 10, weight: .medium)).tracking(1.4).foregroundStyle(.secondary)
-                BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1)).frame(height: 250)
+                BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1), coverURL: book.coverURL).frame(height: 250)
                 Text("Drag to turn your book around").font(.system(size: 12, design: .serif).italic()).foregroundStyle(.secondary)
 
                 VStack(alignment: .leading, spacing: 10) {
