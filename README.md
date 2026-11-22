@@ -10,6 +10,8 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 - Add books manually or scan ISBN barcodes with VisionKit
 - Book metadata lookup through the Open Library search API
 - Interactive SceneKit 3D book preview
+- In-app EPUB chapter reader with local archive extraction, chapter navigation, and reading progress
+- Native PDFKit reader with page navigation and page-progress persistence
 - Tactile system sound feedback
 - Reader profile editing, persistent local photo picker, and cloud-synced name/bio
 - Firebase Authentication integration with Google Sign-In
