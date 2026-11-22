@@ -597,7 +597,7 @@ private struct BookDetailView: View {
         .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data], allowsMultipleSelection: false) { result in
             importCopy(result)
         }
-        .sheet(isPresented: $reading) {
+        .fullScreenCover(isPresented: $reading) {
             if let readerURL { FolioReadingCopyView(url: readerURL) }
         }
     }
