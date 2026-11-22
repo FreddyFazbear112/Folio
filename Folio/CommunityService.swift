@@ -1,21 +1,31 @@
 import Foundation
 import FirebaseFirestore
+import FirebaseStorage
 
 struct CommunityService {
     private let db = Firestore.firestore()
 
-    func saveProfile(name: String, bio: String, userID: String) async throws {
+    func saveProfile(name: String, bio: String, avatarURL: String?, userID: String) async throws {
         try await db.collection("profiles").document(userID).setData([
             "name": name,
             "bio": bio,
+            "avatarURL": avatarURL as Any? ?? NSNull(),
             "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
     }
 
-    func loadProfile(userID: String) async throws -> (name: String, bio: String)? {
+    func loadProfile(userID: String) async throws -> (name: String, bio: String, avatarURL: String?)? {
         let snapshot = try await db.collection("profiles").document(userID).getDocument()
         guard snapshot.exists, let data = snapshot.data() else { return nil }
-        return (data["name"] as? String ?? "", data["bio"] as? String ?? "")
+        return (data["name"] as? String ?? "", data["bio"] as? String ?? "", data["avatarURL"] as? String)
+    }
+
+    func uploadAvatar(_ data: Data, userID: String) async throws -> URL {
+        let reference = Storage.storage().reference().child("profile-images/\\(userID).jpg")
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+        _ = try await reference.putDataAsync(data, metadata: metadata)
+        return try await reference.downloadURL()
     }
 
     func fetchPosts() async throws -> [CommunityPost] {
