@@ -479,8 +479,27 @@ private struct BookDetailView: View {
                             if let started = timerStart {
                                 elapsed += Date().timeIntervalSince(started)
                                 timerStart = nil
+                                Task {
+                                    await ReadingActivityManager.shared.update(
+                                        elapsed: Int(elapsed), paused: true,
+                                        title: savedBook.title, author: savedBook.author
+                                    )
+                                }
                             } else {
                                 timerStart = Date()
+                                if elapsed == 0 {
+                                    ReadingActivityManager.shared.start(
+                                        bookID: savedBook.id.uuidString,
+                                        title: savedBook.title, author: savedBook.author
+                                    )
+                                } else {
+                                    Task {
+                                        await ReadingActivityManager.shared.update(
+                                            elapsed: Int(elapsed), paused: false,
+                                            title: savedBook.title, author: savedBook.author
+                                        )
+                                    }
+                                }
                             }
                             SoundEffects.softTap()
                         } label: {
@@ -501,6 +520,11 @@ private struct BookDetailView: View {
                             if let started = timerStart {
                                 elapsed += Date().timeIntervalSince(started)
                                 timerStart = nil
+                            }
+                            Task {
+                                await ReadingActivityManager.shared.end(
+                                    elapsed: Int(elapsed), title: savedBook.title, author: savedBook.author
+                                )
                             }
                             message = "Reading session: " + String(format: "%d min", Int(elapsed / 60))
                         }
