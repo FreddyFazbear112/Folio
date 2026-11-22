@@ -25,7 +25,7 @@ struct FolioReadingLiveActivity: Widget {
                 }
                 Spacer(minLength: 4)
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text(timer(context.state))
+                    activityTimer(context.state)
                         .font(.system(size: 18, design: .serif).monospacedDigit()).foregroundStyle(ink)
                     Text(context.state.isPaused ? "PAUSED" : "IN SESSION")
                         .font(.system(size: 7, weight: .semibold)).tracking(1).foregroundStyle(muted)
@@ -62,6 +62,18 @@ struct FolioReadingLiveActivity: Widget {
                 Image(systemName: "book.closed.fill").foregroundStyle(.brown)
             }
             .keylineTint(.brown)
+        }
+    }
+
+    @ViewBuilder
+    private func activityTimer(_ state: FolioReadingActivityAttributes.ContentState) -> some View {
+        if !state.isPaused {
+            let start = state.runningSince ?? Date.now.addingTimeInterval(-TimeInterval(state.elapsedSeconds))
+            Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                .monospacedDigit()
+        } else {
+            Text(timer(state))
+                .monospacedDigit()
         }
     }
 
