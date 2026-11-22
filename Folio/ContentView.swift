@@ -1294,7 +1294,7 @@ private struct FolioLibraryScreen: View {
     private var filteredBooks: [Book] {
         library.books.filter { book in
             let queryMatches = searchText.isEmpty || book.title.localizedCaseInsensitiveContains(searchText) || book.author.localizedCaseInsensitiveContains(searchText)
-            let ext = (book.digitalFileName as NSString?)?.pathExtension.uppercased() ?? ""
+            let ext = book.digitalFileName.map { ($0 as NSString).pathExtension.uppercased() } ?? ""
             let formatMatches = format == "All" || ext == format
             return queryMatches && formatMatches
         }
