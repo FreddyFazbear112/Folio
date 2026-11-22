@@ -14,9 +14,8 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 - Reader profile editing, persistent local photo picker, and cloud-synced name/bio
 - Firebase Authentication integration with Google Sign-In
 - Firestore-backed community posts, book reviews, comments, and reader profiles
-- GitHub Actions simulator build artifact
-- Unsigned physical-iPhone IPA artifact on every push to `main`
-- Optional Apple-signed device IPA export when signing secrets are configured
+- Guided first-book walkthrough with ISBN scan, catalogue lookup, or manual entry
+- One unsigned physical-iPhone IPA artifact on every push to `main` (for re-signing with SideStore/Sideloadly)
 
 ## Open in Xcode
 
@@ -36,7 +35,7 @@ Google authentication and shared community data require a Firebase project you c
 
 Do not commit private credentials or service-account keys. The Firebase client plist contains app identifiers and client configuration, not an administrative service-account key; keep your Firebase security rules restrictive.
 
-Without Firebase configuration, the local bookshelf and sample reading-room content still work, but Google sign-in, publishing, and cloud comments remain unavailable.
+Without Firebase configuration, the personal bookshelf works locally without an account. Google sign-in, publishing, and cloud comments remain unavailable until you configure Firebase.
 
 ## Current implementation notes
 
@@ -46,15 +45,17 @@ Without Firebase configuration, the local bookshelf and sample reading-room cont
 - ISBN lookup depends on network access to Open Library.
 - Google Sign-In needs the Firebase plist and reversed client URL scheme described above.
 
-## Building an IPA
+## Building and sideloading Folio
 
-Every push to `main` builds two separate outputs: a simulator build and an **unsigned device IPA** (`Folio-iOS-Unsigned-IPA`). The IPA contains an `iphoneos` Release build packaged in the standard `Payload/Folio.app` layout; it is not a simulator app. You can download it from the workflow run's Artifacts section and re-sign it with your own signing tool and provisioning profile before installing it. An unsigned IPA is not directly installable until it has been signed.
+Every push to `main` runs one iPhone-device build and uploads a single artifact named `Folio-iOS-Unsigned-IPA`. The workflow does not build or upload a simulator app and does not create an App Store distribution IPA.
 
-To also export an Apple-signed, App Store Connect IPA automatically, add these repository Actions secrets under Settings → Secrets and variables → Actions:
+1. Open the latest successful run under [GitHub Actions](https://github.com/FreddyFazbear112/Folio/actions).
+2. Download `Folio-iOS-Unsigned-IPA` from the run's Artifacts section.
+3. Import `Folio-iOS-Unsigned.ipa` into SideStore or Sideloadly and sign it with your own Apple Account.
+4. Follow the signing app's instructions to install it on your iPhone.
 
-- `IOS_CERTIFICATE_BASE64`: base64-encoded Apple Distribution `.p12` certificate
-- `IOS_CERTIFICATE_PASSWORD`: password used when exporting that `.p12`
-- `IOS_PROVISIONING_PROFILE_BASE64`: base64-encoded App Store provisioning profile for `com.folio.app`
-- `IOS_TEAM_ID`: your 10-character Apple Developer Team ID
+The workflow artifact is an unsigned physical-device app package. It is **not directly installable** until SideStore, Sideloadly, or another compatible signing tool signs it for your device. A free Apple Account's Personal Team provisioning is temporary (typically seven days), so the app needs periodic refreshing/re-signing. Each tester should sign the app with their own Apple Account; do not share your personal signing credentials.
 
-The workflow imports the signing assets on a temporary macOS keychain, archives the app, and uploads `Folio-iOS-IPA` as a workflow artifact. Without those secrets, the signed IPA job safely skips; the separate unsigned physical-device IPA job still runs. Never commit signing certificates, provisioning profiles, passwords, or Firebase service-account credentials to the repository.
+For a local build, open `Folio.xcodeproj` in Xcode, sign in with your Apple Account, select your iPhone as the run destination, choose your Personal Team under Signing & Capabilities, and run the app. This is often the simplest way to test on your own phone.
+
+Never commit signing certificates, provisioning profiles, passwords, or Firebase service-account credentials to the repository.
