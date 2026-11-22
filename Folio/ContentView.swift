@@ -674,36 +674,159 @@ private struct BookDetailView: View {
 }
 
 private struct FolioReadingCopyView: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\\.dismiss) private var dismiss
     let url: URL
+    @State private var currentPage = 1
+    @State private var totalPages = 0
+    @State private var sepia = true
+    @State private var focusMode = false
+
     var body: some View {
-        NavigationStack {
-            Group {
+        ZStack {
+            (sepia ? Color(red: 0.91, green: 0.87, blue: 0.78) : Color(red: 0.12, green: 0.13, blue: 0.13))
+                .ignoresSafeArea()
+            VStack(spacing: 0) {
+                if !focusMode {
+                    HStack {
+                        Button { dismiss() } label: {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 14, weight: .semibold))
+                                .frame(width: 38, height: 38)
+                                .background(.white.opacity(0.55), in: Circle())
+                        }
+                        Spacer()
+                        VStack(spacing: 2) {
+                            Text("FOLIO READER")
+                                .font(.system(size: 8, weight: .bold)).tracking(2)
+                            Text(url.deletingPathExtension().lastPathComponent)
+                                .font(.system(size: 12, design: .serif)).lineLimit(1)
+                        }
+                        Spacer()
+                        Button { withAnimation(.easeInOut(duration: 0.2)) { sepia.toggle() } } label: {
+                            Image(systemName: sepia ? "moon" : "sun.max")
+                                .font(.system(size: 14))
+                                .frame(width: 38, height: 38)
+                                .background(.white.opacity(0.55), in: Circle())
+                        }
+                    }
+                    .foregroundStyle(sepia ? folioInk : Color.white)
+                    .padding(.horizontal, 17)
+                    .padding(.top, 8)
+                    .padding(.bottom, 10)
+                }
                 if url.pathExtension.lowercased() == "pdf" {
-                    FolioPDFView(url: url)
+                    FolioPDFView(url: url, currentPage: $currentPage, totalPages: $totalPages, sepia: sepia)
+                        .ignoresSafeArea(edges: focusMode ? .all : [])
                 } else {
                     FolioEPUBPreview(url: url)
                 }
+                if url.pathExtension.lowercased() == "pdf" && !focusMode {
+                    VStack(spacing: 10) {
+                        HStack(spacing: 22) {
+                            Button {
+                                currentPage = max(1, currentPage - 1)
+                                SoundEffects.pageTurn()
+                            } label: { Image(systemName: "chevron.left") }
+                            Text(totalPages > 0 ? "PAGE \\(currentPage) OF \\(totalPages)" : "OPENING BOOK")
+                                .font(.system(size: 9, weight: .semibold, design: .monospaced)).tracking(1.1)
+                            Button {
+                                currentPage = min(max(totalPages, 1), currentPage + 1)
+                                SoundEffects.pageTurn()
+                            } label: { Image(systemName: "chevron.right") }
+                        }
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(sepia ? folioInk : Color.white)
+                        if totalPages > 0 {
+                            ProgressView(value: Double(currentPage), total: Double(totalPages))
+                                .tint(sepia ? folioInk : Color.white)
+                        }
+                        HStack {
+                            Text("A LITTLE TIME FOR A STORY")
+                            Spacer()
+                            Button("Focus") { withAnimation(.easeInOut(duration: 0.2)) { focusMode = true } }
+                        }
+                        .font(.system(size: 8, weight: .semibold)).tracking(1.2)
+                        .foregroundStyle(sepia ? folioInk.opacity(0.55) : Color.white.opacity(0.6))
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 13)
+                    .padding(.bottom, 12)
+                } else if focusMode {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { focusMode = false }
+                    } label: {
+                        Label("Show reading controls", systemImage: "slider.horizontal.3")
+                            .font(.system(size: 11, weight: .medium))
+                            .padding(.horizontal, 15).padding(.vertical, 10)
+                            .background(.ultraThinMaterial, in: Capsule())
+                    }
+                    .foregroundStyle(sepia ? folioInk : .white)
+                    .padding(.bottom, 12)
+                }
             }
-            .navigationTitle(url.deletingPathExtension().lastPathComponent)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }
+        .preferredColorScheme(.light)
     }
 }
 
 private struct FolioPDFView: UIViewRepresentable {
     let url: URL
+    @Binding var currentPage: Int
+    @Binding var totalPages: Int
+    let sepia: Bool
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
     func makeUIView(context: Context) -> PDFView {
         let view = PDFView()
         view.autoScales = true
         view.displayMode = .singlePage
         view.displayDirection = .horizontal
         view.usePageViewController(true, withViewOptions: nil)
+        view.backgroundColor = sepia
+            ? UIColor(red: 0.91, green: 0.87, blue: 0.78, alpha: 1)
+            : UIColor(red: 0.12, green: 0.13, blue: 0.13, alpha: 1)
         view.document = PDFDocument(url: url)
+        context.coordinator.pdfView = view
+        context.coordinator.observePageChanges()
+        totalPages = view.document?.pageCount ?? 0
+        currentPage = 1
         return view
     }
-    func updateUIView(_ view: PDFView, context: Context) {}
+
+    func updateUIView(_ view: PDFView, context: Context) {
+        view.backgroundColor = sepia
+            ? UIColor(red: 0.91, green: 0.87, blue: 0.78, alpha: 1)
+            : UIColor(red: 0.12, green: 0.13, blue: 0.13, alpha: 1)
+        guard let document = view.document, document.pageCount > 0 else { return }
+        let target = min(max(currentPage - 1, 0), document.pageCount - 1)
+        if document.index(for: view.currentPage ?? document.page(at: 0)!) != target,
+           let page = document.page(at: target) {
+            view.go(to: page)
+        }
+    }
+
+    final class Coordinator: NSObject {
+        var parent: FolioPDFView
+        weak var pdfView: PDFView?
+        init(_ parent: FolioPDFView) { self.parent = parent }
+
+        func observePageChanges() {
+            NotificationCenter.default.addObserver(self, selector: #selector(pageChanged),
+                name: .PDFViewPageChanged, object: pdfView)
+        }
+
+        @objc private func pageChanged() {
+            guard let view = pdfView, let document = view.document, let page = view.currentPage else { return }
+            let index = document.index(for: page) + 1
+            DispatchQueue.main.async {
+                self.parent.currentPage = index
+                self.parent.totalPages = document.pageCount
+            }
+        }
+
+        deinit { NotificationCenter.default.removeObserver(self) }
+    }
 }
 
 private struct FolioEPUBPreview: UIViewControllerRepresentable {
