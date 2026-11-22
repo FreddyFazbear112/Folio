@@ -166,12 +166,13 @@ app.get("/v1/profiles/:id", async (req, res) => {
 app.put("/v1/me/profile", requireUser, async (req, res) => {
   const name = text(req.body?.name, 60);
   const bio = text(req.body?.bio, 240);
+  const avatarURL = text(req.body?.avatarURL, 2048) || null;
   if (!name) return res.status(400).json({ error: "Add a reader name." });
   try {
     const result = await pool.query(
-      `INSERT INTO profiles(user_id,name,bio,updated_at) VALUES($1,$2,$3,NOW())
-       ON CONFLICT(user_id) DO UPDATE SET name=EXCLUDED.name,bio=EXCLUDED.bio,updated_at=NOW()
-       RETURNING name,bio`, [req.user.uid, name, bio]);
+      `INSERT INTO profiles(user_id,name,bio,avatar_url,updated_at) VALUES($1,$2,$3,$4,NOW())
+       ON CONFLICT(user_id) DO UPDATE SET name=EXCLUDED.name,bio=EXCLUDED.bio,avatar_url=EXCLUDED.avatar_url,updated_at=NOW()
+       RETURNING name,bio`, [req.user.uid, name, bio, avatarURL]);
     res.json({ profile: result.rows[0] });
   } catch { res.status(500).json({ error: "Couldn't save your profile." }); }
 });
