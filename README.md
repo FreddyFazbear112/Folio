@@ -16,7 +16,7 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 - Community API service source for posts, book reviews, comments, likes, and reader profiles (deployment and app migration still required)
 - Guided first-book walkthrough with ISBN scan, catalogue lookup, or manual entry
 - Private per-book reading journal with page progress and saved notes
-- One unsigned physical-iPhone IPA artifact on every push to `main` (for re-signing with SideStore/Sideloadly)
+- Live Activity and Home Screen widget support
 
 ## Open in Xcode
 
@@ -34,7 +34,7 @@ To run it yourself:
 2. In `server/`, create a `.env` file with a strong `POSTGRES_PASSWORD` and your allowed `CORS_ORIGINS`.
 3. Run `docker compose up --build -d`.
 4. Check `https://your-host/healthz` after deploying behind HTTPS.
-5. Configure the iOS app with that API base URL when the REST client migration is completed.
+5. In Xcode, set the app target build setting `FOLIO_API_BASE_URL` to your HTTPS origin (for example, `https://folio.example.com`). The app reads this value from its generated Info.plist. Leave it empty until the server is deployed; the existing Firestore migration fallback remains available.
 
 The server creates its PostgreSQL tables on startup. Back up the PostgreSQL volume regularly. Do not expose PostgreSQL's port publicly.
 
@@ -57,7 +57,7 @@ Without Firebase configuration, the personal bookshelf works locally without an 
 ## Current implementation notes
 
 - The Reading Room no longer inserts fictional/sample readers or posts. When no real posts are available it shows a quiet empty state.
-- CommunityService in the current iOS build still uses the existing Firebase Firestore/Storage implementation while the Folio API is being integrated; do not treat the new server as live until deployment and client migration are complete.
+- CommunityService now routes feed, publishing, comments, likes, and profile metadata through the Folio API whenever a valid HTTPS `FOLIO_API_BASE_URL` is configured. Firestore remains a migration fallback when the setting is empty. Avatar image files still use Firebase Storage; the Folio API stores the resulting avatar URL in the profile record.
 - ISBN lookup also fetches Open Library cover art when a matching edition has a cover; books without cover art use Folio's original typographic shelf design.
 - Profile photos are resized, stored locally, and uploaded to Firebase Storage when signed in; reader name and bio sync to Firestore.
 - ISBN lookup depends on network access to Open Library.
@@ -65,9 +65,9 @@ Without Firebase configuration, the personal bookshelf works locally without an 
 
 ## Building and sideloading Folio
 
-Every push to `main` runs one iPhone-device build and uploads a single artifact named `Folio-iOS-Unsigned-IPA`. The workflow does not build or upload a simulator app and does not create an App Store distribution IPA.
+The iPhone packaging workflow is manual-only while the redesign and feature work are in progress. Commits to `main` do not trigger an IPA build. The workflow does not build or upload a simulator app and does not create an App Store distribution IPA.
 
-1. Open the latest successful run under [GitHub Actions](https://github.com/FreddyFazbear112/Folio/actions).
+1. After the project reaches its release milestone, manually run the iOS workflow from [GitHub Actions](https://github.com/FreddyFazbear112/Folio/actions).
 2. Download `Folio-iOS-Unsigned-IPA` from the run's Artifacts section.
 3. Import `Folio-iOS-Unsigned.ipa` into SideStore or Sideloadly and sign it with your own Apple Account.
 4. Follow the signing app's instructions to install it on your iPhone.
