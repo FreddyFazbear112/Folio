@@ -173,14 +173,32 @@ private struct ShelfListView: View {
 }
 
 private struct BookDetailView: View {
+    @EnvironmentObject private var library: LibraryStore
+    @Environment(\.dismiss) private var dismiss
     let book: Book
+
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Text(book.title).font(.system(size: 25, design: .serif)).multilineTextAlignment(.center)
             Text(book.author.uppercased()).font(.system(size: 10, weight: .medium)).tracking(1.4).foregroundStyle(.secondary)
             BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1))
-                .frame(height: 300)
+                .frame(height: 270)
             Text("Drag to turn your book around").font(.system(size: 12, design: .serif).italic()).foregroundStyle(.secondary)
+            Picker("Reading status", selection: Binding(
+                get: { library.books.first(where: { $0.id == book.id })?.status ?? book.status },
+                set: { library.update(book, status: $0); SoundEffects.softTap() }
+            )) {
+                ForEach(ReadingStatus.allCases) { status in Text(status.rawValue).tag(status) }
+            }
+            .pickerStyle(.segmented)
+            Button(role: .destructive) {
+                library.remove(book)
+                dismiss()
+            } label: {
+                Label("Remove from my shelf", systemImage: "trash")
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .padding(.top, 5)
         }
         .padding(22)
         .background(folioPaper.ignoresSafeArea())
