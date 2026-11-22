@@ -18,7 +18,7 @@ struct BookLookupService {
         let (data, _) = try await URLSession.shared.data(for: request)
         let result = try JSONDecoder().decode(SearchResponse.self, from: data)
         guard let first = result.docs.first, let title = first.title else { return nil }
-        let coverURL = first.cover_i.map { "https://covers.openlibrary.org/b/id/\\($0)-L.jpg" }
+        let coverURL = first.cover_i.map { "https://covers.openlibrary.org/b/id/\($0)-L.jpg" }
         return (title, first.author_name?.first ?? "Unknown author", coverURL)
     }
 
