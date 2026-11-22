@@ -29,11 +29,20 @@ struct CommunityView: View {
         NavigationStack {
             ZStack {
                 Color(red: 0.96, green: 0.94, blue: 0.89).ignoresSafeArea()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 25) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("FOLIO · COMMUNITY").font(.system(size: 9, weight: .semibold)).tracking(2)
+                                Text("The Reading Room").font(.system(size: 30, design: .serif))
+                            }
+                            Spacer()
+                            Image(systemName: "text.book.closed").font(.system(size: 21, weight: .ultraLight))
+                        }
+                        .foregroundStyle(Color(red: 0.18, green: 0.20, blue: 0.17))
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("THE READING ROOM").font(.system(size: 10, weight: .semibold)).tracking(2.2)
-                            Text("Stories are better\nwhen shared.").font(.system(size: 32, design: .serif))
+                            Text("A PLACE FOR BOOKISH CONVERSATION").font(.system(size: 8, weight: .semibold)).tracking(1.5).foregroundStyle(.secondary)
+                            Text("Stories are better\nwhen shared.").font(.system(size: 29, design: .serif))
                         }
                         HStack {
                             VStack(alignment: .leading, spacing: 3) {
@@ -58,7 +67,9 @@ struct CommunityView: View {
                                         .font(.system(size: 12, weight: .medium)).padding(.top, 4)
                                 }
                             }
-                            .frame(maxWidth: .infinity).padding(.vertical, 46)
+                            .frame(maxWidth: .infinity).padding(.vertical, 48)
+                            .background(.white.opacity(0.42), in: RoundedRectangle(cornerRadius: 8))
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.black.opacity(0.055), lineWidth: 1))
                             .foregroundStyle(Color(red: 0.25, green: 0.27, blue: 0.23))
                         } else {
                             ForEach(posts) { post in postCard(post) }
@@ -157,7 +168,7 @@ struct CommunityView: View {
             }
             .font(.system(size: 11, weight: .medium))
         }
-        .padding(17).background(Color.white.opacity(0.54)).clipShape(RoundedRectangle(cornerRadius: 5))
+        .padding(18).background(Color.white.opacity(0.56)).clipShape(RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.black.opacity(0.055), lineWidth: 1))
     }
 
     @MainActor
