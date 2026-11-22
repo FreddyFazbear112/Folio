@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import GoogleSignIn
 
 @main
 struct FolioApp: App {
@@ -12,6 +13,9 @@ struct FolioApp: App {
                 .environmentObject(library)
                 .environmentObject(auth)
                 .preferredColorScheme(.light)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
     }
 }
