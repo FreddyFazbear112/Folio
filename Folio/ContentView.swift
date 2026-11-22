@@ -35,6 +35,9 @@ private struct LibraryScreen: View {
     @EnvironmentObject private var library: LibraryStore
     @State private var showingAddBook = false
     @State private var selectedBook: Book?
+    @State private var showingFirstBookTutorial = false
+    @State private var openAddBookAfterTutorial = false
+    @AppStorage("folio.firstBookTutorialSeen") private var firstBookTutorialSeen = false
 
     var body: some View {
         NavigationStack {
@@ -42,7 +45,7 @@ private struct LibraryScreen: View {
                 folioPaper.ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
-                        FolioHeader { showingAddBook = true }
+                        FolioHeader(add: { showingAddBook = true }, tutorial: { showingFirstBookTutorial = true })
                         intro
                         shelfCounts
                         BookGrid(books: library.books) { selectedBook = $0 }
@@ -54,6 +57,24 @@ private struct LibraryScreen: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+        }
+        .onAppear {
+            if library.books.isEmpty && !firstBookTutorialSeen {
+                showingFirstBookTutorial = true
+            }
+        }
+        .sheet(isPresented: $showingFirstBookTutorial, onDismiss: {
+            firstBookTutorialSeen = true
+            if openAddBookAfterTutorial {
+                openAddBookAfterTutorial = false
+                showingAddBook = true
+            }
+        }) {
+            FirstBookTutorialView {
+                openAddBookAfterTutorial = true
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingAddBook) {
             AddBookView()
@@ -118,6 +139,7 @@ private struct LibraryScreen: View {
 
 private struct FolioHeader: View {
     let add: () -> Void
+    let tutorial: () -> Void
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
@@ -125,6 +147,13 @@ private struct FolioHeader: View {
                 Text("a life between the pages").font(.system(size: 12, design: .serif).italic()).foregroundStyle(folioInk.opacity(0.62))
             }
             Spacer()
+            Button(action: tutorial) {
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 19, weight: .regular))
+                    .foregroundStyle(folioInk.opacity(0.7))
+                    .frame(width: 38, height: 42)
+            }
+            .accessibilityLabel("How Folio works")
             Button {
                 add()
                 SoundEffects.softTap()
@@ -279,5 +308,97 @@ private struct BookDetailView: View {
         }
         .padding(22)
         .background(folioPaper.ignoresSafeArea())
+    }
+}
+
+
+private struct FirstBookTutorialView: View {
+    @Environment(\.dismiss) private var dismiss
+    let onStartAdding: () -> Void
+    @State private var page = 0
+
+    private let paper = Color(red: 0.96, green: 0.94, blue: 0.89)
+    private let ink = Color(red: 0.18, green: 0.20, blue: 0.17)
+
+    private let steps: [(symbol: String, eyebrow: String, title: String, detail: String)] = [
+        ("barcode.viewfinder", "A GOOD PLACE TO BEGIN", "Find your book.", "Tap the plus button to search by ISBN, scan the barcode on the back, or type the title yourself."),
+        ("books.vertical", "MAKE IT YOURS", "Give it a shelf.", "Choose To Read, Reading, or Read. Folio keeps your little library saved on this device."),
+        ("bookmark", "PICK UP WHERE YOU LEFT OFF", "Come back anytime.", "Open a book on your shelf to change its reading status. You can add more details as your reading life grows.")
+    ]
+
+    var body: some View {
+        ZStack {
+            paper.ignoresSafeArea()
+            VStack(spacing: 0) {
+                HStack {
+                    Text("A NOTE FROM FOLIO")
+                        .font(.system(size: 9, weight: .semibold))
+                        .tracking(1.8)
+                        .foregroundStyle(ink.opacity(0.48))
+                    Spacer()
+                    Button("Skip") { dismiss() }
+                        .font(.system(size: 13))
+                        .foregroundStyle(ink.opacity(0.65))
+                }
+                .padding(.top, 22)
+
+                Spacer()
+                Image(systemName: steps[page].symbol)
+                    .font(.system(size: 52, weight: .ultraLight))
+                    .foregroundStyle(ink)
+                    .frame(height: 90)
+                    .padding(.bottom, 34)
+
+                Text(steps[page].eyebrow)
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(1.8)
+                    .foregroundStyle(ink.opacity(0.48))
+                Text(steps[page].title)
+                    .font(.system(size: 34, design: .serif))
+                    .foregroundStyle(ink)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 12)
+                Text(steps[page].detail)
+                    .font(.system(size: 15, design: .serif))
+                    .lineSpacing(5)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(ink.opacity(0.7))
+                    .frame(maxWidth: 300)
+                    .padding(.top, 14)
+
+                Spacer()
+                HStack(spacing: 7) {
+                    ForEach(0..<steps.count, id: \.self) { index in
+                        Capsule()
+                            .fill(ink.opacity(index == page ? 0.85 : 0.18))
+                            .frame(width: index == page ? 25 : 7, height: 5)
+                    }
+                }
+                .padding(.bottom, 25)
+
+                Button {
+                    if page < steps.count - 1 {
+                        withAnimation(.easeInOut(duration: 0.22)) { page += 1 }
+                    } else {
+                        onStartAdding()
+                        dismiss()
+                    }
+                    SoundEffects.softTap()
+                } label: {
+                    HStack {
+                        Text(page == steps.count - 1 ? "Add my first book" : "Continue")
+                        Image(systemName: "arrow.right")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(paper)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 17)
+                    .background(ink)
+                    .clipShape(Capsule())
+                }
+                .padding(.bottom, 28)
+            }
+            .padding(.horizontal, 26)
+        }
     }
 }
