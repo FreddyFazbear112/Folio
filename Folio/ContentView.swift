@@ -184,26 +184,45 @@ private struct BookSpine: View {
         Color(red: 0.69, green: 0.48, blue: 0.33), Color(red: 0.37, green: 0.39, blue: 0.51),
         Color(red: 0.62, green: 0.56, blue: 0.43), Color(red: 0.53, green: 0.34, blue: 0.36)
     ]
+    private var spineArtwork: some View {
+        VStack(spacing: 5) {
+            Rectangle().fill(.white.opacity(0.42)).frame(height: 1)
+            Text(book.title.uppercased())
+                .font(.system(size: 9, weight: .semibold, design: .serif))
+                .tracking(0.7).multilineTextAlignment(.center).lineLimit(5)
+                .minimumScaleFactor(0.7).foregroundStyle(.white.opacity(0.92))
+                .padding(.horizontal, 5)
+            Spacer(minLength: 2)
+            Rectangle().fill(.white.opacity(0.42)).frame(height: 1)
+            Text("✳").font(.system(size: 11)).foregroundStyle(.white.opacity(0.8))
+        }
+        .padding(.vertical, 10).padding(.horizontal, 4)
+    }
+
     var body: some View {
         VStack(spacing: 7) {
             ZStack {
                 RoundedRectangle(cornerRadius: 3)
                     .fill(palette[book.colorIndex % palette.count].gradient)
                     .shadow(color: .black.opacity(0.16), radius: 5, x: 2, y: 4)
-                VStack(spacing: 5) {
-                    Rectangle().fill(.white.opacity(0.42)).frame(height: 1)
-                    Text(book.title.uppercased())
-                        .font(.system(size: 9, weight: .semibold, design: .serif))
-                        .tracking(0.7).multilineTextAlignment(.center).lineLimit(5)
-                        .minimumScaleFactor(0.7).foregroundStyle(.white.opacity(0.92))
-                        .padding(.horizontal, 5)
-                    Spacer(minLength: 2)
-                    Rectangle().fill(.white.opacity(0.42)).frame(height: 1)
-                    Text("✳").font(.system(size: 11)).foregroundStyle(.white.opacity(0.8))
+                if let coverURL = book.coverURL, let url = URL(string: coverURL) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                        case .failure:
+                            spineArtwork
+                        default:
+                            spineArtwork.overlay { ProgressView().tint(.white.opacity(0.7)) }
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
+                } else {
+                    spineArtwork
                 }
-                .padding(.vertical, 10).padding(.horizontal, 4)
             }
             .frame(height: 154)
+            .clipShape(RoundedRectangle(cornerRadius: 3))
             .overlay(alignment: .leading) { Rectangle().fill(.black.opacity(0.16)).frame(width: 4) }
             Text(book.author).font(.system(size: 10, design: .serif)).foregroundStyle(folioInk.opacity(0.7)).lineLimit(1)
         }
