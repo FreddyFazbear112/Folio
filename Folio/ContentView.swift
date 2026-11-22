@@ -1172,7 +1172,8 @@ private struct FolioLibraryHome: View {
                 .background(Color.white.opacity(0.34), in: RoundedRectangle(cornerRadius: 7))
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 15) {
+                    VStack(spacing: 0) {
+                        HStack(alignment: .top, spacing: 15) {
                         ForEach(recentBooks) { book in
                             Button {
                                 selectedBook = book
@@ -1209,9 +1210,16 @@ private struct FolioLibraryHome: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        }
+                        .padding(.vertical, 3)
+                        .padding(.trailing, 4)
+                        Rectangle()
+                            .fill(LinearGradient(colors: [Color(red: 0.69, green: 0.57, blue: 0.43), Color(red: 0.43, green: 0.31, blue: 0.23), Color(red: 0.31, green: 0.23, blue: 0.18)], startPoint: .top, endPoint: .bottom))
+                            .frame(height: 12)
+                            .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.38)).frame(height: 1) }
+                            .overlay(alignment: .bottom) { Rectangle().fill(Color.black.opacity(0.22)).frame(height: 2) }
+                            .shadow(color: ink.opacity(0.18), radius: 5, x: 0, y: 5)
                     }
-                    .padding(.vertical, 3)
-                    .padding(.trailing, 4)
                 }
             }
         }
