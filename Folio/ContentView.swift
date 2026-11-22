@@ -7,7 +7,7 @@ private let folioPaper = Color(red: 0.96, green: 0.94, blue: 0.89)
 private let folioInk = Color(red: 0.18, green: 0.20, blue: 0.17)
 
 struct ContentView: View {
-    @AppStorage("folio.hasWelcomed") private var hasWelcomed = false
+    @AppStorage("folio.hasCompletedOnboarding.v2") private var hasWelcomed = false
 
     var body: some View {
         if hasWelcomed {
