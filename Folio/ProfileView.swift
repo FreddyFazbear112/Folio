@@ -32,7 +32,7 @@ struct ProfileView: View {
                                 }
                                 .frame(width: 104, height: 104).clipShape(Circle())
                             }
-                            Text(auth.user?.displayName ?? name).font(.system(size: 27, design: .serif))
+                            Text(name).font(.system(size: 27, design: .serif))
                             Text(auth.user?.email ?? "@your.pages").font(.system(size: 11)).tracking(1.2).foregroundStyle(.secondary)
                         }
                         .padding(.top, 28)
