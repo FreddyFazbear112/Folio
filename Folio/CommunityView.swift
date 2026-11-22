@@ -30,8 +30,7 @@ struct CommunityView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("THE READING ROOM")
                                 .font(.system(size: 10, weight: .semibold)).tracking(2.2)
-                            Text("Stories are better
-when shared.")
+                            Text("Stories are better\\nwhen shared.")
                                 .font(.system(size: 32, design: .serif))
                         }
                         HStack {
