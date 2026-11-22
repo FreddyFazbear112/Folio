@@ -11,9 +11,9 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 - Book metadata lookup through the Open Library search API
 - Interactive SceneKit 3D book preview
 - Tactile system sound feedback
-- Reader profile editing and photo picker
+- Reader profile editing, persistent local photo picker, and cloud-synced name/bio
 - Firebase Authentication integration with Google Sign-In
-- Firestore-backed community posts and comments
+- Firestore-backed community posts, book reviews, comments, and reader profiles
 - GitHub Actions simulator build
 
 ## Open in Xcode
@@ -40,7 +40,7 @@ Without Firebase configuration, the local bookshelf and sample reading-room cont
 
 - The initial social feed contains sample posts so the screen has life before a Firebase project is connected. New posts and comments use Firestore after sign-in.
 - Book covers are represented as original 3D book objects and stylized bookshelf spines; real cover-art fetching is a future enhancement.
-- Profile photo selection is currently local to the active app session.
+- Profile photo selection is stored locally on the device; Google account photos are shown as a fallback. Reader name and bio sync to Firestore when signed in.
 - ISBN lookup depends on network access to Open Library.
 - Google Sign-In needs the Firebase plist and reversed client URL scheme described above.
 
