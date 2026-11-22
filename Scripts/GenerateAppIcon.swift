@@ -63,11 +63,11 @@ context.restoreGState()
 
 // Deep ink pages with a warm central gutter.
 let left = NSBezierPath()
-left.move(to: CGPoint(x: 282, y: 405)); left.curve(to: CGPoint(x: 493, y: 554), control1: CGPoint(x: 365, y: 384), control2: CGPoint(x: 455, y: 500))
-left.line(to: CGPoint(x: 493, y: 345)); left.curve(to: CGPoint(x: 282, y: 418), control1: CGPoint(x: 420, y: 360), control2: CGPoint(x: 342, y: 394)); left.close()
+left.move(to: CGPoint(x: 282, y: 405)); left.curve(to: CGPoint(x: 493, y: 554), controlPoint1: CGPoint(x: 365, y: 384), controlPoint2: CGPoint(x: 455, y: 500))
+left.line(to: CGPoint(x: 493, y: 345)); left.curve(to: CGPoint(x: 282, y: 418), controlPoint1: CGPoint(x: 420, y: 360), controlPoint2: CGPoint(x: 342, y: 394)); left.close()
 let right = NSBezierPath()
-right.move(to: CGPoint(x: 531, y: 554)); right.curve(to: CGPoint(x: 742, y: 405), control1: CGPoint(x: 569, y: 500), control2: CGPoint(x: 659, y: 384))
-right.line(to: CGPoint(x: 742, y: 418)); right.curve(to: CGPoint(x: 531, y: 345), control1: CGPoint(x: 681, y: 394), control2: CGPoint(x: 603, y: 360)); right.close()
+right.move(to: CGPoint(x: 531, y: 554)); right.curve(to: CGPoint(x: 742, y: 405), controlPoint1: CGPoint(x: 569, y: 500), controlPoint2: CGPoint(x: 659, y: 384))
+right.line(to: CGPoint(x: 742, y: 418)); right.curve(to: CGPoint(x: 531, y: 345), controlPoint1: CGPoint(x: 681, y: 394), controlPoint2: CGPoint(x: 603, y: 360)); right.close()
 NSColor(calibratedRed: 0.055, green: 0.10, blue: 0.17, alpha: 1).setFill(); left.fill(); right.fill()
 
 // Fine page rules.
