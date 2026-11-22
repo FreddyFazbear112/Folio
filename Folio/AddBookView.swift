@@ -47,7 +47,7 @@ struct AddBookView: View {
                 }
                 if !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Section("A LITTLE PREVIEW") {
-                        BookPreview3D(title: title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1))
+                        BookPreview3D(title: title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1), coverURL: coverURL)
                             .frame(height: 165)
                             .listRowInsets(EdgeInsets())
                     }
