@@ -5,7 +5,7 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 ## Included in the current build
 
 - Animated welcome experience and three-tab navigation
-- Personal bookshelf with To Read, Reading, and Read shelves
+- Personal bookshelf with To Read, Reading, and Read shelves, starting empty for a new reader
 - Local library persistence between launches
 - Add books manually or scan ISBN barcodes with VisionKit
 - Book metadata lookup through the Open Library search API
@@ -15,11 +15,12 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 - Firebase Authentication integration with Google Sign-In
 - Firestore-backed community posts, book reviews, comments, and reader profiles
 - Guided first-book walkthrough with ISBN scan, catalogue lookup, or manual entry
+- Private per-book reading journal with page progress and saved notes
 - One unsigned physical-iPhone IPA artifact on every push to `main` (for re-signing with SideStore/Sideloadly)
 
 ## Open in Xcode
 
-Open `Folio.xcodeproj`, let Swift Package Manager resolve Firebase and Google Sign-In, then select an iPhone simulator and run.
+Open `Folio.xcodeproj`, let Swift Package Manager resolve Firebase and Google Sign-In, then select your connected iPhone and configure your Personal Team for signing.
 
 ## Firebase and Google setup
 
