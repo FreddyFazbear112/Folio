@@ -48,7 +48,7 @@ struct Folio3DBookReader: View {
                     SceneBookStage(
                         leftPage: renderedPage(max(1, page - 1), in: document),
                         rightPage: renderedPage(page, in: document),
-                        cover: coverImage(),
+                        cover: coverArtwork,
                         isOpen: isOpen,
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
@@ -111,10 +111,30 @@ struct Folio3DBookReader: View {
         return pdfPage.thumbnail(of: CGSize(width: 900, height: 1260), for: .mediaBox)
     }
 
-    private func coverImage() -> UIImage? {
-        guard let coverURL, let url = URL(string: coverURL), url.scheme == "https",
-              let data = try? Data(contentsOf: url) else { return nil }
-        return UIImage(data: data)
+    private var coverArtwork: UIImage {
+        let size = CGSize(width: 900, height: 1260)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            let colors = [
+                UIColor(red: 0.18, green: 0.27, blue: 0.28, alpha: 1),
+                UIColor(red: 0.09, green: 0.14, blue: 0.16, alpha: 1)
+            ]
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors.map(\\.cgColor) as CFArray, locations: [0, 1])!
+            context.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .center
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont(name: "Georgia", size: 76) ?? UIFont.systemFont(ofSize: 76),
+                .foregroundColor: UIColor(red: 0.91, green: 0.78, blue: 0.57, alpha: 1),
+                .paragraphStyle: paragraph
+            ]
+            title.draw(in: CGRect(x: 70, y: 430, width: 760, height: 300), withAttributes: attributes)
+            let imprint: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 22, weight: .medium),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.65),
+                .kern: 7
+            ]
+            "FOLIO EDITION".draw(at: CGPoint(x: 310, y: 1120), withAttributes: imprint)
+        }
     }
 
     private func refreshScene() { }
