@@ -75,6 +75,7 @@ struct FolioEPUBReader: View {
         }
         .background(readerBackground)
         .task { load() }
+        .onDisappear { if let contents { try? FileManager.default.removeItem(at: contents.root) } }
     }
 
     @ViewBuilder
@@ -106,7 +107,7 @@ struct FolioEPUBReader: View {
                 Text(book.title)
                     .font(.system(size: 12, weight: .semibold, design: .serif))
                     .lineLimit(1)
-                Text("CHAPTER \\(index + 1) OF \\(book.chapters.count)")
+                Text("CHAPTER \(index + 1) OF \(book.chapters.count)")
                     .font(.system(size: 8, weight: .medium, design: .monospaced))
                     .tracking(1)
             }
@@ -123,7 +124,7 @@ struct FolioEPUBReader: View {
         HStack {
             Text(book.chapters[index].title).lineLimit(1)
             Spacer()
-            Text("\\(Int(Double(index + 1) / Double(book.chapters.count) * 100))%")
+            Text("\(Int(Double(index + 1) / Double(book.chapters.count) * 100))%")
         }
         .font(.system(size: 9, design: .serif))
         .foregroundStyle(sepia ? Color.secondary : Color.white.opacity(0.65))
