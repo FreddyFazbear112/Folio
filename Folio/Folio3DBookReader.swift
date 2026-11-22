@@ -267,14 +267,43 @@ private struct SceneBookStage: UIViewRepresentable {
     private func makeScene() -> SCNScene {
         let scene = SCNScene()
         let root = scene.rootNode
-        let paperBlock = SCNBox(width: 5.82, height: 4.25, length: 0.20, chamferRadius: 0.045)
+        // A compact, substantial page block with a visible fore-edge.
+        let paperBlock = SCNBox(width: 3.00, height: 4.28, length: 0.245, chamferRadius: 0.035)
         let blockMaterial = SCNMaterial()
         blockMaterial.diffuse.contents = paper
+        blockMaterial.roughness.contents = 0.96
         paperBlock.materials = Array(repeating: blockMaterial, count: 6)
         let block = SCNNode(geometry: paperBlock)
         block.name = "paper-block"
-        block.position.z = -0.10
+        block.position.z = -0.105
         root.addChildNode(block)
+
+        // Fine stacked rules on the fore-edge suggest gathered signatures.
+        for index in 0..<5 {
+            let ruleGeometry = SCNBox(width: 0.0025, height: 4.12, length: 0.002, chamferRadius: 0)
+            let ruleMaterial = SCNMaterial()
+            ruleMaterial.diffuse.contents = UIColor(red: 0.69, green: 0.63, blue: 0.52, alpha: 1)
+            ruleMaterial.lightingModel = .constant
+            ruleGeometry.materials = Array(repeating: ruleMaterial, count: 6)
+            let rule = SCNNode(geometry: ruleGeometry)
+            rule.position = SCNVector3(1.501 + Float(index) * 0.0035, 0, 0.022)
+            root.addChildNode(rule)
+        }
+
+        let boardMaterial = SCNMaterial()
+        boardMaterial.diffuse.contents = UIColor(red: 0.22, green: 0.16, blue: 0.12, alpha: 1)
+        boardMaterial.roughness.contents = 0.88
+        let rearBoardGeometry = SCNBox(width: 3.08, height: 4.43, length: 0.075, chamferRadius: 0.035)
+        rearBoardGeometry.materials = Array(repeating: boardMaterial, count: 6)
+        let rearBoard = SCNNode(geometry: rearBoardGeometry)
+        rearBoard.position = SCNVector3(0, 0, -0.235)
+        root.addChildNode(rearBoard)
+
+        let spineGeometry = SCNBox(width: 0.16, height: 4.39, length: 0.31, chamferRadius: 0.07)
+        spineGeometry.materials = Array(repeating: boardMaterial, count: 6)
+        let spine = SCNNode(geometry: spineGeometry)
+        spine.position = SCNVector3(0, 0, -0.02)
+        root.addChildNode(spine)
 
         func pageNode(_ name: String, x: Float) -> SCNNode {
             let plane = SCNPlane(width: 1.47, height: 4.17)
@@ -294,33 +323,72 @@ private struct SceneBookStage: UIViewRepresentable {
 
         let hinge = SCNNode()
         hinge.name = "cover-hinge"
-        hinge.position = SCNVector3(0, 0, 0.09)
-        let coverPlane = SCNPlane(width: 2.96, height: 4.34)
+        hinge.position = SCNVector3(0, 0, 0.105)
+        let frontBoardGeometry = SCNBox(width: 3.08, height: 4.43, length: 0.075, chamferRadius: 0.035)
+        frontBoardGeometry.materials = Array(repeating: boardMaterial, count: 6)
+        let frontBoard = SCNNode(geometry: frontBoardGeometry)
+        frontBoard.position.x = 1.54
+        hinge.addChildNode(frontBoard)
+
+        let coverPlane = SCNPlane(width: 3.025, height: 4.375)
         let coverMaterial = SCNMaterial()
         coverMaterial.diffuse.contents = cover ?? paper
         coverMaterial.isDoubleSided = true
-        coverMaterial.roughness.contents = 0.86
+        coverMaterial.roughness.contents = 0.9
+        coverMaterial.lightingModel = .lambert
         coverPlane.materials = [coverMaterial]
         let coverNode = SCNNode(geometry: coverPlane)
         coverNode.name = "front-cover"
-        coverNode.position.x = 1.48
+        coverNode.position = SCNVector3(1.54, 0, 0.039)
         hinge.addChildNode(coverNode)
         root.addChildNode(hinge)
 
+        let gutterGeometry = SCNBox(width: 0.075, height: 4.12, length: 0.012, chamferRadius: 0.018)
+        let gutterMaterial = SCNMaterial()
+        gutterMaterial.diffuse.contents = UIColor(white: 0.25, alpha: 1)
+        gutterMaterial.lightingModel = .constant
+        gutterGeometry.materials = Array(repeating: gutterMaterial, count: 6)
+        let gutter = SCNNode(geometry: gutterGeometry)
+        gutter.position = SCNVector3(0, 0, 0.025)
+        root.addChildNode(gutter)
+
+        let ambient = SCNNode()
+        let ambientLamp = SCNLight()
+        ambientLamp.type = .ambient
+        ambientLamp.intensity = 260
+        ambientLamp.color = UIColor(red: 0.78, green: 0.72, blue: 0.63, alpha: 1)
+        ambient.light = ambientLamp
+        root.addChildNode(ambient)
+
         let light = SCNNode()
         let lamp = SCNLight()
-        lamp.type = .omni
-        lamp.intensity = 900
+        lamp.type = .directional
+        lamp.intensity = 1050
         lamp.color = UIColor(red: 1, green: 0.88, blue: 0.69, alpha: 1)
+        lamp.castsShadow = true
+        lamp.shadowRadius = 12
+        lamp.shadowColor = UIColor.black.withAlphaComponent(0.42)
+        lamp.shadowMode = .deferred
         light.light = lamp
-        light.position = SCNVector3(-1.8, 3.5, 5)
+        light.eulerAngles = SCNVector3(-0.58, -0.42, 0)
         root.addChildNode(light)
 
+        let fill = SCNNode()
+        let fillLamp = SCNLight()
+        fillLamp.type = .omni
+        fillLamp.intensity = 180
+        fillLamp.color = UIColor(red: 0.72, green: 0.79, blue: 0.88, alpha: 1)
+        fill.light = fillLamp
+        fill.position = SCNVector3(2.4, -1.5, 3.5)
+        root.addChildNode(fill)
+
         let camera = SCNCamera()
-        camera.fieldOfView = 34
+        camera.fieldOfView = 31
+        camera.wantsHDR = true
+        camera.bloomIntensity = 0.12
         let cameraNode = SCNNode()
         cameraNode.camera = camera
-        cameraNode.position = SCNVector3(0, 0, 13.0)
+        cameraNode.position = SCNVector3(0, 0, 12.2)
         root.addChildNode(cameraNode)
         return scene
     }
