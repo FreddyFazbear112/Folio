@@ -1,4 +1,4 @@
-name: iOS build
+name: Folio iPhone sideload build
 
 on:
   push:
@@ -12,53 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: macos-15
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
-
-      - name: Cache Swift packages
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData/SourcePackages
-          key: ${{ runner.os }}-spm-${{ hashFiles('Folio.xcodeproj/project.pbxproj') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
-
-      - name: Resolve Swift packages
-        run: xcodebuild -resolvePackageDependencies -project Folio.xcodeproj -scheme Folio
-
-      - name: Build for iOS Simulator
-        run: |
-          xcodebuild \
-            -project Folio.xcodeproj \
-            -scheme Folio \
-            -sdk iphonesimulator \
-            -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            build
-
-      - name: Package simulator app
-        run: |
-          ditto -c -k --sequesterRsrc --keepParent \
-            build/Build/Products/Debug-iphonesimulator/Folio.app \
-            Folio-iOS-Simulator.zip
-
-      - name: Upload simulator build
-        uses: actions/upload-artifact@v4
-        with:
-          name: Folio-iOS-Simulator
-          path: Folio-iOS-Simulator.zip
-          if-no-files-found: error
-
-  unsigned-device-ipa:
-    name: Unsigned iPhone IPA (device build)
+  sideloadable-ipa:
+    name: Sideloadable iPhone IPA (unsigned)
     runs-on: macos-15
     if: github.event_name != 'pull_request'
     steps:
@@ -107,115 +62,3 @@ jobs:
           path: Folio-iOS-Unsigned.ipa
           if-no-files-found: error
 
-  build-ipa:
-    name: Signed iPhone IPA
-    runs-on: macos-15
-    if: github.event_name != 'pull_request'
-    env:
-      IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-      IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
-      IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Check signing configuration
-        id: signing
-        shell: bash
-        run: |
-          if [[ -n "$IOS_CERTIFICATE_BASE64" && -n "$IOS_CERTIFICATE_PASSWORD" && -n "$IOS_PROVISIONING_PROFILE_BASE64" && -n "$IOS_TEAM_ID" ]]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "Apple signing secrets are not configured; skipping the device IPA."
-          fi
-
-      - name: Select Xcode
-        if: steps.signing.outputs.available == 'true'
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
-
-      - name: Resolve Swift packages
-        if: steps.signing.outputs.available == 'true'
-        run: xcodebuild -resolvePackageDependencies -project Folio.xcodeproj -scheme Folio
-
-      - name: Install Apple signing certificate
-        if: steps.signing.outputs.available == 'true'
-        shell: bash
-        run: |
-          CERT_PATH="$RUNNER_TEMP/folio-distribution.p12"
-          PROFILE_PATH="$RUNNER_TEMP/folio.mobileprovision"
-          KEYCHAIN_PATH="$RUNNER_TEMP/folio-signing.keychain-db"
-          echo "$IOS_CERTIFICATE_BASE64" | base64 -D > "$CERT_PATH"
-          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -D > "$PROFILE_PATH"
-          security create-keychain -p "$IOS_CERTIFICATE_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$IOS_CERTIFICATE_PASSWORD" "$KEYCHAIN_PATH"
-          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$IOS_CERTIFICATE_PASSWORD" "$KEYCHAIN_PATH"
-          security list-keychains -d user -s "$KEYCHAIN_PATH"
-          security default-keychain -d user -s "$KEYCHAIN_PATH"
-          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print Name' "$RUNNER_TEMP/profile.plist")
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
-          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
-          echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
-
-      - name: Archive iOS app
-        if: steps.signing.outputs.available == 'true'
-        run: |
-          xcodebuild \
-            -project Folio.xcodeproj \
-            -scheme Folio \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/Folio.xcarchive" \
-            CODE_SIGNING_ALLOWED=YES \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM="$IOS_TEAM_ID" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-            archive
-
-      - name: Create export options
-        if: steps.signing.outputs.available == 'true'
-        shell: bash
-        run: |
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>destination</key><string>export</string>
-            <key>method</key><string>app-store-connect</string>
-            <key>signingStyle</key><string>manual</string>
-            <key>teamID</key><string>$IOS_TEAM_ID</string>
-            <key>provisioningProfiles</key>
-            <dict><key>com.folio.app</key><string>$PROFILE_NAME</string></dict>
-          </dict>
-          </plist>
-          PLIST
-
-      - name: Export signed IPA
-        if: steps.signing.outputs.available == 'true'
-        run: |
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/Folio.xcarchive" \
-            -exportPath "$RUNNER_TEMP/ipa" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
-
-      - name: Upload signed IPA
-        if: steps.signing.outputs.available == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Folio-iOS-IPA
-          path: ${{ runner.temp }}/ipa/*.ipa
-          if-no-files-found: error
-
-      - name: Clean up signing keychain
-        if: always() && steps.signing.outputs.available == 'true'
-        run: |
-          security delete-keychain "$RUNNER_TEMP/folio-signing.keychain-db" || true
