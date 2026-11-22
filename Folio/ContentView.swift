@@ -381,7 +381,7 @@ private struct BookDetailView: View {
     let book: Book
 
     private var savedBook: Book { library.books.first(where: { $0.id == book.id }) ?? book }
-    private var readyToRead: Bool { savedBook.ownedISBN != nil && savedBook.digitalFileName != nil }
+    private var readyToRead: Bool { savedBook.digitalFileName != nil }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -415,64 +415,46 @@ private struct BookDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 12) {
-                    sectionLabel("YOUR READING COPY")
-                    if savedBook.ownedISBN != nil {
-                        Label("Physical edition verified", systemImage: "checkmark.seal.fill")
-                            .font(.system(size: 13, design: .serif))
-                            .foregroundStyle(Color(red: 0.30, green: 0.43, blue: 0.32))
-                    } else {
-                        Text("Verify the edition with the barcode on your physical copy.")
-                            .font(.system(size: 14, design: .serif))
-                            .foregroundStyle(folioInk.opacity(0.65))
-                        actionRow("Scan barcode", symbol: "barcode.viewfinder", prominent: true) { scanning = true }
+                    HStack {
+                        sectionLabel("YOUR READING COPY")
+                        Spacer()
+                        if savedBook.digitalFileName != nil {
+                            Label("ON THIS DEVICE", systemImage: "checkmark.circle.fill")
+                                .font(.system(size: 8, weight: .semibold)).tracking(0.8)
+                                .foregroundStyle(Color(red: 0.30, green: 0.43, blue: 0.32))
+                        }
                     }
                     if let name = savedBook.digitalFileName {
-                        Label(name, systemImage: "doc.text")
+                        Label(name, systemImage: "book.pages")
                             .font(.system(size: 12, design: .serif))
+                            .foregroundStyle(folioInk.opacity(0.62)).lineLimit(1)
+                        actionRow("Start reading", symbol: "book.pages", prominent: true) { openReader() }
+                    } else {
+                        Text("A free digital edition will appear here when the catalogue has one available.")
+                            .font(.system(size: 13, design: .serif))
                             .foregroundStyle(folioInk.opacity(0.62))
-                            .lineLimit(1)
                     }
-                    actionRow(savedBook.digitalFileName == nil ? "Import an EPUB or PDF" : "Replace reading copy", symbol: "square.and.arrow.down") { importing = true }
-                    actionRow("Open reader", symbol: "book.pages", prominent: true, disabled: !readyToRead) { openReader() }
-                    if !readyToRead {
-                        Text("Available after you've verified your copy and imported its digital file.")
-                            .font(.system(size: 11, design: .serif))
-                            .foregroundStyle(folioInk.opacity(0.48))
-                    }
-                    if let message {
-                        Text(message).font(.system(size: 12, design: .serif)).foregroundStyle(.secondary)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        sectionLabel("READING SESSION")
-                        Spacer()
-                        Text(timerStart == nil ? "TAKE YOUR TIME" : "SESSION IN PROGRESS")
-                            .font(.system(size: 9, weight: .medium))
-                            .tracking(1)
-                            .foregroundStyle(folioInk.opacity(0.42))
-                    }
-                    HStack(alignment: .center) {
-                        TimelineView(.periodic(from: .now, by: 1)) { _ in
-                            let seconds = Int(elapsed + (timerStart.map { Date().timeIntervalSince($0) } ?? 0))
-                            Text(String(format: "%02d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60))
-                                .font(.system(size: 31, design: .serif).monospacedDigit())
-                                .foregroundStyle(folioInk)
+                    if savedBook.ownedISBN == nil {
+                        DisclosureGroup {
+                            Text("Scan the barcode on your printed copy to record its edition. This is optional and isn't required to read free digital books.")
+                                .font(.system(size: 11, design: .serif))
+                                .foregroundStyle(folioInk.opacity(0.58))
+                            actionRow("Verify physical edition", symbol: "barcode.viewfinder") { scanning = true }
+                        } label: {
+                            Text("I own a printed copy")
+                                .font(.system(size: 12, weight: .medium, design: .serif))
+                                .foregroundStyle(folioInk.opacity(0.72))
                         }
-                        Spacer()
-                        Button(timerStart == nil ? "Start session" : "Pause") {
-                            if let start = timerStart { elapsed += Date().timeIntervalSince(start); timerStart = nil }
-                            else { timerStart = Date() }
-                            SoundEffects.softTap()
-                        }
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(folioInk)
+                    } else {
+                        Label("Printed edition verified", systemImage: "checkmark.seal.fill")
+                            .font(.system(size: 12, design: .serif))
+                            .foregroundStyle(Color(red: 0.30, green: 0.43, blue: 0.32))
                     }
+                    if savedBook.digitalFileName == nil {
+                        actionRow("Import a file I already have", symbol: "square.and.arrow.down") { importing = true }
+                    }
+                    if let message { Text(message).font(.system(size: 12, design: .serif)).foregroundStyle(.secondary) }
                 }
-                .padding(17)
-                .background(Color.white.opacity(0.58))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 12) {
                     sectionLabel("READING JOURNAL")
