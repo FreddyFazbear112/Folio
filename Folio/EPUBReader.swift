@@ -64,6 +64,7 @@ private enum FolioEPUBArchive {
 struct FolioEPUBReader: View {
     let url: URL
     let sepia: Bool
+    let initialChapter: Int
     let onProgress: (Int, Int) -> Void
     @State private var contents: FolioEPUBContents?
     @State private var index = 0
@@ -116,7 +117,7 @@ struct FolioEPUBReader: View {
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let result = try FolioEPUBArchive.open(url)
-                DispatchQueue.main.async { contents = result; index = 0; loading = false; onProgress(1, result.chapters.count) }
+                DispatchQueue.main.async { index = min(max(initialChapter, 0), result.chapters.count - 1); contents = result; loading = false; onProgress(index + 1, result.chapters.count) }
             } catch {
                 DispatchQueue.main.async { self.error = error.localizedDescription; loading = false }
             }
