@@ -14,6 +14,30 @@ struct CatalogueBook: Identifiable, Equatable {
 }
 
 struct BookLookupService {
+    enum CatalogueError: LocalizedError {
+        case invalidISBN
+        var errorDescription: String? { "Enter a valid 10- or 13-digit ISBN." }
+    }
+
+    static func isValidISBN(_ value: String) -> Bool {
+        let isbn = value.uppercased().filter { $0.isNumber || $0 == "X" }
+        if isbn.count == 10 {
+            let chars = Array(isbn)
+            let digits = chars.enumerated().map { index, char -> Int? in
+                if char == "X" { return index == 9 ? 10 : nil }
+                return char.wholeNumberValue
+            }
+            guard digits.allSatisfy({ $0 != nil }) else { return false }
+            return zip(digits.compactMap { $0 }, stride(from: 10, through: 1, by: -1)).reduce(0) { $0 + $1.0 * $1.1 } % 11 == 0
+        }
+        if isbn.count == 13 {
+            let digits = isbn.compactMap(\.wholeNumberValue)
+            guard digits.count == 13 else { return false }
+            let sum = digits.enumerated().reduce(0) { $0 + $1.element * ($1.offset.isMultiple(of: 2) ? 1 : 3) }
+            return sum.isMultiple(of: 10)
+        }
+        return false
+    }
     private struct OpenLibraryResponse: Decodable { let docs: [OpenLibraryDocument] }
     private struct OpenLibraryDocument: Decodable {
         let key: String?
@@ -50,8 +74,9 @@ struct BookLookupService {
     }
 
     func lookup(isbn: String) async throws -> CatalogueBook? {
-        let clean = isbn.filter(\.isNumber)
-        guard !clean.isEmpty else { return nil }
+        let raw = isbn.uppercased().filter { $0.isNumber || $0 == "X" }
+        let clean = raw.filter(\.isNumber)
+        guard Self.isValidISBN(raw) else { throw CatalogueError.invalidISBN }
         var components = URLComponents(string: "https://openlibrary.org/search.json")
         components?.queryItems = [URLQueryItem(name: "isbn", value: clean), URLQueryItem(name: "limit", value: "1")]
         guard let url = components?.url else { return nil }
