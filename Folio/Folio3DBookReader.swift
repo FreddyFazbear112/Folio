@@ -17,6 +17,9 @@ struct Folio3DBookReader: View {
     @State private var page = 1
     @State private var isOpen = false
     @State private var sepia = true
+    @State private var coverImage: UIImage?
+    @State private var loadError: String?
+    @State private var turning = false
 
     private var total: Int { document?.pageCount ?? 0 }
 
@@ -46,9 +49,9 @@ struct Folio3DBookReader: View {
                 Spacer(minLength: 12)
                 if let document {
                     SceneBookStage(
-                        leftPage: renderedPage(max(1, page - 1), in: document),
+                        leftPage: page > 1 ? renderedPage(page - 1, in: document) : nil,
                         rightPage: renderedPage(page, in: document),
-                        cover: coverArtwork,
+                        cover: coverImage ?? coverArtwork,
                         isOpen: isOpen,
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
@@ -89,10 +92,17 @@ struct Folio3DBookReader: View {
         }
         .preferredColorScheme(.dark)
         .task {
-            document = PDFDocument(url: url)
-            if let document, document.pageCount > 0 {
-                page = min(max(initialPage, 1), document.pageCount)
-                onProgress(page, document.pageCount)
+            guard let loaded = PDFDocument(url: url), loaded.pageCount > 0 else {
+                loadError = "The PDF may be damaged, encrypted, or unavailable. Try importing it again."
+                return
+            }
+            document = loaded
+            page = min(max(initialPage, 1), loaded.pageCount)
+            onProgress(page, loaded.pageCount)
+            if let coverURL, let remoteURL = URL(string: coverURL), remoteURL.scheme == "https",
+               let (data, _) = try? await URLSession.shared.data(from: remoteURL),
+               let image = UIImage(data: data) {
+                coverImage = image
             }
         }
         .onChange(of: page) { _, value in if total > 0 { onProgress(value, total) } }
@@ -102,8 +112,11 @@ struct Folio3DBookReader: View {
         guard isOpen, total > 0 else { return }
         let next = min(max(page + delta, 1), total)
         guard next != page else { return }
-        page = next
+        guard !turning else { return }
+        turning = true
+        withAnimation(.easeInOut(duration: 0.22)) { page = next }
         SoundEffects.pageTurn()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) { turning = false }
     }
 
     private func renderedPage(_ number: Int, in document: PDFDocument) -> UIImage? {
@@ -170,6 +183,7 @@ private struct SceneBookStage: UIViewRepresentable {
         guard let scene = view.scene else { return }
         scene.rootNode.childNode(withName: "left-page", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = leftPage ?? paper
         scene.rootNode.childNode(withName: "right-page", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = rightPage ?? paper
+        scene.rootNode.childNode(withName: "paper-block", recursively: true)?.geometry?.materials.forEach { $0.diffuse.contents = paper }
         if let cover { scene.rootNode.childNode(withName: "front-cover", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = cover }
         if let hinge = context.coordinator.coverPivot {
             SCNTransaction.begin()
@@ -187,6 +201,7 @@ private struct SceneBookStage: UIViewRepresentable {
         blockMaterial.diffuse.contents = paper
         paperBlock.materials = Array(repeating: blockMaterial, count: 6)
         let block = SCNNode(geometry: paperBlock)
+        block.name = "paper-block"
         block.position.z = -0.10
         root.addChildNode(block)
 
