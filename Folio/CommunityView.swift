@@ -15,6 +15,9 @@ struct CommunityView: View {
     @EnvironmentObject private var auth: AuthManager
     @State private var liked: Set<String> = []
     @State private var draft = ""
+    @State private var isReview = false
+    @State private var reviewBook = ""
+    @State private var rating = 5
     @State private var showingComposer = false
     @State private var selectedForComments: CommunityPost?
     @State private var isPublishing = false
@@ -58,8 +61,29 @@ struct CommunityView: View {
             .sheet(isPresented: $showingComposer) {
                 NavigationStack {
                     Form {
-                        Section("YOUR THOUGHTS") {
+                        Section("WHAT WOULD YOU LIKE TO SHARE?") {
+                            Picker("Post type", selection: $isReview) {
+                                Text("Reading note").tag(false)
+                                Text("Book review").tag(true)
+                            }
+                            .pickerStyle(.segmented)
+                            if isReview {
+                                TextField("Book title and author", text: $reviewBook)
+                                Picker("Your rating", selection: $rating) {
+                                    ForEach(1...5, id: \\.self) { value in
+                                        Text(String(repeating: "★", count: value)).tag(value)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                            }
                             TextEditor(text: $draft).frame(minHeight: 140)
+                                .overlay(alignment: .topLeading) {
+                                    if draft.isEmpty {
+                                        Text(isReview ? "What did this book make you feel?" : "What's on your reading mind?")
+                                            .font(.system(size: 13, design: .serif)).foregroundStyle(.tertiary)
+                                            .padding(.top, 8).padding(.leading, 5).allowsHitTesting(false)
+                                    }
+                                }
                         }
                         Section {
                             Button {
@@ -142,10 +166,12 @@ struct CommunityView: View {
         defer { isPublishing = false }
         let clean = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = user.displayName ?? "A Folio reader"
-        let post = CommunityPost(id: UUID().uuidString, name: displayName, handle: "@reader", title: "A note from my reading journal", book: "Currently reading", body: clean, likes: 0, mark: String(displayName.prefix(1)))
+        let post = CommunityPost(id: UUID().uuidString, name: displayName, handle: "@reader", title: isReview ? "A reader’s review · \\(rating)/5" : "A note from my reading journal", book: isReview ? reviewBook : "Currently reading", body: clean, likes: 0, mark: String(displayName.prefix(1)))
         do {
             try await CommunityService().publish(post, userID: user.uid)
             draft = ""
+            reviewBook = ""
+            isReview = false
             showingComposer = false
             notice = "Your note has been shared."
             await refreshFeed()
@@ -190,7 +216,7 @@ private struct CommentSheet: View {
 
     @MainActor
     private func loadComments() async {
-        guard !post.id.hasPrefix("sample-"), auth.user != nil else { return }
+        guard auth.user != nil else { return }
         comments = (try? await CommunityService().fetchComments(postID: post.id)) ?? []
     }
 
