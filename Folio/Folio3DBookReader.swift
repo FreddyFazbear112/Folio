@@ -255,11 +255,23 @@ private struct SceneBookStage: UIViewRepresentable {
             x: 0,
             y: movingForward ? -.pi : .pi,
             z: 0,
-            duration: 0.58,
+            duration: 0.64,
             usesShortestUnitArc: false
         )
         flip.timingMode = .easeInEaseOut
-        hinge.runAction(flip) { [weak hinge] in
+
+        // Lift the sheet off the paper block as it crosses the gutter. The
+        // small roll and fore-edge compression keep the turn from looking
+        // like a rigid card rotating in a flat plane.
+        let curl = SCNAction.customAction(duration: 0.64) { node, elapsed in
+            let progress = CGFloat(min(max(elapsed / 0.64, 0), 1))
+            let lift = Float(sin(progress * .pi))
+            node.position.z = 0.075 + lift * 0.24
+            leaf.eulerAngles.z = Float(sin(progress * .pi)) * (movingForward ? 0.045 : -0.045)
+            leaf.scale.x = 1 - Float(sin(progress * .pi)) * 0.035
+        }
+        curl.timingMode = .easeInEaseOut
+        hinge.runAction(.group([flip, curl])) { [weak hinge] in
             DispatchQueue.main.async { hinge?.removeFromParentNode() }
         }
     }
