@@ -192,6 +192,76 @@ private struct BookDetailView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 22) {
+                bookHeading
+                bookPreview
+                editionStudio
+                readingCopySection
+                readingTimerSection
+                journalSection
+                shelfSection
+            }
+            .padding(.horizontal, 22)
+            .padding(.top, 14)
+            .padding(.bottom, 34)
+        }
+        .background(folioPaper.ignoresSafeArea())
+        .confirmationDialog("Remove this book?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
+            Button("Remove from my shelf", role: .destructive) { library.remove(book); dismiss() }
+            Button("Keep book", role: .cancel) {}
+        } message: {
+            Text("This removes the book and its reading details from this device.")
+        }
+        .onAppear {
+            currentPageText = book.currentPage.map(String.init) ?? ""
+            totalPagesText = book.totalPages.map(String.init) ?? ""
+            readingNote = book.readingNote ?? ""
+            frontCoverURLText = book.coverURL ?? ""
+            backCoverURLText = book.backCoverURL ?? ""
+            spineColorHex = book.spineColorHex ?? "765447"
+            elapsed = UserDefaults.standard.double(forKey: timerElapsedKey)
+            if let started = UserDefaults.standard.object(forKey: timerStartedKey) as? Date {
+                timerStart = started
+            }
+        }
+        .onDisappear { persistTimerState() }
+        .sheet(isPresented: $scanning) {
+            NavigationStack {
+                ISBNScannerView(onScan: { code in
+                    scanning = false
+                    Task { await verifyBarcode(code) }
+                }, onCancel: { scanning = false })
+                .ignoresSafeArea()
+                .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel") { scanning = false } } }
+            }
+        }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data, .plainText, .rtf, .html], allowsMultipleSelection: false) { result in
+            importCopy(result)
+        }
+        .fullScreenCover(isPresented: $reading) {
+            if let readerURL {
+                if readerURL.pathExtension.lowercased() == "pdf" {
+                    Folio3DBookReader(
+                        url: readerURL,
+                        title: savedBook.title,
+                        coverURL: savedBook.coverURL,
+                        initialPage: book.currentPage ?? 1
+                    ) { page, total in
+                        currentPageText = String(page)
+                        totalPagesText = String(total)
+                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                    }
+                } else {
+                    FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
+                        currentPageText = String(page)
+                        totalPagesText = String(total)
+                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                    }
+                }
+            }
+        }
+    }
+
+    private var bookHeading: some View {
                 VStack(spacing: 7) {
                     Text(savedBook.title)
                         .font(.system(size: 29, weight: .regular, design: .serif))
@@ -206,7 +276,9 @@ private struct BookDetailView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 12)
+    }
 
+    private var bookPreview: some View {
                 VStack(spacing: 8) {
                     BookPreview3D(title: savedBook.title, tint: spineTint, coverURL: savedBook.coverURL, backCoverURL: savedBook.backCoverURL)
                         .frame(height: 225)
@@ -219,7 +291,9 @@ private struct BookDetailView: View {
                 .padding(.vertical, 10)
                 .background(Color.white.opacity(0.30))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
 
+    private var editionStudio: some View {
                 VStack(alignment: .leading, spacing: 12) {
                     sectionLabel("EDITION STUDIO")
                     Text("Make this copy feel like yours. Add artwork hosted online and choose a spine finish.")
@@ -259,7 +333,9 @@ private struct BookDetailView: View {
                 .padding(16)
                 .background(Color.white.opacity(0.48))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
 
+    private var readingCopySection: some View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         sectionLabel("YOUR READING COPY")
@@ -320,7 +396,9 @@ private struct BookDetailView: View {
                     }
                     if let message { Text(message).font(.system(size: 12, design: .serif)).foregroundStyle(.secondary) }
                 }
+    }
 
+    private var readingTimerSection: some View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         sectionLabel("A MOMENT FOR READING")
@@ -404,7 +482,9 @@ private struct BookDetailView: View {
                 .padding(16)
                 .background(Color.white.opacity(0.56))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
 
+    private var journalSection: some View {
                 VStack(alignment: .leading, spacing: 12) {
                     sectionLabel("READING JOURNAL")
                     HStack(spacing: 10) {
@@ -442,7 +522,9 @@ private struct BookDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
+    }
 
+    private var shelfSection: some View {
                 VStack(alignment: .leading, spacing: 10) {
                     sectionLabel("ON YOUR SHELF")
                     Picker("Reading status", selection: Binding(get: { savedBook.status }, set: { library.update(book, status: $0) })) {
@@ -453,66 +535,6 @@ private struct BookDetailView: View {
                     }
                     .padding(.top, 5)
                 }
-            }
-            .padding(.horizontal, 22)
-            .padding(.top, 14)
-            .padding(.bottom, 34)
-        }
-        .background(folioPaper.ignoresSafeArea())
-        .confirmationDialog("Remove this book?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
-            Button("Remove from my shelf", role: .destructive) { library.remove(book); dismiss() }
-            Button("Keep book", role: .cancel) {}
-        } message: {
-            Text("This removes the book and its reading details from this device.")
-        }
-        .onAppear {
-            currentPageText = book.currentPage.map(String.init) ?? ""
-            totalPagesText = book.totalPages.map(String.init) ?? ""
-            readingNote = book.readingNote ?? ""
-            frontCoverURLText = book.coverURL ?? ""
-            backCoverURLText = book.backCoverURL ?? ""
-            spineColorHex = book.spineColorHex ?? "765447"
-            elapsed = UserDefaults.standard.double(forKey: timerElapsedKey)
-            if let started = UserDefaults.standard.object(forKey: timerStartedKey) as? Date {
-                timerStart = started
-            }
-        }
-        .onDisappear { persistTimerState() }
-        .sheet(isPresented: $scanning) {
-            NavigationStack {
-                ISBNScannerView(onScan: { code in
-                    scanning = false
-                    Task { await verifyBarcode(code) }
-                }, onCancel: { scanning = false })
-                .ignoresSafeArea()
-                .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel") { scanning = false } } }
-            }
-        }
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data, .plainText, .rtf, .html], allowsMultipleSelection: false) { result in
-            importCopy(result)
-        }
-        .fullScreenCover(isPresented: $reading) {
-            if let readerURL {
-                if readerURL.pathExtension.lowercased() == "pdf" {
-                    Folio3DBookReader(
-                        url: readerURL,
-                        title: savedBook.title,
-                        coverURL: savedBook.coverURL,
-                        initialPage: book.currentPage ?? 1
-                    ) { page, total in
-                        currentPageText = String(page)
-                        totalPagesText = String(total)
-                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
-                    }
-                } else {
-                    FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
-                        currentPageText = String(page)
-                        totalPagesText = String(total)
-                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
-                    }
-                }
-            }
-        }
     }
 
     private var spineTint: UIColor {
