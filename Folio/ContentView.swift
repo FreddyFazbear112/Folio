@@ -710,9 +710,9 @@ private struct FirstBookTutorialView: View {
     private let steps: [(symbol: String, eyebrow: String, title: String, detail: String)] = [
         ("books.vertical.fill", "WELCOME TO YOUR SHELF", "A home for every story.", "Build a personal library that feels like your own little bookshop. Your collection stays on your iPhone."),
         ("barcode.viewfinder", "FIND YOUR NEXT READ", "Search, scan, or simply type.", "Add a book by ISBN barcode or catalogue search. If a book is hard to find, enter its title and author yourself."),
-        ("bookmark.fill", "MAKE IT YOUR EDITION", "Give every book a place.", "Sort books into To Read, Reading, and Read. Open a book to customise its edition, record pages, and keep private reading notes."),
-        ("book.pages", "READ WHAT YOU OWN", "Bring your own reading copy.", "For books you own, verify the printed ISBN and import your own EPUB or PDF file to open it in Folio. A shelf entry alone does not include a digital book."),
-        ("hourglass", "MAKE TIME FOR STORIES", "Read at your own pace.", "Use the reading timer, keep track of progress, and visit the Reading Room to share genuine notes with other readers.")
+        ("bookmark.fill", "MAKE IT YOUR EDITION", "Give every book a place.", "Sort your library into To Read, Reading, and Read. Keep page progress and a private note for every story."),
+        ("book.pages", "FIND IT. FOLIO FINDS THE FILE.", "Open a book, not a file picker.", "Search Folio's catalogue. Free public-domain EPUBs and PDFs can be downloaded straight to your shelf. Other editions are shown when no free digital copy is available."),
+        ("hourglass", "MAKE TIME FOR STORIES", "Read at your own pace.", "Use the reading timer, keep track of progress, and visit the Reading Room when community features are configured.")
     ]
 
     var body: some View {
