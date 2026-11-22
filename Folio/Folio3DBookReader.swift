@@ -221,18 +221,35 @@ private struct SceneBookStage: UIViewRepresentable {
     /// pages, so the real document remains the source of every visible page.
     private func animatePageTurn(in scene: SCNScene, movingForward: Bool, front: UIImage?, reverse: UIImage?) {
         guard let front else { return }
-        let material = SCNMaterial()
-        material.diffuse.contents = front
-        material.isDoubleSided = true
-        material.lightingModel = .lambert
-        material.roughness.contents = 0.92
+        let frontMaterial = SCNMaterial()
+        frontMaterial.diffuse.contents = front
+        frontMaterial.lightingModel = .lambert
+        frontMaterial.roughness.contents = 0.92
 
+        // The pivot stays on the spine; the page itself is offset to the
+        // fore-edge, which makes the sheet sweep across the book rather
+        // than spin around its own centre.
+        let hinge = SCNNode()
+        hinge.position = SCNVector3(0, 0, 0.075)
         let leaf = SCNNode(geometry: SCNPlane(width: 1.47, height: 4.17))
-        leaf.geometry?.materials = [material]
-        leaf.position = SCNVector3(movingForward ? 0.735 : -0.735, 0, 0.075)
+        leaf.geometry?.materials = [frontMaterial]
+        leaf.position.x = movingForward ? 0.735 : -0.735
         leaf.castsShadow = true
         leaf.renderingOrder = 10
-        scene.rootNode.addChildNode(leaf)
+        hinge.addChildNode(leaf)
+
+        if let reverse {
+            let backMaterial = SCNMaterial()
+            backMaterial.diffuse.contents = reverse
+            backMaterial.lightingModel = .lambert
+            backMaterial.roughness.contents = 0.92
+            let back = SCNNode(geometry: SCNPlane(width: 1.47, height: 4.17))
+            back.geometry?.materials = [backMaterial]
+            back.position.z = -0.002
+            back.eulerAngles.y = .pi
+            leaf.addChildNode(back)
+        }
+        scene.rootNode.addChildNode(hinge)
 
         let flip = SCNAction.rotateTo(
             x: 0,
@@ -242,8 +259,8 @@ private struct SceneBookStage: UIViewRepresentable {
             usesShortestUnitArc: false
         )
         flip.timingMode = .easeInEaseOut
-        leaf.runAction(flip) { [weak leaf] in
-            DispatchQueue.main.async { leaf?.removeFromParentNode() }
+        hinge.runAction(flip) { [weak hinge] in
+            DispatchQueue.main.async { hinge?.removeFromParentNode() }
         }
     }
 
