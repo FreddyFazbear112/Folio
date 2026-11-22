@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct ProfileView: View {
     @EnvironmentObject private var auth: AuthManager
@@ -96,7 +97,18 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task(id: auth.user?.uid) { await loadProfile() }
             .onChange(of: photo) { _, item in
-                Task { if let data = try? await item?.loadTransferable(type: Data.self) { avatarBase64 = data.base64EncodedString(); avatarNeedsUpload = true } }
+                Task {
+                    guard let data = try? await item?.loadTransferable(type: Data.self),
+                          let image = UIImage(data: data) else { return }
+                    let scale = min(1, 1024 / max(image.size.width, image.size.height))
+                    let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+                    let renderer = UIGraphicsImageRenderer(size: size)
+                    let resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+                    if let jpeg = resized.jpegData(compressionQuality: 0.72) {
+                        avatarBase64 = jpeg.base64EncodedString()
+                        avatarNeedsUpload = true
+                    }
+                }
             }
         }
     }
