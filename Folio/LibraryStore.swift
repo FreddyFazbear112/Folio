@@ -23,10 +23,10 @@ final class LibraryStore: ObservableObject {
         let cleanAuthor = author.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanTitle.isEmpty else { return nil }
         let normalizedAuthor = cleanAuthor.isEmpty ? "Unknown author" : cleanAuthor
-        let cleanISBN = isbn?.filter(\.isNumber)
+        let cleanISBN = isbn?.uppercased().filter { $0.isNumber || $0 == "X" }
         if let existing = books.first(where: { candidate in
             if let cleanISBN, !cleanISBN.isEmpty {
-                return candidate.isbn?.filter(\.isNumber) == cleanISBN || candidate.ownedISBN?.filter(\.isNumber) == cleanISBN
+                return candidate.isbn?.uppercased() == cleanISBN || candidate.ownedISBN?.uppercased() == cleanISBN
             }
             return candidate.title.localizedCaseInsensitiveCompare(cleanTitle) == .orderedSame
                 && candidate.author.localizedCaseInsensitiveCompare(normalizedAuthor) == .orderedSame
@@ -52,7 +52,7 @@ final class LibraryStore: ObservableObject {
 
     func verifyOwnership(_ book: Book, scannedISBN: String) {
         guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
-        let clean = scannedISBN.filter(\.isNumber)
+        let clean = scannedISBN.uppercased().filter { $0.isNumber || $0 == "X" }
         guard !clean.isEmpty else { return }
         books[index].ownedISBN = clean
         if books[index].isbn == nil { books[index].isbn = clean }
