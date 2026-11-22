@@ -125,7 +125,12 @@ struct AddBookView: View {
                 TextField("Author", text: $manualAuthor)
                 Button("Cancel", role: .cancel) {}
                 Button("Add") {
-                    _ = library.add(title: manualTitle, author: manualAuthor, status: status)
+                    let title = manualTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !title.isEmpty else {
+                        notice = "A book needs a title before it can be added."
+                        return
+                    }
+                    _ = library.add(title: title, author: manualAuthor, status: status)
                     SoundEffects.addBook()
                     dismiss()
                 }
@@ -320,6 +325,19 @@ struct AddBookView: View {
 
     @MainActor
     private func add(_ book: CatalogueBook) async {
+        let cleanISBN = book.isbn?.filter(\.isNumber)
+        let alreadyOnShelf = library.books.contains { saved in
+            if let cleanISBN, !cleanISBN.isEmpty,
+               saved.isbn?.filter(\.isNumber) == cleanISBN || saved.ownedISBN?.filter(\.isNumber) == cleanISBN {
+                return true
+            }
+            return saved.title.localizedCaseInsensitiveCompare(book.title) == .orderedSame
+                && saved.author.localizedCaseInsensitiveCompare(book.author) == .orderedSame
+        }
+        if alreadyOnShelf {
+            notice = "That book is already on your shelf."
+            return
+        }
         addingIDs.insert(book.id)
         defer { addingIDs.remove(book.id) }
         guard let id = library.add(title: book.title, author: book.author, status: status, coverURL: book.coverURL, isbn: book.isbn) else { return }
