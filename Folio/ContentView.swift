@@ -60,6 +60,10 @@ private struct BookDetailView: View {
     @State private var currentPageText = ""
     @State private var totalPagesText = ""
     @State private var readingNote = ""
+    @State private var frontCoverURLText = ""
+    @State private var backCoverURLText = ""
+    @State private var spineColorHex = "765447"
+    @State private var editionMessage: String?
     @State private var scanning = false
     @State private var importing = false
     @State private var reading = false
@@ -91,7 +95,7 @@ private struct BookDetailView: View {
                 .padding(.top, 12)
 
                 VStack(spacing: 8) {
-                    BookPreview3D(title: savedBook.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1), coverURL: savedBook.coverURL, backCoverURL: savedBook.backCoverURL)
+                    BookPreview3D(title: savedBook.title, tint: spineTint, coverURL: savedBook.coverURL, backCoverURL: savedBook.backCoverURL)
                         .frame(height: 225)
                     Text("TURN THE BOOK TO EXPLORE IT")
                         .font(.system(size: 9, weight: .medium))
@@ -102,6 +106,46 @@ private struct BookDetailView: View {
                 .padding(.vertical, 10)
                 .background(Color.white.opacity(0.30))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 12) {
+                    sectionLabel("EDITION STUDIO")
+                    Text("Make this copy feel like yours. Add artwork hosted online and choose a spine finish.")
+                        .font(.system(size: 12, design: .serif))
+                        .foregroundStyle(folioInk.opacity(0.62))
+                    DisclosureGroup("Customize cover and spine") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("FRONT COVER IMAGE URL").font(.system(size: 8, weight: .semibold)).tracking(1.2).foregroundStyle(folioInk.opacity(0.5))
+                            TextField("https://…", text: $frontCoverURLText).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder)
+                            Text("BACK COVER IMAGE URL").font(.system(size: 8, weight: .semibold)).tracking(1.2).foregroundStyle(folioInk.opacity(0.5))
+                            TextField("https://…", text: $backCoverURLText).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder)
+                            Text("SPINE FINISH").font(.system(size: 8, weight: .semibold)).tracking(1.2).foregroundStyle(folioInk.opacity(0.5))
+                            HStack(spacing: 12) {
+                                ForEach(["765447", "34463D", "293C52", "8A713F", "5B3940", "383532"], id: \.self) { hex in
+                                    Button { spineColorHex = hex } label: {
+                                        Circle().fill(Color(red: Double(Int(hex.prefix(2), radix: 16) ?? 0) / 255, green: Double(Int(hex.dropFirst(2).prefix(2), radix: 16) ?? 0) / 255, blue: Double(Int(hex.suffix(2), radix: 16) ?? 0) / 255))
+                                            .frame(width: 27, height: 27)
+                                            .overlay(Circle().stroke(spineColorHex == hex ? folioInk : .clear, lineWidth: 2).padding(-4))
+                                    }.buttonStyle(.plain)
+                                }
+                            }
+                            Button("Save edition design") {
+                                let front = URL(string: frontCoverURLText.trimmingCharacters(in: .whitespacesAndNewlines))?.scheme == "https" ? frontCoverURLText.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+                                let back = URL(string: backCoverURLText.trimmingCharacters(in: .whitespacesAndNewlines))?.scheme == "https" ? backCoverURLText.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+                                library.updateEdition(book, coverURL: front, spineColorHex: spineColorHex, backCoverURL: back)
+                                editionMessage = "Your edition design has been saved."
+                            }
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(folioPaper).padding(.horizontal, 15).padding(.vertical, 11)
+                            .background(folioInk, in: Capsule())
+                            if let editionMessage { Text(editionMessage).font(.system(size: 10, design: .serif)).foregroundStyle(.secondary) }
+                        }
+                        .padding(.top, 10)
+                    }
+                    .font(.system(size: 13, weight: .medium, design: .serif))
+                }
+                .padding(16)
+                .background(Color.white.opacity(0.48))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
@@ -275,6 +319,9 @@ private struct BookDetailView: View {
             currentPageText = book.currentPage.map(String.init) ?? ""
             totalPagesText = book.totalPages.map(String.init) ?? ""
             readingNote = book.readingNote ?? ""
+            frontCoverURLText = book.coverURL ?? ""
+            backCoverURLText = book.backCoverURL ?? ""
+            spineColorHex = book.spineColorHex ?? "765447"
             elapsed = UserDefaults.standard.double(forKey: timerElapsedKey)
             if let started = UserDefaults.standard.object(forKey: timerStartedKey) as? Date {
                 timerStart = started
@@ -303,6 +350,12 @@ private struct BookDetailView: View {
                 }
             }
         }
+    }
+
+    private var spineTint: UIColor {
+        let hex = savedBook.spineColorHex ?? "765447"
+        let value = UInt64(hex, radix: 16) ?? 0x765447
+        return UIColor(red: CGFloat((value >> 16) & 0xff) / 255, green: CGFloat((value >> 8) & 0xff) / 255, blue: CGFloat(value & 0xff) / 255, alpha: 1)
     }
 
     private var timerElapsedKey: String { "folio.timer.elapsed.\(book.id.uuidString)" }
