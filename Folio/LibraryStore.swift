@@ -70,7 +70,18 @@ final class LibraryStore: ObservableObject {
         books[index].backCoverURL = backCoverURL
     }
 
-    func remove(_ book: Book) { books.removeAll { $0.id == book.id } }
+    func remove(_ book: Book) {
+        if let fileName = books.first(where: { $0.id == book.id })?.digitalFileName {
+            let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let fileURL = documents.appendingPathComponent(fileName).standardizedFileURL
+            if fileURL.deletingLastPathComponent() == documents.standardizedFileURL {
+                try? FileManager.default.removeItem(at: fileURL)
+            }
+        }
+        books.removeAll { $0.id == book.id }
+        UserDefaults.standard.removeObject(forKey: "folio.timer.elapsed.\(book.id.uuidString)")
+        UserDefaults.standard.removeObject(forKey: "folio.timer.started.\(book.id.uuidString)")
+    }
 
     func books(for status: ReadingStatus) -> [Book] { books.filter { $0.status == status } }
 
