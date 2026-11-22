@@ -78,7 +78,7 @@ struct BookLookupService {
         let clean = raw.filter(\.isNumber)
         guard Self.isValidISBN(raw) else { throw CatalogueError.invalidISBN }
         var components = URLComponents(string: "https://openlibrary.org/search.json")
-        components?.queryItems = [URLQueryItem(name: "isbn", value: clean), URLQueryItem(name: "limit", value: "1")]
+        components?.queryItems = [URLQueryItem(name: "isbn", value: raw), URLQueryItem(name: "limit", value: "1")]
         guard let url = components?.url else { return nil }
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
