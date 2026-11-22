@@ -234,7 +234,6 @@ private struct BookDetailView: View {
                         Label(name, systemImage: "book.pages")
                             .font(.system(size: 12, design: .serif))
                             .foregroundStyle(folioInk.opacity(0.62)).lineLimit(1)
-                        actionRow("Start reading", symbol: "book.pages", prominent: true) { openReader() }
                     } else {
                         Text("Add a digital copy you already own. Folio keeps the file on this iPhone and opens it in the reader.")
                             .font(.system(size: 13, design: .serif))
