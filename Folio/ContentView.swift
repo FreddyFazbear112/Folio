@@ -578,7 +578,7 @@ private struct FolioReadingCopyView: View {
                     FolioPDFView(url: url, currentPage: $currentPage, totalPages: $totalPages, sepia: sepia)
                         .ignoresSafeArea(edges: focusMode ? .all : [])
                 } else {
-                    FolioEPUBPreview(url: url)
+                    FolioEPUBReader(url: url, sepia: sepia, onProgress: onProgress)
                 }
                 if url.pathExtension.lowercased() == "pdf" && !focusMode {
                     VStack(spacing: 10) {
