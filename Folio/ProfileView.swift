@@ -4,8 +4,8 @@ import UIKit
 
 struct ProfileView: View {
     @EnvironmentObject private var auth: AuthManager
-    @AppStorage("folio.readerName") private var name = "A fellow reader"
-    @AppStorage("folio.readerBio") private var bio = "Collecting stories, one page at a time."
+    @AppStorage("folio.readerName") private var name = ""
+    @AppStorage("folio.readerBio") private var bio = ""
     @State private var photo: PhotosPickerItem?
     @State private var isSaving = false
     @State private var profileMessage: String?
@@ -35,8 +35,8 @@ struct ProfileView: View {
                                 }
                                 .frame(width: 104, height: 104).clipShape(Circle())
                             }
-                            Text(name).font(.system(size: 27, design: .serif))
-                            Text(auth.user?.email ?? "@your.pages").font(.system(size: 11)).tracking(1.2).foregroundStyle(.secondary)
+                            Text(name.isEmpty ? "Your reading profile" : name).font(.system(size: 27, design: .serif))
+                            Text(auth.user?.email ?? "Not signed in").font(.system(size: 11)).tracking(1.2).foregroundStyle(.secondary)
                         }
                         .padding(.top, 28)
 
