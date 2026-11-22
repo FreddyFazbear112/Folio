@@ -81,14 +81,14 @@ jobs:
 
       - name: Build for physical iPhone (unsigned)
         run: |
-          xcodebuild \\
-            -project Folio.xcodeproj \\
-            -scheme Folio \\
-            -sdk iphoneos \\
-            -configuration Release \\
-            -destination 'generic/platform=iOS' \\
-            -derivedDataPath build-device \\
-            CODE_SIGNING_ALLOWED=NO \\
+          xcodebuild \
+            -project Folio.xcodeproj \
+            -scheme Folio \
+            -sdk iphoneos \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build-device \
+            CODE_SIGNING_ALLOWED=NO \
             build
 
       - name: Package device app as IPA
