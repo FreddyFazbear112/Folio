@@ -9,7 +9,7 @@ struct CommunityService {
         try await db.collection("profiles").document(userID).setData([
             "name": name,
             "bio": bio,
-            "avatarURL": avatarURL as Any? ?? NSNull(),
+            "avatarURL": avatarURL ?? "",
             "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
     }
