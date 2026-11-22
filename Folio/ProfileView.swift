@@ -6,7 +6,7 @@ struct ProfileView: View {
     @AppStorage("folio.readerName") private var name = "A fellow reader"
     @AppStorage("folio.readerBio") private var bio = "Collecting stories, one page at a time."
     @State private var photo: PhotosPickerItem?
-    @State private var avatarData: Data?
+    @AppStorage("folio.avatarBase64") private var avatarBase64 = ""
 
     var body: some View {
         NavigationStack {
@@ -17,8 +17,12 @@ struct ProfileView: View {
                         VStack(spacing: 12) {
                             PhotosPicker(selection: $photo, matching: .images) {
                                 Group {
-                                    if let avatarData, let image = UIImage(data: avatarData) {
+                                    if let data = Data(base64Encoded: avatarBase64), let image = UIImage(data: data) {
                                         Image(uiImage: image).resizable().scaledToFill()
+                                    } else if let url = auth.user?.photoURL {
+                                        AsyncImage(url: url) { image in image.resizable().scaledToFill() } placeholder: {
+                                            Image(systemName: "person.crop.circle.fill").resizable().scaledToFit()
+                                        }
                                     } else {
                                         Image(systemName: "person.crop.circle.fill").resizable().scaledToFit()
                                             .foregroundStyle(Color(red: 0.55, green: 0.52, blue: 0.44))
@@ -73,7 +77,7 @@ struct ProfileView: View {
             .navigationTitle("Your profile")
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: photo) { _, item in
-                Task { avatarData = try? await item?.loadTransferable(type: Data.self) }
+                Task { if let data = try? await item?.loadTransferable(type: Data.self) { avatarBase64 = data.base64EncodedString() } }
             }
         }
     }
