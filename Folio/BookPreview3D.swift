@@ -5,6 +5,7 @@ import UIKit
 struct BookPreview3D: UIViewRepresentable {
     let title: String
     let tint: UIColor
+    var coverURL: String? = nil
 
     func makeUIView(context: Context) -> SCNView {
         let view = SCNView()
@@ -29,9 +30,16 @@ struct BookPreview3D: UIViewRepresentable {
         let scene = SCNScene()
         scene.physicsWorld.gravity = SCNVector3(0, 0, 0)
         let book = SCNBox(width: 1.05, height: 1.48, length: 0.22, chamferRadius: 0.035)
+        let front = material(tint)
+        if let coverURL, let url = URL(string: coverURL) {
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                guard let data, let image = UIImage(data: data) else { return }
+                DispatchQueue.main.async { front.diffuse.contents = image }
+            }.resume()
+        }
         book.materials = [
             material(tint), material(UIColor(red: 0.82, green: 0.77, blue: 0.67, alpha: 1)),
-            material(tint.withAlphaComponent(0.85)), material(tint), material(tint), material(tint)
+            material(tint.withAlphaComponent(0.85)), material(tint), front, material(tint)
         ]
         let node = SCNNode(geometry: book)
         node.position = SCNVector3(0, 0, 0)
