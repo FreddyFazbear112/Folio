@@ -190,6 +190,7 @@ private struct BookDetailView: View {
                                     }
                                 }
                             }
+                            persistTimerState()
                             SoundEffects.softTap()
                         } label: {
                             HStack(spacing: 7) {
@@ -216,6 +217,8 @@ private struct BookDetailView: View {
                                 )
                             }
                             message = "Reading session: " + String(format: "%d min", Int(elapsed / 60))
+                            UserDefaults.standard.removeObject(forKey: timerElapsedKey)
+                            UserDefaults.standard.removeObject(forKey: timerStartedKey)
                         }
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(folioInk.opacity(0.56))
@@ -272,7 +275,12 @@ private struct BookDetailView: View {
             currentPageText = book.currentPage.map(String.init) ?? ""
             totalPagesText = book.totalPages.map(String.init) ?? ""
             readingNote = book.readingNote ?? ""
+            elapsed = UserDefaults.standard.double(forKey: timerElapsedKey)
+            if let started = UserDefaults.standard.object(forKey: timerStartedKey) as? Date {
+                timerStart = started
+            }
         }
+        .onDisappear { persistTimerState() }
         .sheet(isPresented: $scanning) {
             NavigationStack {
                 ISBNScannerView(onScan: { code in
@@ -287,7 +295,25 @@ private struct BookDetailView: View {
             importCopy(result)
         }
         .fullScreenCover(isPresented: $reading) {
-            if let readerURL { FolioReadingCopyView(url: readerURL) }
+            if let readerURL {
+                FolioReadingCopyView(url: readerURL) { page, total in
+                    currentPageText = String(page)
+                    totalPagesText = String(total)
+                    library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                }
+            }
+        }
+    }
+
+    private var timerElapsedKey: String { "folio.timer.elapsed.\\(book.id.uuidString)" }
+    private var timerStartedKey: String { "folio.timer.started.\\(book.id.uuidString)" }
+
+    private func persistTimerState() {
+        UserDefaults.standard.set(elapsed, forKey: timerElapsedKey)
+        if let timerStart {
+            UserDefaults.standard.set(timerStart, forKey: timerStartedKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: timerStartedKey)
         }
     }
 
@@ -365,6 +391,7 @@ private struct BookDetailView: View {
 private struct FolioReadingCopyView: View {
     @Environment(\.dismiss) private var dismiss
     let url: URL
+    var onProgress: (Int, Int) -> Void
     @State private var currentPage = 1
     @State private var totalPages = 0
     @State private var sepia = true
@@ -455,6 +482,10 @@ private struct FolioReadingCopyView: View {
             }
         }
         .preferredColorScheme(.light)
+        .onChange(of: currentPage) { _, page in
+            guard totalPages > 0 else { return }
+            onProgress(page, totalPages)
+        }
     }
 }
 
