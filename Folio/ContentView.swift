@@ -1087,11 +1087,11 @@ private struct FolioLibraryHome: View {
             }
             Rectangle().fill(ink.opacity(0.12)).frame(width: 1, height: 22)
             Button { showingAddBook = true } label: {
-                Image(systemName: "barcode.viewfinder")
-                    .font(.system(size: 17, weight: .regular))
+                Image(systemName: "plus")
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(forest)
             }
-            .accessibilityLabel("Add a book by scanning its ISBN")
+            .accessibilityLabel("Find or add a book")
         }
         .padding(.horizontal, 15)
         .frame(height: 51)
@@ -1342,7 +1342,7 @@ private struct FolioLibraryHome: View {
             } else { coverTypography(book) }
         }
         .frame(width: width == 0 ? nil : width, height: height == 0 ? nil : height)
-        .frame(maxWidth: width == 0 ? .infinity : nil, maxHeight: height == 0 ? .infinity : nil)
+        .frame(maxWidth: width == 0 ? .infinity : nil)
         .clipShape(RoundedRectangle(cornerRadius: 5))
         .overlay(alignment: .leading) {
             LinearGradient(colors: [.black.opacity(0.40), .clear, .white.opacity(0.12)], startPoint: .leading, endPoint: .trailing).frame(width: 9)
