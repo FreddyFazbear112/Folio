@@ -140,7 +140,7 @@ struct Folio3DBookReader: View {
                 UIColor(red: 0.18, green: 0.27, blue: 0.28, alpha: 1),
                 UIColor(red: 0.09, green: 0.14, blue: 0.16, alpha: 1)
             ]
-            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors.map(\\.cgColor) as CFArray, locations: [0, 1])!
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors.map { $0.cgColor } as CFArray, locations: [0, 1])!
             context.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
             let paragraph = NSMutableParagraphStyle()
             paragraph.alignment = .center
