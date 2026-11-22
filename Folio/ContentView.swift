@@ -305,8 +305,8 @@ private struct BookDetailView: View {
         }
     }
 
-    private var timerElapsedKey: String { "folio.timer.elapsed.\\(book.id.uuidString)" }
-    private var timerStartedKey: String { "folio.timer.started.\\(book.id.uuidString)" }
+    private var timerElapsedKey: String { "folio.timer.elapsed.\(book.id.uuidString)" }
+    private var timerStartedKey: String { "folio.timer.started.\(book.id.uuidString)" }
 
     private func persistTimerState() {
         UserDefaults.standard.set(elapsed, forKey: timerElapsedKey)
