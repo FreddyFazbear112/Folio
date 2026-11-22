@@ -250,7 +250,6 @@ private struct CommentSheet: View {
 
     @MainActor
     private func loadComments() async {
-        guard auth.user != nil else { return }
         comments = (try? await CommunityService().fetchComments(postID: post.id)) ?? []
     }
 
