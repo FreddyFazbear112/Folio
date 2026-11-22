@@ -13,6 +13,7 @@ struct CommunityPost: Identifiable {
 
 struct CommunityView: View {
     @EnvironmentObject private var auth: AuthManager
+    @AppStorage("folio.readerName") private var readerName = ""
     @State private var liked: Set<String> = []
     @State private var draft = ""
     @State private var isReview = false
@@ -165,7 +166,7 @@ struct CommunityView: View {
         isPublishing = true
         defer { isPublishing = false }
         let clean = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = user.displayName ?? "A Folio reader"
+        let displayName = readerName.isEmpty ? (user.displayName ?? "A Folio reader") : readerName
         let post = CommunityPost(id: UUID().uuidString, name: displayName, handle: "@reader", title: isReview ? "A reader’s review · \\(rating)/5" : "A note from my reading journal", book: isReview ? reviewBook : "Currently reading", body: clean, likes: 0, mark: String(displayName.prefix(1)))
         do {
             try await CommunityService().publish(post, userID: user.uid)
