@@ -106,7 +106,7 @@ app.post("/v1/posts", requireUser, async (req, res) => {
     return res.status(400).json({ error: "Add a note and a valid review rating." });
   }
   try {
-    await ensureProfile(req.user);
+    await ensureProfile({ ...req.user, name: text(req.body?.name, 60) || req.user.name });
     const result = await pool.query(
       "INSERT INTO posts(author_id,title,book,body,post_type,rating) VALUES($1,$2,$3,$4,$5,$6) RETURNING id",
       [req.user.uid, title || (postType === "review" ? "A reader's review" : "A reading note"), book, body, postType, rating]
