@@ -5,6 +5,7 @@ struct FolioReadingActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         var elapsedSeconds: Int
         var isPaused: Bool
+        var runningSince: Date?
         var bookTitle: String
         var author: String
     }
