@@ -62,7 +62,7 @@ struct CommunityService {
     func saveProfile(name: String, bio: String, avatarURL: String?, userID: String) async throws {
         if apiBaseURL != nil {
             _ = try await request("v1/me/profile", method: "PUT",
-                                  body: ["name": name, "bio": bio], authenticated: true)
+                                  body: ["name": name, "bio": bio, "avatarURL": avatarURL ?? ""], authenticated: true)
             return
         }
         try await db.collection("profiles").document(userID).setData([
