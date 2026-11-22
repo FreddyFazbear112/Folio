@@ -429,7 +429,7 @@ private struct BookDetailView: View {
                 .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel") { scanning = false } } }
             }
         }
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data], allowsMultipleSelection: false) { result in
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data, .plainText, .rtf, .html], allowsMultipleSelection: false) { result in
             importCopy(result)
         }
         .fullScreenCover(isPresented: $reading) {
@@ -513,7 +513,7 @@ private struct BookDetailView: View {
             let access = source.startAccessingSecurityScopedResource()
             defer { if access { source.stopAccessingSecurityScopedResource() } }
             let ext = source.pathExtension.lowercased()
-            guard ext == "pdf" || ext == "epub" else { message = "Choose an EPUB or PDF file."; return }
+            guard ["pdf", "epub", "txt", "rtf", "html", "htm"].contains(ext) else { message = "Choose an EPUB, PDF, TXT, RTF, or HTML reading file."; return }
             let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let destination = folder.appendingPathComponent(book.id.uuidString + "." + ext)
             if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
@@ -581,13 +581,16 @@ private struct FolioReadingCopyView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 10)
                 }
-                if url.pathExtension.lowercased() == "pdf" {
+                let fileType = url.pathExtension.lowercased()
+                if fileType == "pdf" {
                     FolioPDFView(url: url, currentPage: $currentPage, totalPages: $totalPages, sepia: sepia)
                         .ignoresSafeArea(edges: focusMode ? .all : [])
-                } else {
+                } else if fileType == "epub" {
                     FolioEPUBReader(url: url, sepia: sepia, initialChapter: max(0, initialPage - 1), onProgress: onProgress)
+                } else {
+                    FolioTextReader(url: url, sepia: sepia)
                 }
-                if url.pathExtension.lowercased() == "pdf" && !focusMode {
+                if fileType == "pdf" && !focusMode {
                     VStack(spacing: 10) {
                         HStack(spacing: 22) {
                             Button {
@@ -637,6 +640,52 @@ private struct FolioReadingCopyView: View {
             guard totalPages > 0 else { return }
             onProgress(page, totalPages)
         }
+    }
+}
+
+private struct FolioTextReader: UIViewRepresentable {
+    let url: URL
+    let sepia: Bool
+
+    func makeUIView(context: Context) -> UITextView {
+        let view = UITextView()
+        view.isEditable = false
+        view.isSelectable = true
+        view.alwaysBounceVertical = true
+        view.textContainerInset = UIEdgeInsets(top: 30, left: 24, bottom: 44, right: 24)
+        view.backgroundColor = sepia
+            ? UIColor(red: 0.91, green: 0.87, blue: 0.78, alpha: 1)
+            : UIColor(red: 0.12, green: 0.13, blue: 0.13, alpha: 1)
+        view.textColor = sepia
+            ? UIColor(red: 0.18, green: 0.20, blue: 0.17, alpha: 1)
+            : UIColor(red: 0.94, green: 0.92, blue: 0.87, alpha: 1)
+        view.font = UIFont(name: "Georgia", size: 19) ?? .systemFont(ofSize: 19)
+        view.text = "Opening your document…"
+        do {
+            let data = try Data(contentsOf: url)
+            let ext = url.pathExtension.lowercased()
+            if ext == "rtf" || ext == "html" || ext == "htm" {
+                let kind: NSAttributedString.DocumentType = ext == "rtf" ? .rtf : .html
+                let document = try NSAttributedString(data: data, options: [.documentType: kind], documentAttributes: nil)
+                let mutable = NSMutableAttributedString(attributedString: document)
+                mutable.addAttributes([.foregroundColor: view.textColor ?? .label, .font: view.font ?? UIFont.systemFont(ofSize: 19)], range: NSRange(location: 0, length: mutable.length))
+                view.attributedText = mutable
+            } else {
+                view.text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .utf16) ?? "Unsupported text encoding."
+            }
+        } catch {
+            view.text = "This document couldn't be opened: \(error.localizedDescription)"
+        }
+        return view
+    }
+
+    func updateUIView(_ view: UITextView, context: Context) {
+        view.backgroundColor = sepia
+            ? UIColor(red: 0.91, green: 0.87, blue: 0.78, alpha: 1)
+            : UIColor(red: 0.12, green: 0.13, blue: 0.13, alpha: 1)
+        view.textColor = sepia
+            ? UIColor(red: 0.18, green: 0.20, blue: 0.17, alpha: 1)
+            : UIColor(red: 0.94, green: 0.92, blue: 0.87, alpha: 1)
     }
 }
 
