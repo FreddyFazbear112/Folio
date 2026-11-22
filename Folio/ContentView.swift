@@ -256,7 +256,27 @@ private struct BookDetailView: View {
                             .font(.system(size: 12, design: .serif))
                             .foregroundStyle(Color(red: 0.30, green: 0.43, blue: 0.32))
                     }
-                    if savedBook.digitalFileName == nil {
+                    if let fileName = savedBook.digitalFileName {
+                        HStack(spacing: 8) {
+                            Image(systemName: "doc.text.fill")
+                                .font(.system(size: 15))
+                                .foregroundStyle(Color(red: 0.34, green: 0.43, blue: 0.34))
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("DIGITAL COPY ON THIS IPHONE")
+                                    .font(.system(size: 8, weight: .semibold)).tracking(1.1)
+                                Text(fileName)
+                                    .font(.system(size: 10, design: .serif))
+                                    .foregroundStyle(folioInk.opacity(0.58)).lineLimit(1)
+                            }
+                            Spacer()
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(Color(red: 0.34, green: 0.43, blue: 0.34))
+                        }
+                        .padding(13)
+                        .background(Color.white.opacity(0.52), in: RoundedRectangle(cornerRadius: 9))
+                        actionRow("Read this book", symbol: "book.pages", prominent: true) { openReader() }
+                        actionRow("Replace digital copy", symbol: "arrow.triangle.2.circlepath") { importing = true }
+                    } else {
                         actionRow("Import a digital reading copy", symbol: "square.and.arrow.down") { importing = true }
                     }
                     if let message { Text(message).font(.system(size: 12, design: .serif)).foregroundStyle(.secondary) }
@@ -516,8 +536,14 @@ private struct BookDetailView: View {
             guard ["pdf", "epub", "txt", "rtf", "html", "htm"].contains(ext) else { message = "Choose an EPUB, PDF, TXT, RTF, or HTML reading file."; return }
             let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let destination = folder.appendingPathComponent(book.id.uuidString + "." + ext)
-            if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
-            try FileManager.default.copyItem(at: source, to: destination)
+            let stagedCopy = folder.appendingPathComponent("\(book.id.uuidString)-\(UUID().uuidString).import")
+            defer { try? FileManager.default.removeItem(at: stagedCopy) }
+            try FileManager.default.copyItem(at: source, to: stagedCopy)
+            if FileManager.default.fileExists(atPath: destination.path) {
+                _ = try FileManager.default.replaceItemAt(destination, withItemAt: stagedCopy)
+            } else {
+                try FileManager.default.moveItem(at: stagedCopy, to: destination)
+            }
             library.attachDigitalCopy(book, fileName: destination.lastPathComponent)
             message = "Your reading copy is saved on this iPhone."
         } catch { message = "Couldn't import that file. Please try again." }
