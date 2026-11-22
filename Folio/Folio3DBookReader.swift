@@ -231,9 +231,9 @@ private struct SceneBookStage: UIViewRepresentable {
         // than spin around its own centre.
         let hinge = SCNNode()
         hinge.position = SCNVector3(0, 0, 0.075)
-        let leaf = SCNNode(geometry: SCNPlane(width: 1.47, height: 4.17))
+        let leaf = SCNNode(geometry: SCNPlane(width: 2.85, height: 4.17))
         leaf.geometry?.materials = [frontMaterial]
-        leaf.position.x = movingForward ? 0.735 : -0.735
+        leaf.position.x = movingForward ? 1.425 : -1.425
         leaf.castsShadow = true
         leaf.renderingOrder = 10
         hinge.addChildNode(leaf)
@@ -243,7 +243,7 @@ private struct SceneBookStage: UIViewRepresentable {
             backMaterial.diffuse.contents = reverse
             backMaterial.lightingModel = .lambert
             backMaterial.roughness.contents = 0.92
-            let back = SCNNode(geometry: SCNPlane(width: 1.47, height: 4.17))
+            let back = SCNNode(geometry: SCNPlane(width: 2.85, height: 4.17))
             back.geometry?.materials = [backMaterial]
             back.position.z = -0.002
             back.eulerAngles.y = .pi
@@ -267,7 +267,7 @@ private struct SceneBookStage: UIViewRepresentable {
     private func makeScene() -> SCNScene {
         let scene = SCNScene()
         let root = scene.rootNode
-        let paperBlock = SCNBox(width: 3.0, height: 4.25, length: 0.16, chamferRadius: 0.035)
+        let paperBlock = SCNBox(width: 5.82, height: 4.25, length: 0.20, chamferRadius: 0.045)
         let blockMaterial = SCNMaterial()
         blockMaterial.diffuse.contents = paper
         paperBlock.materials = Array(repeating: blockMaterial, count: 6)
@@ -289,13 +289,13 @@ private struct SceneBookStage: UIViewRepresentable {
             root.addChildNode(node)
             return node
         }
-        pageNode("left-page", x: -0.75)
-        pageNode("right-page", x: 0.75)
+        pageNode("left-page", x: -1.45)
+        pageNode("right-page", x: 1.45)
 
         let hinge = SCNNode()
         hinge.name = "cover-hinge"
         hinge.position = SCNVector3(0, 0, 0.09)
-        let coverPlane = SCNPlane(width: 1.53, height: 4.32)
+        let coverPlane = SCNPlane(width: 2.96, height: 4.34)
         let coverMaterial = SCNMaterial()
         coverMaterial.diffuse.contents = cover ?? paper
         coverMaterial.isDoubleSided = true
@@ -303,7 +303,7 @@ private struct SceneBookStage: UIViewRepresentable {
         coverPlane.materials = [coverMaterial]
         let coverNode = SCNNode(geometry: coverPlane)
         coverNode.name = "front-cover"
-        coverNode.position.x = 0.765
+        coverNode.position.x = 1.48
         hinge.addChildNode(coverNode)
         root.addChildNode(hinge)
 
@@ -320,7 +320,7 @@ private struct SceneBookStage: UIViewRepresentable {
         camera.fieldOfView = 34
         let cameraNode = SCNNode()
         cameraNode.camera = camera
-        cameraNode.position = SCNVector3(0, 0, 11.8)
+        cameraNode.position = SCNVector3(0, 0, 13.0)
         root.addChildNode(cameraNode)
         return scene
     }
