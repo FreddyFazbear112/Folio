@@ -327,9 +327,8 @@ struct AddBookView: View {
     private func add(_ book: CatalogueBook) async {
         let cleanISBN = book.isbn?.filter(\.isNumber)
         let alreadyOnShelf = library.books.contains { saved in
-            if let cleanISBN, !cleanISBN.isEmpty,
-               saved.isbn?.filter(\.isNumber) == cleanISBN || saved.ownedISBN?.filter(\.isNumber) == cleanISBN {
-                return true
+            if let cleanISBN, !cleanISBN.isEmpty {
+                return saved.isbn?.filter(\.isNumber) == cleanISBN || saved.ownedISBN?.filter(\.isNumber) == cleanISBN
             }
             return saved.title.localizedCaseInsensitiveCompare(book.title) == .orderedSame
                 && saved.author.localizedCaseInsensitiveCompare(book.author) == .orderedSame
