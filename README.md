@@ -14,7 +14,8 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 - Reader profile editing, persistent local photo picker, and cloud-synced name/bio
 - Firebase Authentication integration with Google Sign-In
 - Firestore-backed community posts, book reviews, comments, and reader profiles
-- GitHub Actions simulator build
+- GitHub Actions simulator build artifact
+- Optional signed device IPA export when Apple signing secrets are configured
 
 ## Open in Xcode
 
@@ -39,11 +40,18 @@ Without Firebase configuration, the local bookshelf and sample reading-room cont
 ## Current implementation notes
 
 - The initial social feed contains sample posts so the screen has life before a Firebase project is connected. New posts and comments use Firestore after sign-in.
-- Book covers are represented as original 3D book objects and stylized bookshelf spines; real cover-art fetching is a future enhancement.
+- ISBN lookup also fetches Open Library cover art when a matching edition has a cover; books without cover art use Folio's original typographic shelf design.
 - Profile photos are resized, stored locally, and uploaded to Firebase Storage when signed in; reader name and bio sync to Firestore.
 - ISBN lookup depends on network access to Open Library.
 - Google Sign-In needs the Firebase plist and reversed client URL scheme described above.
 
 ## Building an IPA
 
-The GitHub Actions workflow currently builds the app for the iOS Simulator without signing. An installable device IPA requires an Apple Developer Team, distribution certificate, provisioning profile, and signing configuration. Those credentials must be supplied by the app owner through protected GitHub Actions secrets; they should never be committed to this repository.
+Every push builds an unsigned iOS Simulator artifact. To also export an installable, App Store Connect-signed IPA, add these repository Actions secrets under Settings → Secrets and variables → Actions:
+
+- `IOS_CERTIFICATE_BASE64`: base64-encoded Apple Distribution `.p12` certificate
+- `IOS_CERTIFICATE_PASSWORD`: password used when exporting that `.p12`
+- `IOS_PROVISIONING_PROFILE_BASE64`: base64-encoded App Store provisioning profile for `com.folio.app`
+- `IOS_TEAM_ID`: your 10-character Apple Developer Team ID
+
+The workflow imports the signing assets on a temporary macOS keychain, archives the app, and uploads `Folio-iOS-IPA` as a workflow artifact. Without those secrets, the IPA job safely skips while the simulator build continues. Never commit signing certificates, provisioning profiles, passwords, or Firebase service-account credentials to the repository.
