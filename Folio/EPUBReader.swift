@@ -130,6 +130,12 @@ private struct FolioEPUBWebPage: UIViewRepresentable {
     let sepia: Bool
     func makeUIView(context: Context) -> WKWebView {
         let view = WKWebView()
+        let paper = sepia ? "#f0e7d5" : "#202321"
+        let ink = sepia ? "#302e29" : "#eee9df"
+        let css = "html,body{background:\(paper)!important;color:\(ink)!important;font-family:Georgia,serif!important;font-size:18px!important;line-height:1.85!important;}body{padding:22px 18px 36px!important;max-width:46rem!important;margin:0 auto!important;}img,svg{max-width:100%!important;height:auto!important;}a{color:\(ink)!important;}"
+        let escapedCSS = css.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "'", with: "\\'")
+        let script = "var folioStyle=document.createElement('style');folioStyle.innerHTML='\(escapedCSS)';document.head.appendChild(folioStyle);"
+        view.configuration.userContentController.addUserScript(WKUserScript(source: script, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         view.isOpaque = false
         view.backgroundColor = sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.82, alpha: 1) : UIColor(red: 0.12, green: 0.13, blue: 0.13, alpha: 1)
         view.scrollView.backgroundColor = view.backgroundColor
