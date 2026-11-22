@@ -88,7 +88,7 @@ private struct LibraryScreen: View {
         .sheet(item: $selectedBook) { book in
             BookDetailView(book: book)
                 .environmentObject(library)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
     }
@@ -386,14 +386,14 @@ private struct BookDetailView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 22) {
-                VStack(spacing: 5) {
-                    Text(book.title)
+                VStack(spacing: 7) {
+                    Text(savedBook.title)
                         .font(.system(size: 29, weight: .regular, design: .serif))
                         .tracking(-0.7)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
                         .minimumScaleFactor(0.82)
-                    Text(book.author.uppercased())
+                    Text(savedBook.author.uppercased())
                         .font(.system(size: 10, weight: .semibold))
                         .tracking(2.2)
                         .foregroundStyle(folioInk.opacity(0.48))
@@ -402,7 +402,7 @@ private struct BookDetailView: View {
                 .padding(.top, 12)
 
                 VStack(spacing: 8) {
-                    BookPreview3D(title: book.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1), coverURL: book.coverURL, backCoverURL: savedBook.backCoverURL)
+                    BookPreview3D(title: savedBook.title, tint: UIColor(red: 0.43, green: 0.31, blue: 0.27, alpha: 1), coverURL: savedBook.coverURL, backCoverURL: savedBook.backCoverURL)
                         .frame(height: 225)
                     Text("TURN THE BOOK TO EXPLORE IT")
                         .font(.system(size: 9, weight: .medium))
@@ -795,6 +795,7 @@ private struct FolioPDFView: UIViewRepresentable {
     }
 
     func updateUIView(_ view: PDFView, context: Context) {
+        context.coordinator.parent = self
         view.backgroundColor = sepia
             ? UIColor(red: 0.91, green: 0.87, blue: 0.78, alpha: 1)
             : UIColor(red: 0.12, green: 0.13, blue: 0.13, alpha: 1)
