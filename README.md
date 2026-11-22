@@ -15,7 +15,8 @@ A warm, tactile reading companion for iPhone. Folio is built with SwiftUI and na
 - Firebase Authentication integration with Google Sign-In
 - Firestore-backed community posts, book reviews, comments, and reader profiles
 - GitHub Actions simulator build artifact
-- Optional signed device IPA export when Apple signing secrets are configured
+- Unsigned physical-iPhone IPA artifact on every push to `main`
+- Optional Apple-signed device IPA export when signing secrets are configured
 
 ## Open in Xcode
 
@@ -47,11 +48,13 @@ Without Firebase configuration, the local bookshelf and sample reading-room cont
 
 ## Building an IPA
 
-Every push builds an unsigned iOS Simulator artifact. To also export an installable, App Store Connect-signed IPA, add these repository Actions secrets under Settings → Secrets and variables → Actions:
+Every push to `main` builds two separate outputs: a simulator build and an **unsigned device IPA** (`Folio-iOS-Unsigned-IPA`). The IPA contains an `iphoneos` Release build packaged in the standard `Payload/Folio.app` layout; it is not a simulator app. You can download it from the workflow run's Artifacts section and re-sign it with your own signing tool and provisioning profile before installing it. An unsigned IPA is not directly installable until it has been signed.
+
+To also export an Apple-signed, App Store Connect IPA automatically, add these repository Actions secrets under Settings → Secrets and variables → Actions:
 
 - `IOS_CERTIFICATE_BASE64`: base64-encoded Apple Distribution `.p12` certificate
 - `IOS_CERTIFICATE_PASSWORD`: password used when exporting that `.p12`
 - `IOS_PROVISIONING_PROFILE_BASE64`: base64-encoded App Store provisioning profile for `com.folio.app`
 - `IOS_TEAM_ID`: your 10-character Apple Developer Team ID
 
-The workflow imports the signing assets on a temporary macOS keychain, archives the app, and uploads `Folio-iOS-IPA` as a workflow artifact. Without those secrets, the IPA job safely skips while the simulator build continues. Never commit signing certificates, provisioning profiles, passwords, or Firebase service-account credentials to the repository.
+The workflow imports the signing assets on a temporary macOS keychain, archives the app, and uploads `Folio-iOS-IPA` as a workflow artifact. Without those secrets, the signed IPA job safely skips; the separate unsigned physical-device IPA job still runs. Never commit signing certificates, provisioning profiles, passwords, or Firebase service-account credentials to the repository.
