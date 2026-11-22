@@ -1,0 +1,227 @@
+import SwiftUI
+import SceneKit
+import PDFKit
+import UIKit
+
+/// A small interactive book stage. PDFKit renders the user's real PDF pages
+/// into SceneKit page materials; no placeholder text is used in the book.
+struct Folio3DBookReader: View {
+    @Environment(\.dismiss) private var dismiss
+    let url: URL
+    let title: String
+    let coverURL: String?
+    let initialPage: Int
+    var onProgress: (Int, Int) -> Void
+
+    @State private var document: PDFDocument?
+    @State private var page = 1
+    @State private var isOpen = false
+    @State private var sepia = true
+
+    private var total: Int { document?.pageCount ?? 0 }
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.12, green: 0.13, blue: 0.12).ignoresSafeArea()
+            VStack(spacing: 0) {
+                HStack {
+                    Button { dismiss() } label: {
+                        Image(systemName: "chevron.down").font(.system(size: 14, weight: .semibold))
+                            .frame(width: 42, height: 42).background(.white.opacity(0.09), in: Circle())
+                    }
+                    Spacer()
+                    VStack(spacing: 3) {
+                        Text("FOLIO").font(.system(size: 9, weight: .bold)).tracking(2.5)
+                        Text(title).font(.system(size: 14, design: .serif)).lineLimit(1)
+                    }
+                    Spacer()
+                    Button { sepia.toggle(); refreshScene() } label: {
+                        Image(systemName: sepia ? "moon" : "sun.max").font(.system(size: 14))
+                            .frame(width: 42, height: 42).background(.white.opacity(0.09), in: Circle())
+                    }
+                }
+                .foregroundStyle(Color(red: 0.94, green: 0.89, blue: 0.78))
+                .padding(.horizontal, 20).padding(.top, 12)
+
+                Spacer(minLength: 12)
+                if let document {
+                    SceneBookStage(
+                        leftPage: renderedPage(max(1, page - 1), in: document),
+                        rightPage: renderedPage(page, in: document),
+                        cover: coverImage(),
+                        isOpen: isOpen,
+                        paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
+                        onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
+                    )
+                    .frame(height: 390)
+                    .padding(.horizontal, 8)
+                    .gesture(DragGesture(minimumDistance: 24).onEnded { value in
+                        guard isOpen else { withAnimation(.easeInOut(duration: 0.8)) { isOpen = true }; return }
+                        if value.translation.width < -35 { turn(1) }
+                        if value.translation.width > 35 { turn(-1) }
+                    })
+                } else {
+                    ProgressView("Preparing your book…").tint(.white).foregroundStyle(.white)
+                        .frame(height: 390)
+                }
+                Spacer(minLength: 12)
+                VStack(spacing: 15) {
+                    HStack(spacing: 34) {
+                        Button { turn(-1) } label: { Image(systemName: "chevron.left") }
+                            .disabled(!isOpen || page <= 1)
+                        Text(total > 0 ? "PAGE \(page) OF \(total)" : "OPENING")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1.4)
+                        Button { turn(1) } label: { Image(systemName: "chevron.right") }
+                            .disabled(!isOpen || page >= total)
+                    }
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Color(red: 0.94, green: 0.78, blue: 0.53))
+                    if total > 0 {
+                        ProgressView(value: Double(page), total: Double(total))
+                            .tint(Color(red: 0.78, green: 0.62, blue: 0.39))
+                    }
+                    Text(isOpen ? "SWIPE TO TURN THE PAGE" : "TAP THE COVER TO OPEN YOUR BOOK")
+                        .font(.system(size: 8, weight: .medium)).tracking(1.6)
+                        .foregroundStyle(.white.opacity(0.48))
+                }
+                .padding(.horizontal, 28).padding(.bottom, 28)
+            }
+        }
+        .preferredColorScheme(.dark)
+        .task {
+            document = PDFDocument(url: url)
+            if let document, document.pageCount > 0 {
+                page = min(max(initialPage, 1), document.pageCount)
+                onProgress(page, document.pageCount)
+            }
+        }
+        .onChange(of: page) { _, value in if total > 0 { onProgress(value, total) } }
+    }
+
+    private func turn(_ delta: Int) {
+        guard isOpen, total > 0 else { return }
+        let next = min(max(page + delta, 1), total)
+        guard next != page else { return }
+        page = next
+        SoundEffects.pageTurn()
+    }
+
+    private func renderedPage(_ number: Int, in document: PDFDocument) -> UIImage? {
+        guard let pdfPage = document.page(at: min(max(number - 1, 0), document.pageCount - 1)) else { return nil }
+        return pdfPage.thumbnail(of: CGSize(width: 900, height: 1260), for: .mediaBox)
+    }
+
+    private func coverImage() -> UIImage? {
+        guard let coverURL, let url = URL(string: coverURL), url.scheme == "https",
+              let data = try? Data(contentsOf: url) else { return nil }
+        return UIImage(data: data)
+    }
+
+    private func refreshScene() { }
+}
+
+private struct SceneBookStage: UIViewRepresentable {
+    let leftPage: UIImage?
+    let rightPage: UIImage?
+    let cover: UIImage?
+    let isOpen: Bool
+    let paper: UIColor
+    var onTapCover: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> SCNView {
+        let view = SCNView()
+        view.backgroundColor = .clear
+        view.scene = makeScene()
+        view.autoenablesDefaultLighting = true
+        view.allowsCameraControl = false
+        view.antialiasingMode = .multisampling4X
+        view.isPlaying = true
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapped))
+        view.addGestureRecognizer(tap)
+        context.coordinator.onTap = onTapCover
+        context.coordinator.coverPivot = view.scene?.rootNode.childNode(withName: "cover-hinge", recursively: true)
+        return view
+    }
+
+    func updateUIView(_ view: SCNView, context: Context) {
+        context.coordinator.onTap = onTapCover
+        guard let scene = view.scene else { return }
+        scene.rootNode.childNode(withName: "left-page", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = leftPage ?? paper
+        scene.rootNode.childNode(withName: "right-page", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = rightPage ?? paper
+        if let cover { scene.rootNode.childNode(withName: "front-cover", recursively: true)?.geometry?.firstMaterial?.diffuse.contents = cover }
+        if let hinge = context.coordinator.coverPivot {
+            SCNTransaction.begin()
+            SCNTransaction.animationDuration = 0.65
+            hinge.eulerAngles.y = isOpen ? -.pi : 0
+            SCNTransaction.commit()
+        }
+    }
+
+    private func makeScene() -> SCNScene {
+        let scene = SCNScene()
+        let root = scene.rootNode
+        let paperBlock = SCNBox(width: 3.0, height: 4.25, length: 0.16, chamferRadius: 0.035)
+        let blockMaterial = SCNMaterial()
+        blockMaterial.diffuse.contents = paper
+        paperBlock.materials = Array(repeating: blockMaterial, count: 6)
+        let block = SCNNode(geometry: paperBlock)
+        block.position.z = -0.10
+        root.addChildNode(block)
+
+        func pageNode(_ name: String, x: Float) -> SCNNode {
+            let plane = SCNPlane(width: 1.47, height: 4.17)
+            let material = SCNMaterial()
+            material.diffuse.contents = paper
+            material.isDoubleSided = true
+            material.lightingModel = .lambert
+            plane.materials = [material]
+            let node = SCNNode(geometry: plane)
+            node.name = name
+            node.position = SCNVector3(x, 0, 0.0)
+            root.addChildNode(node)
+            return node
+        }
+        pageNode("left-page", x: -0.75)
+        pageNode("right-page", x: 0.75)
+
+        let hinge = SCNNode()
+        hinge.name = "cover-hinge"
+        hinge.position = SCNVector3(0, 0, 0.09)
+        let coverPlane = SCNPlane(width: 1.53, height: 4.32)
+        let coverMaterial = SCNMaterial()
+        coverMaterial.diffuse.contents = cover ?? paper
+        coverMaterial.isDoubleSided = true
+        coverMaterial.roughness.contents = 0.86
+        coverPlane.materials = [coverMaterial]
+        let coverNode = SCNNode(geometry: coverPlane)
+        coverNode.name = "front-cover"
+        coverNode.position.x = 0.765
+        hinge.addChildNode(coverNode)
+        root.addChildNode(hinge)
+
+        let light = SCNNode()
+        let lamp = SCNLight()
+        lamp.type = .omni
+        lamp.intensity = 900
+        lamp.color = UIColor(red: 1, green: 0.88, blue: 0.69, alpha: 1)
+        light.light = lamp
+        light.position = SCNVector3(-1.8, 3.5, 5)
+        root.addChildNode(light)
+
+        let camera = SCNCamera()
+        camera.fieldOfView = 34
+        let cameraNode = SCNNode()
+        cameraNode.camera = camera
+        cameraNode.position = SCNVector3(0, 0, 11.8)
+        root.addChildNode(cameraNode)
+        return scene
+    }
+
+    final class Coordinator: NSObject {
+        var onTap: (() -> Void)?
+        weak var coverPivot: SCNNode?
+        @objc func tapped() { onTap?() }
+    }
+}
