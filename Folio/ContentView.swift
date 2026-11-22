@@ -94,17 +94,26 @@ private struct LibraryScreen: View {
     }
 
     private var intro: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            Text("YOUR LITTLE\nCORNER OF THE\nLITERARY WORLD.")
-                .font(.system(size: 33, weight: .regular, design: .serif))
-                .tracking(-1.1)
-                .lineSpacing(-1)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Rectangle().fill(Color(red: 0.62, green: 0.43, blue: 0.31)).frame(width: 24, height: 1)
+                Text("A PERSONAL LIBRARY")
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(2.1)
+                    .foregroundStyle(folioInk.opacity(0.52))
+            }
+            Text("Stories worth\nkeeping.")
+                .font(.system(size: 38, weight: .regular, design: .serif))
+                .tracking(-1.3)
+                .lineSpacing(-3)
                 .foregroundStyle(folioInk)
-            Text("Keep the stories you love, and the ones you're yet to find.")
+            Text("A little bookshop, made entirely your own.")
                 .font(.system(size: 14, design: .serif))
-                .foregroundStyle(folioInk.opacity(0.68))
+                .italic()
+                .foregroundStyle(folioInk.opacity(0.62))
         }
-        .padding(.top, 15)
+        .padding(.top, 12)
+        .padding(.bottom, 2)
     }
 
     private var shelfCounts: some View {
