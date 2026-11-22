@@ -14,4 +14,7 @@ struct Book: Identifiable, Codable, Equatable {
     var status: ReadingStatus
     var colorIndex: Int = 0
     var coverURL: String? = nil
+    var currentPage: Int? = nil
+    var totalPages: Int? = nil
+    var readingNote: String? = nil
 }
