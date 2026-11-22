@@ -62,6 +62,7 @@ struct BookLookupService {
         async let libraryTask = try? searchOpenLibrary(clean)
         async let publicDomainTask = try? searchGutendex(clean)
         let (libraryResult, publicResult) = await (libraryTask, publicDomainTask)
+        guard libraryResult != nil || publicResult != nil else { throw URLError(.cannotConnectToHost) }
         let libraryBooks = libraryResult ?? []
         let publicBooks = publicResult ?? []
         var results = publicBooks
