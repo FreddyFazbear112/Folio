@@ -71,41 +71,85 @@ struct FolioEPUBReader: View {
     @State private var error: String?
     var body: some View {
         VStack(spacing: 0) {
-            if let contents, contents.chapters.indices.contains(index) {
-                HStack {
-                    Button { turn(-1) } label: { Image(systemName: "chevron.left") }.disabled(index == 0)
-                    Spacer()
-                    VStack(spacing: 3) {
-                        Text(contents.title).font(.system(size: 12, weight: .semibold, design: .serif)).lineLimit(1)
-                        Text("CHAPTER \(index + 1) OF \(contents.chapters.count)").font(.system(size: 8, weight: .medium, design: .monospaced)).tracking(1)
-                    }
-                    Spacer()
-                    Button { turn(1) } label: { Image(systemName: "chevron.right") }.disabled(index >= contents.chapters.count - 1)
-                }
-                .foregroundStyle(sepia ? Color(red: 0.22, green: 0.21, blue: 0.18) : .white)
-                .padding(.horizontal, 20).padding(.vertical, 9)
-                FolioEPUBWebPage(chapter: contents.chapters[index], root: contents.root, sepia: sepia)
-                HStack {
-                    Text(contents.chapters[index].title).lineLimit(1)
-                    Spacer()
-                    Text("\(Int(Double(index + 1) / Double(contents.chapters.count) * 100))%")
-                }
-                .font(.system(size: 9, design: .serif)).foregroundStyle(sepia ? .secondary : .white.opacity(0.65))
-                .padding(.horizontal, 18).padding(.vertical, 8)
-            } else if loading {
-                ProgressView("Opening your book…").frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                VStack(spacing: 10) {
-                    Image(systemName: "book.closed").font(.system(size: 28, weight: .light))
-                    Text("This EPUB couldn't be opened").font(.system(size: 20, design: .serif))
-                    Text(error ?? "The file may be damaged or use an unsupported layout.").font(.system(size: 12, design: .serif)).multilineTextAlignment(.center)
-                    Button("Try again") { load() }
-                }.padding(28).frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            readerContent
         }
-        .background(sepia ? Color(red: 0.94, green: 0.90, blue: 0.82) : Color(red: 0.12, green: 0.13, blue: 0.13))
+        .background(readerBackground)
         .task { load() }
     }
+
+    @ViewBuilder
+    private var readerContent: some View {
+        if let contents, contents.chapters.indices.contains(index) {
+            chapterView(contents)
+        } else if loading {
+            ProgressView("Opening your book…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            failureView
+        }
+    }
+
+    private func chapterView(_ book: FolioEPUBContents) -> some View {
+        VStack(spacing: 0) {
+            chapterNavigation(book)
+            FolioEPUBWebPage(chapter: book.chapters[index], root: book.root, sepia: sepia)
+            chapterFooter(book)
+        }
+    }
+
+    private func chapterNavigation(_ book: FolioEPUBContents) -> some View {
+        HStack {
+            Button { turn(-1) } label: { Image(systemName: "chevron.left") }
+                .disabled(index == 0)
+            Spacer()
+            VStack(spacing: 3) {
+                Text(book.title)
+                    .font(.system(size: 12, weight: .semibold, design: .serif))
+                    .lineLimit(1)
+                Text("CHAPTER \\(index + 1) OF \\(book.chapters.count)")
+                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    .tracking(1)
+            }
+            Spacer()
+            Button { turn(1) } label: { Image(systemName: "chevron.right") }
+                .disabled(index >= book.chapters.count - 1)
+        }
+        .foregroundStyle(sepia ? Color(red: 0.22, green: 0.21, blue: 0.18) : Color.white)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 9)
+    }
+
+    private func chapterFooter(_ book: FolioEPUBContents) -> some View {
+        HStack {
+            Text(book.chapters[index].title).lineLimit(1)
+            Spacer()
+            Text("\\(Int(Double(index + 1) / Double(book.chapters.count) * 100))%")
+        }
+        .font(.system(size: 9, design: .serif))
+        .foregroundStyle(sepia ? Color.secondary : Color.white.opacity(0.65))
+        .padding(.horizontal, 18)
+        .padding(.vertical, 8)
+    }
+
+    private var failureView: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "book.closed")
+                .font(.system(size: 28, weight: .light))
+            Text("This EPUB couldn't be opened")
+                .font(.system(size: 20, design: .serif))
+            Text(error ?? "The file may be damaged or use an unsupported layout.")
+                .font(.system(size: 12, design: .serif))
+                .multilineTextAlignment(.center)
+            Button("Try again") { load() }
+        }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var readerBackground: Color {
+        sepia ? Color(red: 0.94, green: 0.90, blue: 0.82) : Color(red: 0.12, green: 0.13, blue: 0.13)
+    }
+
     private func turn(_ delta: Int) {
         index = min(max(index + delta, 0), (contents?.chapters.count ?? 1) - 1)
         SoundEffects.pageTurn()
