@@ -4,6 +4,20 @@ import FirebaseFirestore
 struct CommunityService {
     private let db = Firestore.firestore()
 
+    func saveProfile(name: String, bio: String, userID: String) async throws {
+        try await db.collection("profiles").document(userID).setData([
+            "name": name,
+            "bio": bio,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+    }
+
+    func loadProfile(userID: String) async throws -> (name: String, bio: String)? {
+        let snapshot = try await db.collection("profiles").document(userID).getDocument()
+        guard snapshot.exists, let data = snapshot.data() else { return nil }
+        return (data["name"] as? String ?? "", data["bio"] as? String ?? "")
+    }
+
     func fetchPosts() async throws -> [CommunityPost] {
         let snapshot = try await db.collection("posts")
             .order(by: "createdAt", descending: true)
