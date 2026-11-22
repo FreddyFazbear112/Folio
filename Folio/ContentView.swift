@@ -40,7 +40,7 @@ private struct LibraryScreen: View {
     @State private var selectedBook: Book?
     @State private var showingFirstBookTutorial = false
     @State private var openAddBookAfterTutorial = false
-    @AppStorage("folio.firstBookTutorialSeen") private var firstBookTutorialSeen = false
+    @AppStorage("folio.productTourSeen.v2") private var firstBookTutorialSeen = false
 
     var body: some View {
         NavigationStack {
