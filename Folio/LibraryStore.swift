@@ -17,6 +17,34 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    var continueReadingBook: Book? {
+        books
+            .filter { $0.status == .reading }
+            .sorted { ($0.lastOpenedAt ?? $0.addedAt) > ($1.lastOpenedAt ?? $1.addedAt) }
+            .first ?? books.first
+    }
+
+    var favoriteBooks: [Book] {
+        books.filter(\.isFavorite)
+    }
+
+    var recentlyReadBooks: [Book] {
+        books
+            .filter { $0.lastOpenedAt != nil || $0.status == .reading || $0.status == .finished }
+            .sorted { ($0.lastOpenedAt ?? $0.addedAt) > ($1.lastOpenedAt ?? $1.addedAt) }
+    }
+
+    var recentlyAddedBooks: [Book] {
+        books.sorted { $0.addedAt > $1.addedAt }
+    }
+
+    func digitalFileURL(for book: Book) -> URL? {
+        guard let fileName = book.digitalFileName else { return nil }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileURL = documents.appendingPathComponent(fileName)
+        return FileManager.default.fileExists(atPath: fileURL.path) ? fileURL : nil
+    }
+
     @discardableResult
     func add(title: String, author: String, status: ReadingStatus, coverURL: String? = nil, isbn: String? = nil) -> UUID? {
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -33,9 +61,30 @@ final class LibraryStore: ObservableObject {
         }) {
             return existing.id
         }
-        let book = Book(title: cleanTitle, author: normalizedAuthor, status: status, colorIndex: books.count % 6, coverURL: coverURL, isbn: cleanISBN)
+        let book = Book(
+            title: cleanTitle,
+            author: normalizedAuthor,
+            status: status,
+            colorIndex: books.count % 6,
+            coverURL: coverURL,
+            isbn: cleanISBN,
+            addedAt: Date()
+        )
         books.insert(book, at: 0)
         return book.id
+    }
+
+    func toggleFavorite(_ book: Book) {
+        guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
+        books[index].isFavorite.toggle()
+    }
+
+    func markOpened(_ book: Book) {
+        guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
+        books[index].lastOpenedAt = Date()
+        if books[index].status == .toRead {
+            books[index].status = .reading
+        }
     }
 
     func update(_ book: Book, status: ReadingStatus) {
@@ -47,7 +96,15 @@ final class LibraryStore: ObservableObject {
         guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
         books[index].currentPage = currentPage
         books[index].totalPages = totalPages
-        books[index].readingNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        books[index].lastOpenedAt = Date()
+        if let currentPage, let totalPages, totalPages > 0, currentPage >= totalPages {
+            books[index].status = .finished
+        } else if (currentPage ?? 0) > 1 && books[index].status == .toRead {
+            books[index].status = .reading
+        }
+        if let note {
+            books[index].readingNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
     }
 
     func verifyOwnership(_ book: Book, scannedISBN: String) {
@@ -90,14 +147,10 @@ final class LibraryStore: ObservableObject {
         UserDefaults.standard.set(data, forKey: storageKey)
 
         let shared = UserDefaults(suiteName: "group.com.folio.app")
-        let current = books.first(where: { $0.status == .reading }) ?? books.first
+        let current = continueReadingBook
         shared?.set(current?.title ?? "Choose your next story", forKey: "widget.current.title")
         shared?.set(current?.author ?? "Your Folio library", forKey: "widget.current.author")
-        let progress = current.flatMap { book -> Double? in
-            guard let page = book.currentPage, let total = book.totalPages, total > 0 else { return nil }
-            return min(1, max(0, Double(page) / Double(total)))
-        } ?? 0
-        shared?.set(progress, forKey: "widget.current.progress")
+        shared?.set(current?.progressFraction ?? 0, forKey: "widget.current.progress")
         WidgetCenter.shared.reloadTimelines(ofKind: "FolioShelfWidget")
     }
 }
