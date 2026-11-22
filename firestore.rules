@@ -8,7 +8,9 @@ service cloud.firestore {
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 80
         && request.resource.data.bio is string
-        && request.resource.data.bio.size() <= 500;
+        && request.resource.data.bio.size() <= 500
+        && request.resource.data.avatarURL is string
+        && request.resource.data.avatarURL.size() <= 2000;
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
