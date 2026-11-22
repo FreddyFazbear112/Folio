@@ -735,6 +735,7 @@ private struct FolioLibraryHome: View {
     @State private var selectedBook: Book?
     @State private var showingAddBook = false
     @State private var showingTour = false
+    @State private var openAddAfterTour = false
     @AppStorage("folio.productTourSeen.v2") private var tourSeen = false
 
     private let paper = Color(red: 0.955, green: 0.936, blue: 0.888)
@@ -779,13 +780,21 @@ private struct FolioLibraryHome: View {
         .sheet(item: $selectedBook) { book in
             BookDetailView(book: book)
                 .environmentObject(library)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showingTour) {
-            FirstBookTutorialView { showingAddBook = true }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingTour, onDismiss: {
+            if openAddAfterTour {
+                openAddAfterTour = false
+                showingAddBook = true
+            }
+        }) {
+            FirstBookTutorialView {
+                openAddAfterTour = true
+                showingTour = false
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .onAppear {
             if !tourSeen { showingTour = true; tourSeen = true }
