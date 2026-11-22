@@ -47,7 +47,7 @@ struct Folio3DBookReader: View {
                 .padding(.horizontal, 20).padding(.top, 12)
 
                 Spacer(minLength: 12)
-                if let document {
+                if let document, total > 0 {
                     SceneBookStage(
                         leftPage: page > 1 ? renderedPage(page - 1, in: document) : nil,
                         rightPage: renderedPage(page, in: document),
