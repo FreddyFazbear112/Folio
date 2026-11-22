@@ -82,7 +82,7 @@ private struct LibraryScreen: View {
         .sheet(isPresented: $showingAddBook) {
             AddBookView()
                 .environmentObject(library)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $selectedBook) { book in
@@ -455,6 +455,62 @@ private struct BookDetailView: View {
                     }
                     if let message { Text(message).font(.system(size: 12, design: .serif)).foregroundStyle(.secondary) }
                 }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        sectionLabel("A MOMENT FOR READING")
+                        Spacer()
+                        Circle().fill(timerStart == nil ? folioInk.opacity(0.2) : Color(red: 0.35, green: 0.49, blue: 0.36))
+                            .frame(width: 6, height: 6)
+                        Text(timerStart == nil ? "PAUSED" : "IN SESSION")
+                            .font(.system(size: 8, weight: .semibold)).tracking(1.2)
+                            .foregroundStyle(folioInk.opacity(0.48))
+                    }
+                    HStack(alignment: .center) {
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            let seconds = max(0, Int((timerStart.map { context.date.timeIntervalSince($0) } ?? elapsed)))
+                            Text(String(format: "%02d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60))
+                                .font(.system(size: 34, weight: .regular, design: .serif))
+                                .monospacedDigit()
+                                .foregroundStyle(folioInk)
+                        }
+                        Spacer()
+                        Button {
+                            if let started = timerStart {
+                                elapsed += Date().timeIntervalSince(started)
+                                timerStart = nil
+                            } else {
+                                timerStart = Date()
+                            }
+                            SoundEffects.softTap()
+                        } label: {
+                            HStack(spacing: 7) {
+                                Image(systemName: timerStart == nil ? "play.fill" : "pause.fill")
+                                    .font(.system(size: 10, weight: .semibold))
+                                Text(timerStart == nil ? (elapsed == 0 ? "Begin" : "Resume") : "Pause")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .foregroundStyle(folioPaper)
+                            .padding(.horizontal, 17).padding(.vertical, 12)
+                            .background(folioInk)
+                            .clipShape(Capsule())
+                        }
+                    }
+                    if elapsed > 0 || timerStart != nil {
+                        Button("End session") {
+                            if let started = timerStart {
+                                elapsed += Date().timeIntervalSince(started)
+                                timerStart = nil
+                            }
+                            message = "Reading session: " + String(format: "%d min", Int(elapsed / 60))
+                        }
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(folioInk.opacity(0.56))
+                    }
+                }
+                .padding(16)
+                .background(Color.white.opacity(0.56))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 12) {
                     sectionLabel("READING JOURNAL")
