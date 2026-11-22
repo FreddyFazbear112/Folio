@@ -433,7 +433,7 @@ private struct BookDetailView: View {
         }
         .fullScreenCover(isPresented: $reading) {
             if let readerURL {
-                FolioReadingCopyView(url: readerURL) { page, total in
+                FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
                     currentPageText = String(page)
                     totalPagesText = String(total)
                     library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
@@ -534,8 +534,15 @@ private struct BookDetailView: View {
 private struct FolioReadingCopyView: View {
     @Environment(\.dismiss) private var dismiss
     let url: URL
+    let initialPage: Int
     var onProgress: (Int, Int) -> Void
-    @State private var currentPage = 1
+    @State private var currentPage: Int
+    init(url: URL, initialPage: Int = 1, onProgress: @escaping (Int, Int) -> Void) {
+        self.url = url
+        self.initialPage = max(1, initialPage)
+        self.onProgress = onProgress
+        _currentPage = State(initialValue: max(1, initialPage))
+    }
     @State private var totalPages = 0
     @State private var sepia = true
     @State private var focusMode = false
@@ -577,7 +584,7 @@ private struct FolioReadingCopyView: View {
                     FolioPDFView(url: url, currentPage: $currentPage, totalPages: $totalPages, sepia: sepia)
                         .ignoresSafeArea(edges: focusMode ? .all : [])
                 } else {
-                    FolioEPUBReader(url: url, sepia: sepia, onProgress: onProgress)
+                    FolioEPUBReader(url: url, sepia: sepia, initialChapter: max(0, initialPage - 1), onProgress: onProgress)
                 }
                 if url.pathExtension.lowercased() == "pdf" && !focusMode {
                     VStack(spacing: 10) {
@@ -654,7 +661,6 @@ private struct FolioPDFView: UIViewRepresentable {
         context.coordinator.pdfView = view
         context.coordinator.observePageChanges()
         totalPages = view.document?.pageCount ?? 0
-        currentPage = 1
         return view
     }
 
