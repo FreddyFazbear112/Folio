@@ -174,10 +174,12 @@ struct CommunityService {
 
 enum CommunityAPIError: LocalizedError {
     case signInRequired
+    case setupRequired
     case server(String)
     var errorDescription: String? {
         switch self {
-        case .signInRequired: return "Sign in to use the Reading Room."\n        case .setupRequired: return "Connect Firebase or configure the Folio API to enable online features."
+        case .signInRequired: return "Sign in to use the Reading Room."
+        case .setupRequired: return "Connect Firebase or configure the Folio API to enable online features."
         case .server(let message): return message
         }
     }
