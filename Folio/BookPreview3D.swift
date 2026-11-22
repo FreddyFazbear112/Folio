@@ -1,5 +1,6 @@
 import SwiftUI
 import SceneKit
+import UIKit
 
 struct BookPreview3D: UIViewRepresentable {
     let title: String
@@ -13,6 +14,8 @@ struct BookPreview3D: UIViewRepresentable {
         view.autoenablesDefaultLighting = true
         view.antialiasingMode = .multisampling4X
         view.isPlaying = true
+        context.coordinator.view = view
+        view.addGestureRecognizer(UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapBook(_:))))
         return view
     }
 
@@ -20,8 +23,11 @@ struct BookPreview3D: UIViewRepresentable {
         view.scene = makeScene()
     }
 
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     private func makeScene() -> SCNScene {
         let scene = SCNScene()
+        scene.physicsWorld.gravity = SCNVector3(0, 0, 0)
         let book = SCNBox(width: 1.05, height: 1.48, length: 0.22, chamferRadius: 0.035)
         book.materials = [
             material(tint), material(UIColor(red: 0.82, green: 0.77, blue: 0.67, alpha: 1)),
@@ -30,11 +36,13 @@ struct BookPreview3D: UIViewRepresentable {
         let node = SCNNode(geometry: book)
         node.position = SCNVector3(0, 0, 0)
         node.eulerAngles = SCNVector3(0.12, -0.48, 0.06)
-        let spin = SCNAction.repeatForever(.sequence([
-            .rotateBy(x: 0, y: 0.16, z: 0, duration: 1.8),
-            .rotateBy(x: 0, y: -0.16, z: 0, duration: 1.8)
-        ]))
-        node.runAction(spin)
+        let body = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: book, options: nil))
+        body.mass = 0.65
+        body.angularDamping = 1.7
+        body.damping = 0.8
+        body.isAffectedByGravity = false
+        node.physicsBody = body
+        body.applyTorque(SCNVector4(0, 1, 0, 0.35), asImpulse: true)
         scene.rootNode.addChildNode(node)
 
         let titleText = SCNText(string: title.uppercased(), extrusionDepth: 0.002)
@@ -44,7 +52,6 @@ struct BookPreview3D: UIViewRepresentable {
         let textNode = SCNNode(geometry: titleText)
         textNode.scale = SCNVector3(0.012, 0.012, 0.012)
         textNode.position = SCNVector3(-0.47, -0.12, 0.116)
-        textNode.constraints = [SCNBillboardConstraint()]
         node.addChildNode(textNode)
 
         let camera = SCNCamera()
@@ -60,5 +67,18 @@ struct BookPreview3D: UIViewRepresentable {
         material.diffuse.contents = color
         material.roughness.contents = 0.72
         return material
+    }
+
+    final class Coordinator: NSObject {
+        weak var view: SCNView?
+
+        @objc func tapBook(_ recognizer: UITapGestureRecognizer) {
+            guard let view else { return }
+            let point = recognizer.location(in: view)
+            guard let hit = view.hitTest(point, options: nil).first?.node else { return }
+            let bookNode = hit.physicsBody == nil ? hit.parent : hit
+            bookNode?.physicsBody?.applyTorque(SCNVector4(0, 1, 0, 1.1), asImpulse: true)
+            bookNode?.physicsBody?.applyForce(SCNVector3(0, 0.12, 0), asImpulse: true)
+        }
     }
 }
