@@ -23,7 +23,7 @@ final class ReadingActivityManager {
     func update(elapsed: Int, paused: Bool, title: String, author: String) async {
         guard let activity else { return }
         let state = FolioReadingActivityAttributes.ContentState(
-            elapsedSeconds: max(0, elapsed), isPaused: paused, runningSince: paused ? nil : .now, bookTitle: title, author: author
+            elapsedSeconds: max(0, elapsed), isPaused: paused, runningSince: paused ? nil : Date.now.addingTimeInterval(-TimeInterval(max(0, elapsed))), bookTitle: title, author: author
         )
         await activity.update(ActivityContent(state: state, staleDate: .now.addingTimeInterval(60 * 60 * 12)))
     }
