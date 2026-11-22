@@ -7,6 +7,7 @@ struct AddBookView: View {
     @State private var title = ""
     @State private var author = ""
     @State private var isbn = ""
+    @State private var searchText = ""
     @State private var coverURL: String?
     @State private var status: ReadingStatus = .toRead
     @State private var showingScanner = false
@@ -22,6 +23,22 @@ struct AddBookView: View {
             Form {
                 Section("FIND A BOOK") {
                     HStack {
+                        Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                        TextField("Search title or author", text: $searchText)
+                            .submitLabel(.search)
+                            .onSubmit { Task { await searchBook() } }
+                    }
+                    Button {
+                        Task { await searchBook() }
+                    } label: {
+                        HStack {
+                            if isLookingUp { ProgressView() }
+                            Text("Search the book catalogue")
+                        }
+                    }
+                    .disabled(isLookingUp || searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Divider()
+                    HStack {
                         TextField("ISBN barcode number", text: $isbn).keyboardType(.numberPad)
                         Button { showingScanner = true } label: {
                             Label("Scan", systemImage: "barcode.viewfinder")
@@ -31,10 +48,7 @@ struct AddBookView: View {
                     Button {
                         Task { await lookupBook() }
                     } label: {
-                        HStack {
-                            if isLookingUp { ProgressView() }
-                            Text("Look up book details")
-                        }
+                        Text("Find by ISBN")
                     }
                     .disabled(isLookingUp || isbn.isEmpty)
                     if let lookupMessage {
@@ -93,6 +107,25 @@ struct AddBookView: View {
                     }
                 }
             }
+        }
+    }
+
+    @MainActor
+    private func searchBook() async {
+        isLookingUp = true
+        lookupMessage = "Searching the catalogue…"
+        defer { isLookingUp = false }
+        do {
+            if let result = try await BookLookupService().search(query: searchText) {
+                title = result.title
+                author = result.author
+                coverURL = result.coverURL
+                lookupMessage = "Found a match. Check the details before adding it."
+            } else {
+                lookupMessage = "No match found. You can enter the details yourself."
+            }
+        } catch {
+            lookupMessage = "The catalogue is unavailable. You can still add this book manually."
         }
     }
 
