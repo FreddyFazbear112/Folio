@@ -453,10 +453,23 @@ private struct BookDetailView: View {
         }
         .fullScreenCover(isPresented: $reading) {
             if let readerURL {
-                FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
-                    currentPageText = String(page)
-                    totalPagesText = String(total)
-                    library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                if readerURL.pathExtension.lowercased() == "pdf" {
+                    Folio3DBookReader(
+                        url: readerURL,
+                        title: savedBook.title,
+                        coverURL: savedBook.coverURL,
+                        initialPage: book.currentPage ?? 1
+                    ) { page, total in
+                        currentPageText = String(page)
+                        totalPagesText = String(total)
+                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                    }
+                } else {
+                    FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
+                        currentPageText = String(page)
+                        totalPagesText = String(total)
+                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                    }
                 }
             }
         }
