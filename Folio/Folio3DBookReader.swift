@@ -105,6 +105,7 @@ struct Folio3DBookReader: View {
             }
             document = loaded
             page = min(max(initialPage, 1), loaded.pageCount)
+            withAnimation(.easeInOut(duration: 0.85)) { isOpen = true }
             onProgress(page, loaded.pageCount)
             if let coverURL, let remoteURL = URL(string: coverURL), remoteURL.scheme == "https",
                let (data, _) = try? await URLSession.shared.data(from: remoteURL),
