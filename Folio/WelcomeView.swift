@@ -46,8 +46,7 @@ struct WelcomeView: View {
                 .foregroundStyle(walnut)
                 .padding(.bottom, 36)
 
-                Text("A LIFE BETWEEN
-THE PAGES.")
+                Text("A LIFE BETWEEN\nTHE PAGES.")
                     .font(.system(size: 37, weight: .regular, design: .serif))
                     .tracking(-1.3)
                     .multilineTextAlignment(.center)
