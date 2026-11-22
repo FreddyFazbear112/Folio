@@ -1,10 +1,9 @@
 import Foundation
 
-enum ReadingStatus: String, CaseIterable, Identifiable {
+enum ReadingStatus: String, CaseIterable, Identifiable, Codable {
     case toRead = "To Read"
     case reading = "Reading"
     case finished = "Read"
-
     var id: String { rawValue }
 }
 
