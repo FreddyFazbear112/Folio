@@ -28,6 +28,13 @@ final class LibraryStore: ObservableObject {
         books[index].status = status
     }
 
+    func updateReadingDetails(_ book: Book, currentPage: Int?, totalPages: Int?, note: String?) {
+        guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
+        books[index].currentPage = currentPage
+        books[index].totalPages = totalPages
+        books[index].readingNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     func remove(_ book: Book) { books.removeAll { $0.id == book.id } }
 
     func books(for status: ReadingStatus) -> [Book] { books.filter { $0.status == status } }
