@@ -1,4 +1,5 @@
-import SwiftUI\nimport WidgetKit
+import SwiftUI
+import WidgetKit
 
 @MainActor
 final class LibraryStore: ObservableObject {
