@@ -1,4 +1,4 @@
-import SwiftUI
+import SwiftUI\nimport WidgetKit
 
 @MainActor
 final class LibraryStore: ObservableObject {
@@ -64,5 +64,16 @@ final class LibraryStore: ObservableObject {
     private func save() {
         guard let data = try? JSONEncoder().encode(books) else { return }
         UserDefaults.standard.set(data, forKey: storageKey)
+
+        let shared = UserDefaults(suiteName: "group.com.folio.app")
+        let current = books.first(where: { $0.status == .reading }) ?? books.first
+        shared?.set(current?.title ?? "Choose your next story", forKey: "widget.current.title")
+        shared?.set(current?.author ?? "Your Folio library", forKey: "widget.current.author")
+        let progress = current.flatMap { book -> Double? in
+            guard let page = book.currentPage, let total = book.totalPages, total > 0 else { return nil }
+            return min(1, max(0, Double(page) / Double(total)))
+        } ?? 0
+        shared?.set(progress, forKey: "widget.current.progress")
+        WidgetCenter.shared.reloadTimelines(ofKind: "FolioShelfWidget")
     }
 }
