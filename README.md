@@ -28,7 +28,7 @@ Open `Folio.xcodeproj`, let Swift Package Manager resolve Firebase, Google Sign-
 
 The repository now includes `server/`, a self-hostable Node.js API with PostgreSQL storage. It provides public reading-room feed reads and authenticated endpoints for publishing posts, comments, likes, and reader profiles. Firebase Authentication is currently used only as the identity-token issuer for API requests; the data API and database are Folio-owned and can be hosted independently.
 
-The iOS client is integrated with the Folio API and selects it when `FOLIO_API_BASE_URL` is configured. The server source is committed, but it is **not deployed**, so shared online features are not live until you provide hosting, an HTTPS endpoint, PostgreSQL, and a Firebase Admin service-account credential stored only on the server. Never put the service-account JSON in the iOS app or commit it to Git.
+The iOS client is integrated with the Folio API and selects it when `FOLIO_API_BASE_URL` is configured. A Render deployment blueprint is included in `render.yaml`. It provisions a web service and PostgreSQL database; set the private `FIREBASE_SERVICE_ACCOUNT_JSON` secret in Render using the service-account JSON contents. The first deployment still requires connecting this repository to your Render account and supplying that private credential. After deployment, set the iOS build setting `FOLIO_API_BASE_URL` to the generated HTTPS service URL and rebuild the app. Never put the service-account JSON in the iOS app or commit it to Git.
 
 To run it yourself:
 
