@@ -4,6 +4,7 @@
  classes = {};
  objectVersion = 56;
  objects = {
+  E50000000000000000000001 /* Folio3DBookReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Folio3DBookReader.swift; sourceTree = "<group>"; };
   D40000000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
   D40000000000000000000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000001; };
   D40000000000000000000017 /* Generate Folio App Icon */ = {isa = PBXShellScriptBuildPhase; buildActionMask = 2147483647; files = (); inputPaths = ("$(SRCROOT)/Scripts/GenerateAppIcon.swift",); name = "Generate Folio App Icon"; outputPaths = ("$(SRCROOT)/Folio/Assets.xcassets/AppIcon.appiconset/AppIcon.png",); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "set -e\n/usr/bin/xcrun swift \"${SRCROOT}/Scripts/GenerateAppIcon.swift\" \"${SRCROOT}/Folio/Assets.xcassets/AppIcon.appiconset/AppIcon.png\"\n"; };
