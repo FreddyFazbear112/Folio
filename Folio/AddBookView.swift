@@ -7,6 +7,7 @@ struct AddBookView: View {
     @State private var title = ""
     @State private var author = ""
     @State private var isbn = ""
+    @State private var coverURL: String?
     @State private var status: ReadingStatus = .toRead
     @State private var showingScanner = false
     @State private var isLookingUp = false
@@ -59,7 +60,7 @@ struct AddBookView: View {
                 }
                 Section {
                     Button {
-                        library.add(title: title, author: author, status: status)
+                        library.add(title: title, author: author, status: status, coverURL: coverURL)
                         SoundEffects.addBook()
                         dismiss()
                     } label: {
@@ -104,6 +105,7 @@ struct AddBookView: View {
             if let result = try await BookLookupService().lookup(isbn: isbn) {
                 title = result.title
                 author = result.author
+                coverURL = result.coverURL
                 lookupMessage = "Found it. Have a look and add it to your shelf."
             } else {
                 lookupMessage = "No match found. You can enter the details yourself."
