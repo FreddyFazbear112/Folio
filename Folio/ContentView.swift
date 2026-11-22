@@ -136,6 +136,7 @@ private struct BookDetailView: View {
     @State private var backCoverURLText = ""
     @State private var spineColorHex = "765447"
     @State private var editionMessage: String?
+    @State private var confirmingRemoval = false
     @State private var scanning = false
     @State private var importing = false
     @State private var reading = false
@@ -388,7 +389,7 @@ private struct BookDetailView: View {
                     Picker("Reading status", selection: Binding(get: { savedBook.status }, set: { library.update(book, status: $0) })) {
                         ForEach(ReadingStatus.allCases) { status in Text(status.rawValue).tag(status) }
                     }.pickerStyle(.segmented)
-                    Button(role: .destructive) { library.remove(book); dismiss() } label: {
+                    Button(role: .destructive) { confirmingRemoval = true } label: {
                         Label("Remove from shelf", systemImage: "trash").font(.system(size: 12, weight: .medium))
                     }
                     .padding(.top, 5)
@@ -399,6 +400,12 @@ private struct BookDetailView: View {
             .padding(.bottom, 34)
         }
         .background(folioPaper.ignoresSafeArea())
+        .confirmationDialog("Remove this book?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
+            Button("Remove from my shelf", role: .destructive) { library.remove(book); dismiss() }
+            Button("Keep book", role: .cancel) {}
+        } message: {
+            Text("This removes the book and its reading details from this device.")
+        }
         .onAppear {
             currentPageText = book.currentPage.map(String.init) ?? ""
             totalPagesText = book.totalPages.map(String.init) ?? ""
