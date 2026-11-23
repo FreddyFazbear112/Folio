@@ -43,6 +43,11 @@ final class LibraryStore: ObservableObject {
         books[index].status = status
     }
 
+    func updateFavorite(_ book: Book, isFavorite: Bool) {
+        guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
+        books[index].isFavorite = isFavorite
+    }
+
     func updateReadingDetails(_ book: Book, currentPage: Int?, totalPages: Int?, note: String?) {
         guard let index = books.firstIndex(where: { $0.id == book.id }) else { return }
         books[index].currentPage = currentPage
