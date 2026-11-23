@@ -417,18 +417,21 @@ private struct BookDetailView: View {
     }
 
     private var bookPreview: some View {
-                VStack(spacing: 8) {
+                VStack(spacing: 5) {
                     BookPreview3D(title: savedBook.title, tint: spineTint, coverURL: savedBook.coverURL, backCoverURL: savedBook.backCoverURL)
-                        .frame(height: 225)
+                        .frame(height: 310)
+                        .shadow(color: .black.opacity(0.48), radius: 20, x: 0, y: 13)
                     Text("TURN THE BOOK TO EXPLORE IT")
-                        .font(.system(size: 9, weight: .medium))
-                        .tracking(1.7)
-                        .foregroundStyle(folioInk.opacity(0.42))
+                        .font(.system(size: 8, weight: .semibold))
+                        .tracking(1.9)
+                        .foregroundStyle(FolioPalette.gold.opacity(0.72))
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(FolioPalette.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.vertical, 3)
+                .background(
+                    RadialGradient(colors: [Color(red: 0.19, green: 0.14, blue: 0.10), Color(red: 0.055, green: 0.048, blue: 0.043)], center: .center, startRadius: 10, endRadius: 250)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 15))
     }
 
     private var editionStudio: some View {
