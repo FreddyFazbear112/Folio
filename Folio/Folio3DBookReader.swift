@@ -343,7 +343,11 @@ private struct SceneBookStage: UIViewRepresentable {
             plane.materials = [material]
             let node = SCNNode(geometry: plane)
             node.name = name
-            node.position = SCNVector3(x, 0, 0.0)
+            // Keep the PDF artwork in front of the solid page block.
+            // At z=0 the block's front face occluded both page planes.
+            node.position = SCNVector3(x, 0, 0.052)
+            node.castsShadow = false
+            node.renderingOrder = 2
             root.addChildNode(node)
             return node
         }
@@ -380,7 +384,7 @@ private struct SceneBookStage: UIViewRepresentable {
         gutterMaterial.lightingModel = .constant
         gutterGeometry.materials = Array(repeating: gutterMaterial, count: 6)
         let gutter = SCNNode(geometry: gutterGeometry)
-        gutter.position = SCNVector3(0, 0, 0.025)
+        gutter.position = SCNVector3(0, 0, 0.060)
         root.addChildNode(gutter)
 
         let ambient = SCNNode()
