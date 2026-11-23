@@ -205,7 +205,7 @@ private struct SceneBookStage: UIViewRepresentable {
         view.isJitteringEnabled = true
         view.antialiasingMode = .multisampling4X
         view.preferredFramesPerSecond = 60
-        view.isPlaying = false
+        view.isPlaying = true
         if let camera = scene.rootNode.childNode(withName: "folio-camera", recursively: true) {
             camera.look(at: SCNVector3Zero)
             view.pointOfView = camera
