@@ -12,7 +12,7 @@ struct FolioApp: App {
             ContentView()
                 .environmentObject(library)
                 .environmentObject(auth)
-                .preferredColorScheme(.light)
+                .preferredColorScheme(.dark)
                 .onOpenURL { url in
                     GIDSignIn.sharedInstance.handle(url)
                 }
