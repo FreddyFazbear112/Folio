@@ -64,7 +64,7 @@ struct Folio3DBookReader: View {
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
                     )
-                    .frame(maxWidth: .infinity).frame(height: 470)
+                    .frame(maxWidth: .infinity).frame(height: 340)
                     .padding(.horizontal, 2)
                     .background(Color.clear)
                     .shadow(color: .black.opacity(0.72), radius: 30, x: 0, y: 24)
@@ -263,9 +263,9 @@ private struct SceneBookStage: UIViewRepresentable {
         // than spin around its own centre.
         let hinge = SCNNode()
         hinge.position = SCNVector3(0, 0, 0.075)
-        let leaf = SCNNode(geometry: SCNPlane(width: 2.85, height: 4.17))
+        let leaf = SCNNode(geometry: SCNPlane(width: 1.49, height: 2.10))
         leaf.geometry?.materials = [frontMaterial]
-        leaf.position.x = movingForward ? 1.425 : -1.425
+        leaf.position.x = movingForward ? 0.745 : -0.745
         leaf.castsShadow = true
         leaf.renderingOrder = 10
         hinge.addChildNode(leaf)
@@ -314,7 +314,7 @@ private struct SceneBookStage: UIViewRepresentable {
         scene.background.contents = UIColor.clear
         let root = scene.rootNode
         // A compact, substantial page block with a visible fore-edge.
-        let paperBlock = SCNBox(width: 3.00, height: 4.28, length: 0.245, chamferRadius: 0.035)
+        let paperBlock = SCNBox(width: 3.00, height: 2.18, length: 0.20, chamferRadius: 0.035)
         let blockMaterial = SCNMaterial()
         blockMaterial.diffuse.contents = paper
         blockMaterial.roughness.contents = 0.96
@@ -326,7 +326,7 @@ private struct SceneBookStage: UIViewRepresentable {
 
         // Fine stacked rules on the fore-edge suggest gathered signatures.
         for index in 0..<5 {
-            let ruleGeometry = SCNBox(width: 0.0025, height: 4.12, length: 0.002, chamferRadius: 0)
+            let ruleGeometry = SCNBox(width: 0.0025, height: 2.08, length: 0.002, chamferRadius: 0)
             let ruleMaterial = SCNMaterial()
             ruleMaterial.diffuse.contents = UIColor(red: 0.69, green: 0.63, blue: 0.52, alpha: 1)
             ruleMaterial.lightingModel = .constant
@@ -339,13 +339,13 @@ private struct SceneBookStage: UIViewRepresentable {
         let boardMaterial = SCNMaterial()
         boardMaterial.diffuse.contents = UIColor(red: 0.22, green: 0.16, blue: 0.12, alpha: 1)
         boardMaterial.roughness.contents = 0.88
-        let rearBoardGeometry = SCNBox(width: 3.08, height: 4.43, length: 0.075, chamferRadius: 0.035)
+        let rearBoardGeometry = SCNBox(width: 3.08, height: 2.28, length: 0.075, chamferRadius: 0.035)
         rearBoardGeometry.materials = Array(repeating: boardMaterial, count: 6)
         let rearBoard = SCNNode(geometry: rearBoardGeometry)
         rearBoard.position = SCNVector3(0, 0, -0.235)
         root.addChildNode(rearBoard)
 
-        let spineGeometry = SCNBox(width: 0.16, height: 4.39, length: 0.31, chamferRadius: 0.07)
+        let spineGeometry = SCNBox(width: 0.16, height: 2.24, length: 0.25, chamferRadius: 0.07)
         spineGeometry.materials = Array(repeating: boardMaterial, count: 6)
         let spine = SCNNode(geometry: spineGeometry)
         spine.position = SCNVector3(0, 0, -0.02)
@@ -370,9 +370,9 @@ private struct SceneBookStage: UIViewRepresentable {
                     let verticalBow = pow(abs(v - 0.5) * 2, 2) * 0.012
                     let z = gutter + edgeLift + verticalBow
                     let sideX = x < 0 ? -localX : localX
-                    vertices.append(SCNVector3(sideX, (0.5 - v) * 4.17, z))
+                    vertices.append(SCNVector3(sideX, (0.5 - v) * 2.10, z))
                     normals.append(SCNVector3(0, 0, 1))
-                    uv.append(CGPoint(x: CGFloat(u), y: CGFloat(1 - v)))
+                    uv.append(CGPoint(x: CGFloat(x < 0 ? 1 - u : u), y: CGFloat(1 - v)))
                 }
             }
             for row in 0..<rows {
@@ -393,8 +393,8 @@ private struct SceneBookStage: UIViewRepresentable {
             let material = SCNMaterial()
             material.diffuse.contents = paper
             material.isDoubleSided = true
-            material.lightingModel = .physicallyBased
-            material.roughness.contents = 0.94
+            material.lightingModel = .constant
+            material.roughness.contents = 1.0
             material.metalness.contents = 0
             mesh.materials = [material]
             let node = SCNNode(geometry: mesh)
@@ -413,13 +413,13 @@ private struct SceneBookStage: UIViewRepresentable {
         let hinge = SCNNode()
         hinge.name = "cover-hinge"
         hinge.position = SCNVector3(0, 0, 0.105)
-        let frontBoardGeometry = SCNBox(width: 3.08, height: 4.43, length: 0.075, chamferRadius: 0.035)
+        let frontBoardGeometry = SCNBox(width: 1.54, height: 2.28, length: 0.075, chamferRadius: 0.035)
         frontBoardGeometry.materials = Array(repeating: boardMaterial, count: 6)
         let frontBoard = SCNNode(geometry: frontBoardGeometry)
         frontBoard.position.x = 1.54
         hinge.addChildNode(frontBoard)
 
-        let coverPlane = SCNPlane(width: 3.025, height: 4.375)
+        let coverPlane = SCNPlane(width: 1.49, height: 2.14)
         let coverMaterial = SCNMaterial()
         coverMaterial.diffuse.contents = cover ?? paper
         coverMaterial.isDoubleSided = true
@@ -428,11 +428,11 @@ private struct SceneBookStage: UIViewRepresentable {
         coverPlane.materials = [coverMaterial]
         let coverNode = SCNNode(geometry: coverPlane)
         coverNode.name = "front-cover"
-        coverNode.position = SCNVector3(1.54, 0, 0.039)
+        coverNode.position = SCNVector3(0.77, 0, 0.039)
         hinge.addChildNode(coverNode)
         root.addChildNode(hinge)
 
-        let gutterGeometry = SCNBox(width: 0.075, height: 4.12, length: 0.012, chamferRadius: 0.018)
+        let gutterGeometry = SCNBox(width: 0.075, height: 2.08, length: 0.012, chamferRadius: 0.018)
         let gutterMaterial = SCNMaterial()
         gutterMaterial.diffuse.contents = UIColor(white: 0.25, alpha: 1)
         gutterMaterial.lightingModel = .constant
@@ -450,7 +450,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let deskGeometry = SCNBox(width: 12, height: 0.16, length: 8, chamferRadius: 0.04)
         deskGeometry.materials = Array(repeating: deskMaterial, count: 6)
         let desk = SCNNode(geometry: deskGeometry)
-        desk.position = SCNVector3(0, -2.29, -0.46)
+        desk.position = SCNVector3(0, -1.18, -0.46)
         desk.castsShadow = false
         root.addChildNode(desk)
 
@@ -460,7 +460,7 @@ private struct SceneBookStage: UIViewRepresentable {
         foilMaterial.metalness.contents = 0.72
         foilMaterial.roughness.contents = 0.32
         foilMaterial.lightingModel = .physicallyBased
-        for y in [-2.08 as Float, 2.08 as Float] {
+        for y in [-1.05 as Float, 1.05 as Float] {
             let rule = SCNNode(geometry: SCNBox(width: 2.88, height: 0.012, length: 0.004, chamferRadius: 0.002))
             rule.geometry?.materials = [foilMaterial]
             rule.position = SCNVector3(0, y, 0.205)
@@ -470,7 +470,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let ambient = SCNNode()
         let ambientLamp = SCNLight()
         ambientLamp.type = .ambient
-        ambientLamp.intensity = 190
+        ambientLamp.intensity = 120
         ambientLamp.color = UIColor(red: 0.78, green: 0.72, blue: 0.63, alpha: 1)
         ambient.light = ambientLamp
         root.addChildNode(ambient)
@@ -478,7 +478,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let light = SCNNode()
         let lamp = SCNLight()
         lamp.type = .directional
-        lamp.intensity = 1350
+        lamp.intensity = 420
         lamp.color = UIColor(red: 1, green: 0.88, blue: 0.69, alpha: 1)
         lamp.castsShadow = true
         lamp.shadowRadius = 12
@@ -491,14 +491,14 @@ private struct SceneBookStage: UIViewRepresentable {
         let fill = SCNNode()
         let fillLamp = SCNLight()
         fillLamp.type = .omni
-        fillLamp.intensity = 180
+        fillLamp.intensity = 90
         fillLamp.color = UIColor(red: 0.72, green: 0.79, blue: 0.88, alpha: 1)
         fill.light = fillLamp
         fill.position = SCNVector3(2.4, -1.5, 3.5)
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 34
+        camera.fieldOfView = 29
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
@@ -506,7 +506,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
-        cameraNode.position = SCNVector3(0.12, 1.05, 8.9)
+        cameraNode.position = SCNVector3(0.08, 0.34, 7.4)
         cameraNode.look(at: SCNVector3(0, 0, 0))
         root.addChildNode(cameraNode)
         return scene
