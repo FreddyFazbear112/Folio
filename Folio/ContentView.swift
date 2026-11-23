@@ -374,20 +374,31 @@ private struct BookDetailView: View {
             }
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data, .plainText, .rtf, .html], allowsMultipleSelection: false) { result in importCopy(result) }
-        .fullScreenCover(isPresented: $reading) {
-            if let readerURL {
-                if readerURL.pathExtension.lowercased() == "pdf" {
-                    Folio3DBookReader(url: readerURL, title: savedBook.title, coverURL: savedBook.coverURL, initialPage: book.currentPage ?? 1) { page, total in
-                        currentPageText = String(page); totalPagesText = String(total)
-                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+        .fullScreenCover(isPresented: $reading, onDismiss: { readerURL = nil }) {
+            ZStack {
+                Color(red: 0.035, green: 0.032, blue: 0.030).ignoresSafeArea()
+                if let readerURL {
+                    if readerURL.pathExtension.lowercased() == "pdf" {
+                        Folio3DBookReader(url: readerURL, title: savedBook.title, coverURL: savedBook.coverURL, initialPage: book.currentPage ?? 1) { page, total in
+                            currentPageText = String(page); totalPagesText = String(total)
+                            library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                        }
+                    } else {
+                        FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
+                            currentPageText = String(page); totalPagesText = String(total)
+                            library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                        }
                     }
                 } else {
-                    FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
-                        currentPageText = String(page); totalPagesText = String(total)
-                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
+                    VStack(spacing: 14) {
+                        ProgressView().tint(Color(red: 0.94, green: 0.78, blue: 0.53))
+                        Text("Preparing your reading space…")
+                            .font(.system(size: 15, design: .serif))
+                            .foregroundStyle(Color(red: 0.94, green: 0.90, blue: 0.82))
                     }
                 }
             }
+            .preferredColorScheme(.dark)
         }
     }
 
@@ -770,8 +781,13 @@ private struct BookDetailView: View {
         guard let name = savedBook.digitalFileName else { return }
         let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(name)
         guard FileManager.default.fileExists(atPath: url.path) else { message = "That file is missing. Please import it again."; return }
+        // Publish the URL before presenting the cover. Presenting both state
+        // changes in the same update could briefly create an empty full-screen view.
         readerURL = url
-        reading = true
+        DispatchQueue.main.async {
+            guard readerURL == url else { return }
+            reading = true
+        }
     }
 }
 
