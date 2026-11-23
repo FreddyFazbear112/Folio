@@ -2,6 +2,9 @@ name: Folio iPhone sideload build
 run-name: Folio iPhone build retry
 
 on:
+  push:
+    branches:
+      - work/folio-main-ui
   workflow_dispatch:
 
 concurrency:
