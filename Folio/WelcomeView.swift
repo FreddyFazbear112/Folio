@@ -246,11 +246,11 @@ private struct LibraryBackdrop: View {
             ZStack {
                 LinearGradient(colors: [Color(red: 0.16, green: 0.105, blue: 0.07), Color(red: 0.035, green: 0.027, blue: 0.022)], startPoint: .top, endPoint: .bottom)
                 HStack(spacing: 0) {
-                    ForEach(0..<6, id: \\.self) { column in
+                    ForEach(0..<6, id: \.self) { column in
                         VStack(spacing: 0) {
-                            ForEach(0..<4, id: \\.self) { shelf in
+                            ForEach(0..<4, id: \.self) { shelf in
                                 HStack(alignment: .bottom, spacing: 3) {
-                                    ForEach(0..<5, id: \\.self) { book in
+                                    ForEach(0..<5, id: \.self) { book in
                                         RoundedRectangle(cornerRadius: 2)
                                             .fill(bookColors[(column + shelf + book) % bookColors.count].opacity(0.82))
                                             .frame(width: max(7, (proxy.size.width / 6 - 18) / 5), height: CGFloat(28 + ((column * 13 + shelf * 7 + book * 9) % 42)))
