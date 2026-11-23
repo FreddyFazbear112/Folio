@@ -216,9 +216,15 @@ private struct BookDetailView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
 
-                    BookPreview3D(title: savedBook.title, tint: spineTint, coverURL: savedBook.coverURL, backCoverURL: savedBook.backCoverURL)
-                        .frame(height: 340)
-                        .padding(.horizontal, 28)
+                    FolioBookCover(book: savedBook)
+                        .frame(width: 210, height: 300)
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                        .overlay(alignment: .leading) {
+                            LinearGradient(colors: [.black.opacity(0.35), .clear], startPoint: .leading, endPoint: .trailing)
+                                .frame(width: 12)
+                        }
+                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.white.opacity(0.18), lineWidth: 1))
+                        .shadow(color: .black.opacity(0.65), radius: 24, x: 0, y: 18)
                         .padding(.top, 12)
 
                     Text(savedBook.title)
