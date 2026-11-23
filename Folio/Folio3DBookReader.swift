@@ -175,8 +175,9 @@ private struct SceneBookStage: UIViewRepresentable {
 
     func makeUIView(context: Context) -> SCNView {
         let view = SCNView()
-        view.backgroundColor = UIColor(red: 0.035, green: 0.032, blue: 0.030, alpha: 1)
+        view.backgroundColor = UIColor(red: 0.055, green: 0.048, blue: 0.043, alpha: 1)
         view.isOpaque = true
+        view.contentMode = .scaleAspectFit
         let scene = makeScene()
         view.scene = scene
         view.autoenablesDefaultLighting = false
@@ -292,6 +293,8 @@ private struct SceneBookStage: UIViewRepresentable {
 
     private func makeScene() -> SCNScene {
         let scene = SCNScene()
+        // Keep a deliberate stage behind the model if a page texture fails.
+        scene.background.contents = UIColor(red: 0.055, green: 0.048, blue: 0.043, alpha: 1)
         let root = scene.rootNode
         // A compact, substantial page block with a visible fore-edge.
         let paperBlock = SCNBox(width: 3.00, height: 4.28, length: 0.245, chamferRadius: 0.035)
@@ -332,7 +335,7 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(spine)
 
         func pageNode(_ name: String, x: Float) -> SCNNode {
-            let plane = SCNPlane(width: 1.47, height: 4.17)
+            let plane = SCNPlane(width: 1.49, height: 4.17)
             let material = SCNMaterial()
             material.diffuse.contents = paper
             material.isDoubleSided = true
@@ -344,8 +347,10 @@ private struct SceneBookStage: UIViewRepresentable {
             root.addChildNode(node)
             return node
         }
-        pageNode("left-page", x: -1.45)
-        pageNode("right-page", x: 1.45)
+        // The leaves must meet at the spine and remain inside the hardback boards.
+        // The old +/-1.45 offsets pushed both pages outside the book footprint.
+        pageNode("left-page", x: -0.755)
+        pageNode("right-page", x: 0.755)
 
         let hinge = SCNNode()
         hinge.name = "cover-hinge"
@@ -409,7 +414,7 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 34
+        camera.fieldOfView = 50
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
@@ -417,7 +422,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
-        cameraNode.position = SCNVector3(0, 0.45, 9.4)
+        cameraNode.position = SCNVector3(0, 0.34, 7.8)
         cameraNode.look(at: SCNVector3(0, 0, 0))
         root.addChildNode(cameraNode)
         return scene
