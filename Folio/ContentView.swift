@@ -8,13 +8,18 @@ private let folioInk = Color(red: 0.94, green: 0.90, blue: 0.82)
 
 struct ContentView: View {
     @AppStorage("folio.hasCompletedOnboarding.v2") private var hasWelcomed = false
+    @State private var showingLaunch = true
 
     var body: some View {
-        if hasWelcomed {
-            FolioTabs()
-        } else {
-            WelcomeView {
-                withAnimation(.easeInOut(duration: 0.35)) { hasWelcomed = true }
+        Group {
+            if showingLaunch {
+                FolioLaunchView { withAnimation(.easeInOut(duration: 0.35)) { showingLaunch = false } }
+            } else if hasWelcomed {
+                FolioTabs()
+            } else {
+                WelcomeView {
+                    withAnimation(.easeInOut(duration: 0.35)) { hasWelcomed = true }
+                }
             }
         }
     }
@@ -245,16 +250,9 @@ private struct BookDetailView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
 
-                    FolioBookCover(book: savedBook)
-                        .frame(width: 210, height: 300)
-                        .clipShape(RoundedRectangle(cornerRadius: 5))
-                        .overlay(alignment: .leading) {
-                            LinearGradient(colors: [.black.opacity(0.35), .clear], startPoint: .leading, endPoint: .trailing)
-                                .frame(width: 12)
-                        }
-                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.white.opacity(0.18), lineWidth: 1))
-                        .shadow(color: .black.opacity(0.65), radius: 24, x: 0, y: 18)
-                        .padding(.top, 12)
+                    bookPreview
+                        .padding(.horizontal, 22)
+                        .padding(.top, 8)
 
                     Text(savedBook.title)
                         .font(.system(size: 29, design: .serif))
