@@ -1601,8 +1601,12 @@ private struct FolioDiscoverScreen: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 20) {
+            ZStack {
+                FolioShelfAtmosphere().ignoresSafeArea().opacity(0.58)
+                ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    Text("EXPLORE YOUR NEXT STORY")
+                        .font(.system(size: 9, weight: .bold)).tracking(2.6).foregroundStyle(FolioPalette.gold)
                     Text("Discover")
                         .font(.system(size: 34, design: .serif))
                         .foregroundStyle(FolioPalette.cream)
@@ -1650,9 +1654,9 @@ private struct FolioDiscoverScreen: View {
                         .font(.system(size: 11, design: .serif))
                         .foregroundStyle(FolioPalette.muted)
                 }
-                .padding(20)
+                .padding(22)
+                }
             }
-            .background(FolioPalette.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
         }
     }
@@ -1662,8 +1666,12 @@ private struct FolioStatsScreen: View {
     @EnvironmentObject private var library: LibraryStore
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+            ZStack {
+                FolioShelfAtmosphere().ignoresSafeArea().opacity(0.48)
+                ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    Text("YOUR READING LIFE")
+                        .font(.system(size: 9, weight: .bold)).tracking(2.6).foregroundStyle(FolioPalette.gold)
                     Text("Your reading")
                         .font(.system(size: 34, design: .serif))
                         .foregroundStyle(FolioPalette.cream)
@@ -1680,9 +1688,9 @@ private struct FolioStatsScreen: View {
                         .foregroundStyle(FolioPalette.muted)
                         .padding(.top, 8)
                 }
-                .padding(20)
+                .padding(22)
+                }
             }
-            .background(FolioPalette.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
         }
     }
