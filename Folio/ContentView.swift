@@ -1510,8 +1510,12 @@ private struct FolioLibraryScreen: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
+            ZStack {
+                FolioShelfAtmosphere().ignoresSafeArea().opacity(0.62)
+                ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("YOUR PERSONAL COLLECTION")
+                        .font(.system(size: 9, weight: .bold)).tracking(2.6).foregroundStyle(FolioPalette.gold)
                     Text("Library")
                         .font(.system(size: 34, design: .serif))
                         .foregroundStyle(FolioPalette.cream)
@@ -1554,8 +1558,9 @@ private struct FolioLibraryScreen: View {
                             ForEach(filteredBooks) { book in
                                 Button { selectBook(book) } label: {
                                     HStack(spacing: 13) {
-                                        FolioBookCover(book: book).frame(width: 61, height: 86)
-                                        VStack(alignment: .leading, spacing: 5) {
+                                        FolioBookCover(book: book).frame(width: 76, height: 108)
+                                            .shadow(color: .black.opacity(0.42), radius: 8, x: 3, y: 5)
+                                        VStack(alignment: .leading, spacing: 6) {
                                             Text(book.title).font(.system(size: 15, design: .serif)).foregroundStyle(FolioPalette.cream).lineLimit(2)
                                             Text(book.author).font(.system(size: 11, design: .serif)).foregroundStyle(FolioPalette.muted)
                                             Text(book.digitalFileName.map { $0.uppercased() } ?? book.status.rawValue.uppercased())
@@ -1570,14 +1575,16 @@ private struct FolioLibraryScreen: View {
                                     .padding(.vertical, 11)
                                 }
                                 .buttonStyle(.plain)
-                                if book.id != filteredBooks.last?.id { Divider().overlay(FolioPalette.line) }
+                                if book.id != filteredBooks.last?.id {
+                                    Divider().overlay(FolioPalette.line).padding(.leading, 91)
+                                }
                             }
                         }
                     }
                 }
-                .padding(.horizontal, 17).padding(.top, 13).padding(.bottom, 30)
+                .padding(.horizontal, 20).padding(.top, 22).padding(.bottom, 34)
+                }
             }
-            .background(FolioPalette.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
         }
     }
