@@ -1178,122 +1178,135 @@ private struct FolioLibraryHome: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 22) {
-                    header
-                    greetingBlock
-                    continueReading
-                    shortcuts
-                    recentlyAdded
+            GeometryReader { geometry in
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        header
+                            .padding(.top, 10)
+                        greetingBlock
+                            .padding(.top, 30)
+                        continueReading
+                            .padding(.top, 31)
+                        shortcuts
+                            .padding(.top, 34)
+                        recentlyAdded
+                            .padding(.top, 34)
+                    }
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 32)
+                    .frame(maxWidth: 620)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .frame(minHeight: geometry.size.height, alignment: .top)
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
+                .background(FolioPalette.background.ignoresSafeArea())
             }
-            .background(FolioPalette.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
         }
     }
 
     private var header: some View {
-        HStack {
+        HStack(alignment: .center) {
             Text("Folio")
-                .font(.system(size: 34, weight: .regular, design: .serif))
-                .tracking(-0.8)
+                .font(.system(size: 43, weight: .regular, design: .serif))
+                .tracking(-1.3)
                 .foregroundStyle(FolioPalette.cream)
             Spacer()
             Button(action: openMore) {
                 Image(systemName: "person.crop.circle")
-                    .font(.system(size: 21, weight: .regular))
+                    .font(.system(size: 27, weight: .regular))
                     .foregroundStyle(FolioPalette.gold)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 42, height: 42)
+                    .contentShape(Rectangle())
             }
             .accessibilityLabel("Profile and account")
         }
-        .padding(.top, 2)
     }
 
     private var greetingBlock: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(greeting)
-                .font(.system(size: 18, design: .serif))
+                .font(.system(size: 27, weight: .regular, design: .serif))
                 .foregroundStyle(FolioPalette.cream)
             Text("Reader. 👋")
-                .font(.system(size: 22, weight: .regular, design: .serif))
+                .font(.system(size: 31, weight: .regular, design: .serif))
                 .foregroundStyle(FolioPalette.cream)
         }
-        .padding(.top, 0)
     }
 
     @ViewBuilder
     private var continueReading: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 16) {
             sectionTitle("Continue Reading", action: nil)
             if let book = currentlyReading {
                 Button { selectBook(book) } label: {
-                    HStack(spacing: 14) {
+                    HStack(spacing: 17) {
                         FolioBookCover(book: book)
-                            .frame(width: 78, height: 116)
-                            .shadow(color: .black.opacity(0.35), radius: 9, x: 3, y: 5)
-                        VStack(alignment: .leading, spacing: 6) {
+                            .frame(width: 112, height: 164)
+                            .shadow(color: .black.opacity(0.5), radius: 9, x: 3, y: 6)
+                        VStack(alignment: .leading, spacing: 8) {
                             Text("Continue Reading")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.system(size: 17, weight: .medium))
                                 .foregroundStyle(FolioPalette.cream)
                             Text(book.title)
-                                .font(.system(size: 17, design: .serif))
+                                .font(.system(size: 25, weight: .regular, design: .serif))
                                 .foregroundStyle(FolioPalette.cream)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                             Text(book.author)
-                                .font(.system(size: 11, design: .serif))
+                                .font(.system(size: 17, design: .serif))
                                 .foregroundStyle(FolioPalette.muted)
                                 .lineLimit(1)
                             Spacer(minLength: 0)
                             if let page = book.currentPage, let total = book.totalPages, total > 0 {
                                 ProgressView(value: min(1, Double(page) / Double(total)))
                                     .tint(FolioPalette.gold)
-                                Text("\(Int((Double(page) / Double(total) * 100).rounded()))% • \(max(1, Int(Double(total - page) * 0.06)))h left")
-                                    .font(.system(size: 10, design: .rounded).monospacedDigit())
+                                Text("PAGE \(page) OF \(total)")
+                                    .font(.system(size: 9, weight: .medium)).tracking(1)
                                     .foregroundStyle(FolioPalette.muted)
                             } else {
-                                Text(book.digitalFileName == nil ? "Add your digital copy to read" : "Continue your story")
-                                    .font(.system(size: 10, design: .serif))
+                                Text(book.digitalFileName == nil ? "Add your reading copy" : "Continue your story")
+                                    .font(.system(size: 15, design: .serif))
                                     .foregroundStyle(FolioPalette.muted)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         Image(systemName: "play.fill")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(FolioPalette.background)
-                            .frame(width: 42, height: 42)
+                            .frame(width: 62, height: 62)
                             .background(FolioPalette.gold, in: Circle())
                     }
-                     .padding(12)
-                    .background(LinearGradient(colors: [Color(red: 0.16, green: 0.13, blue: 0.11), Color(red: 0.075, green: 0.065, blue: 0.058)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 13))
-                    .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.white.opacity(0.13), lineWidth: 0.8))
+                    .padding(18)
+                    .frame(height: 202)
+                    .background(
+                        LinearGradient(colors: [Color(red: 0.105, green: 0.087, blue: 0.074), Color(red: 0.065, green: 0.057, blue: 0.052)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: RoundedRectangle(cornerRadius: 20)
+                    )
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.15), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             } else {
                 Button(action: addBook) {
-                    HStack(spacing: 13) {
+                    HStack(spacing: 17) {
                         Image(systemName: "book.closed")
-                            .font(.system(size: 25, weight: .light))
+                            .font(.system(size: 32, weight: .light))
                             .foregroundStyle(FolioPalette.gold)
-                            .frame(width: 70, height: 94)
-                            .background(FolioPalette.raised, in: RoundedRectangle(cornerRadius: 8))
-                        VStack(alignment: .leading, spacing: 5) {
+                            .frame(width: 88, height: 120)
+                            .background(FolioPalette.raised, in: RoundedRectangle(cornerRadius: 10))
+                        VStack(alignment: .leading, spacing: 8) {
                             Text("Your next chapter starts here")
-                                .font(.system(size: 17, design: .serif))
+                                .font(.system(size: 22, design: .serif))
                                 .foregroundStyle(FolioPalette.cream)
                             Text("Add a book to begin reading.")
-                                .font(.system(size: 11, design: .serif))
+                                .font(.system(size: 14, design: .serif))
                                 .foregroundStyle(FolioPalette.muted)
                         }
                         Spacer()
-                        Image(systemName: "plus.circle.fill").foregroundStyle(FolioPalette.gold)
+                        Image(systemName: "plus.circle.fill").font(.system(size: 25)).foregroundStyle(FolioPalette.gold)
                     }
-                    .padding(14)
-                    .background(FolioPalette.surface, in: RoundedRectangle(cornerRadius: 15))
+                    .padding(18)
+                    .frame(height: 164)
+                    .background(FolioPalette.surface, in: RoundedRectangle(cornerRadius: 18))
                 }
                 .buttonStyle(.plain)
             }
@@ -1301,9 +1314,9 @@ private struct FolioLibraryHome: View {
     }
 
     private var shortcuts: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 17) {
             sectionTitle("Your Library", action: "See all  ›", perform: openLibrary)
-            HStack(spacing: 10) {
+            HStack(spacing: 13) {
                 shortcut(title: "All Books", count: "\(library.books.count)", symbol: "book.closed", action: openLibrary)
                 shortcut(title: "Favorites", count: "\(library.books.filter { $0.isFavorite == true }.count)", symbol: "star.fill", action: openLibrary)
                 shortcut(title: "Recently Read", count: "\(library.books(for: .finished).count)", symbol: "clock.arrow.circlepath", action: openLibrary)
@@ -1313,71 +1326,73 @@ private struct FolioLibraryHome: View {
 
     private func shortcut(title: String, count: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 13) {
                 Image(systemName: symbol)
-                    .font(.system(size: 18, weight: .regular))
+                    .font(.system(size: 29, weight: .regular))
                     .foregroundStyle(FolioPalette.gold)
+                    .frame(height: 34)
                 Text(title)
-                    .font(.system(size: 11, weight: .medium, design: .serif))
+                    .font(.system(size: 17, weight: .medium, design: .serif))
                     .foregroundStyle(FolioPalette.cream)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.75)
                 Text(count)
-                    .font(.system(size: 10, design: .rounded).monospacedDigit())
+                    .font(.system(size: 14, design: .serif).monospacedDigit())
                     .foregroundStyle(FolioPalette.muted)
             }
-             .frame(maxWidth: .infinity, minHeight: 112, alignment: .center)
-            .padding(12)
-            .background(Color(red: 0.105, green: 0.091, blue: 0.081), in: RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.055), lineWidth: 0.7))
+            .frame(maxWidth: .infinity, minHeight: 142, alignment: .leading)
+            .padding(.horizontal, 15)
+            .background(Color(red: 0.105, green: 0.091, blue: 0.081), in: RoundedRectangle(cornerRadius: 17))
+            .overlay(RoundedRectangle(cornerRadius: 17).stroke(Color.white.opacity(0.075), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
 
     private var recentlyAdded: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 17) {
             sectionTitle("Recently Added", action: "See all  ›", perform: openLibrary)
             if recentBooks.isEmpty {
                 Button(action: addBook) {
-                    HStack {
+                    HStack(spacing: 12) {
                         Image(systemName: "plus").foregroundStyle(FolioPalette.gold)
                         Text("Your shelves are waiting. Add your first book.")
-                            .font(.system(size: 12, design: .serif))
+                            .font(.system(size: 15, design: .serif))
                             .foregroundStyle(FolioPalette.muted)
                         Spacer()
                     }
-                    .padding(16)
-                    .background(FolioPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .padding(18)
+                    .background(FolioPalette.surface, in: RoundedRectangle(cornerRadius: 15))
                 }
                 .buttonStyle(.plain)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 13) {
+                    HStack(alignment: .top, spacing: 19) {
                         ForEach(recentBooks) { book in
                             Button { selectBook(book) } label: {
-                                VStack(alignment: .leading, spacing: 7) {
+                                VStack(alignment: .leading, spacing: 9) {
                                     FolioBookCover(book: book)
-                                        .frame(width: 100, height: 148)
-                                        .shadow(color: .black.opacity(0.35), radius: 8, x: 3, y: 5)
+                                        .frame(width: 142, height: 210)
+                                        .shadow(color: .black.opacity(0.42), radius: 9, x: 3, y: 6)
                                     Text(book.title)
-                                        .font(.system(size: 12, design: .serif))
+                                        .font(.system(size: 18, design: .serif))
                                         .foregroundStyle(FolioPalette.cream)
                                         .lineLimit(2)
                                         .multilineTextAlignment(.leading)
-                                        .frame(width: 100, alignment: .leading)
+                                        .frame(width: 142, alignment: .leading)
                                     Text(book.author)
-                                        .font(.system(size: 9, design: .serif))
+                                        .font(.system(size: 14, design: .serif))
                                         .foregroundStyle(FolioPalette.muted)
                                         .lineLimit(1)
-                                        .frame(width: 104, alignment: .leading)
+                                        .frame(width: 142, alignment: .leading)
                                 }
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 3)
                     .padding(.trailing, 4)
                 }
+                .contentMargins(.trailing, -28, for: .scrollContent)
             }
         }
     }
@@ -1385,28 +1400,16 @@ private struct FolioLibraryHome: View {
     private func sectionTitle(_ title: String, action: String?, perform: (() -> Void)? = nil) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.system(size: 9, weight: .semibold))
-                .tracking(1.3)
+                .font(.system(size: 13, weight: .semibold))
+                .tracking(2.5)
                 .foregroundStyle(FolioPalette.muted)
             Spacer()
             if let action, let perform {
                 Button(action, action: perform)
-                    .font(.system(size: 10, weight: .medium, design: .serif))
+                    .font(.system(size: 14, weight: .medium, design: .serif))
                     .foregroundStyle(FolioPalette.gold)
             }
         }
-    }
-
-    private var footer: some View {
-        HStack(spacing: 10) {
-            Rectangle().fill(FolioPalette.line).frame(height: 1)
-            Text("READ. EXPLORE. BELONG.")
-                .font(.system(size: 8, weight: .medium))
-                .tracking(1.5)
-                .foregroundStyle(FolioPalette.muted)
-            Rectangle().fill(FolioPalette.line).frame(height: 1)
-        }
-        .padding(.top, 5)
     }
 }
 
