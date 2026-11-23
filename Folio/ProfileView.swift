@@ -16,18 +16,18 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.96, green: 0.94, blue: 0.89).ignoresSafeArea()
+                Color(red: 0.035, green: 0.031, blue: 0.029).ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 25) {
+                    VStack(spacing: 22) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("THE READER'S EDITION").font(.system(size: 9, weight: .semibold)).tracking(2)
-                                Text("Your corner of Folio").font(.system(size: 29, design: .serif))
+                                Text("THE READER'S EDITION").font(.system(size: 9, weight: .semibold)).tracking(2).foregroundStyle(Color(red: 0.80, green: 0.64, blue: 0.43))
+                                Text("Your reading room").font(.system(size: 34, design: .serif)).foregroundStyle(Color(red: 0.94, green: 0.91, blue: 0.85))
                             }
                             Spacer()
                             Image(systemName: "leaf").font(.system(size: 18, weight: .light))
                         }
-                        .foregroundStyle(Color(red: 0.18, green: 0.20, blue: 0.17))
+                        .foregroundStyle(Color(red: 0.94, green: 0.91, blue: 0.85))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         VStack(spacing: 12) {
                             PhotosPicker(selection: $photo, matching: .images) {
@@ -51,15 +51,15 @@ struct ProfileView: View {
                         .padding(.top, 4)
 
                         VStack(alignment: .leading, spacing: 14) {
-                            Text("A LITTLE ABOUT YOU").font(.system(size: 10, weight: .semibold)).tracking(1.6)
+                            Text("A LITTLE ABOUT YOU").font(.system(size: 9, weight: .semibold)).tracking(1.8).foregroundStyle(Color(red: 0.80, green: 0.64, blue: 0.43))
                             TextField("Your name", text: $name).textFieldStyle(.roundedBorder)
                             TextField("A line or two about your reading life", text: $bio, axis: .vertical)
                                 .lineLimit(2...4).textFieldStyle(.roundedBorder)
                         }
-                        .padding(19).background(.white.opacity(0.55)).clipShape(RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.black.opacity(0.055), lineWidth: 1))
+                        .padding(19).background(Color(red: 0.105, green: 0.098, blue: 0.091)).clipShape(RoundedRectangle(cornerRadius: 14)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
 
                         VStack(alignment: .leading, spacing: 14) {
-                            Text("YOUR ACCOUNT").font(.system(size: 10, weight: .semibold)).tracking(1.6)
+                            Text("YOUR ACCOUNT").font(.system(size: 9, weight: .semibold)).tracking(1.8).foregroundStyle(Color(red: 0.80, green: 0.64, blue: 0.43))
                             if let user = auth.user {
                                 Label(user.isEmailVerified ? "Account connected" : "Google account connected", systemImage: "checkmark.seal")
                                     .font(.system(size: 13, design: .serif))
@@ -72,9 +72,9 @@ struct ProfileView: View {
                                         Text("Continue with Google")
                                     }
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(Color(red: 0.96, green: 0.94, blue: 0.89))
+                                    .foregroundStyle(Color(red: 0.035, green: 0.031, blue: 0.029))
                                     .frame(maxWidth: .infinity).padding(.vertical, 14)
-                                    .background(Color(red: 0.18, green: 0.20, blue: 0.17))
+                                    .background(Color(red: 0.80, green: 0.64, blue: 0.43))
                                     .clipShape(Capsule())
                                 }
                                 Text(auth.isConfigured ? "Sign in to keep your reading identity with you." : "Connect Firebase to enable Google sign-in.")
@@ -88,8 +88,8 @@ struct ProfileView: View {
                                     Text("Save profile")
                                 }
                                 .frame(maxWidth: .infinity).padding(.vertical, 12)
-                                .background(Color(red: 0.18, green: 0.20, blue: 0.17))
-                                .foregroundStyle(Color(red: 0.96, green: 0.94, blue: 0.89))
+                                .background(Color(red: 0.80, green: 0.64, blue: 0.43))
+                                .foregroundStyle(Color(red: 0.035, green: 0.031, blue: 0.029))
                                 .clipShape(Capsule())
                             }
                             .disabled(isSaving)
@@ -99,7 +99,7 @@ struct ProfileView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(19).background(.white.opacity(0.55)).clipShape(RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.black.opacity(0.055), lineWidth: 1))
+                        .padding(19).background(Color(red: 0.105, green: 0.098, blue: 0.091)).clipShape(RoundedRectangle(cornerRadius: 14)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
                     }
                     .padding(.horizontal, 22)
                     .padding(.top, 16)
