@@ -372,7 +372,7 @@ private struct SceneBookStage: UIViewRepresentable {
                     let sideX = x < 0 ? -localX : localX
                     vertices.append(SCNVector3(sideX, (0.5 - v) * 4.17, z))
                     normals.append(SCNVector3(0, 0, 1))
-                    uv.append(CGPoint(x: u, y: 1 - v))
+                    uv.append(CGPoint(x: CGFloat(u), y: CGFloat(1 - v)))
                 }
             }
             for row in 0..<rows {
