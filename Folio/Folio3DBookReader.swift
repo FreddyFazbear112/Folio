@@ -49,11 +49,11 @@ struct Folio3DBookReader: View {
                 .foregroundStyle(Color(red: 0.94, green: 0.89, blue: 0.78))
                 .padding(.horizontal, 20).padding(.top, 12)
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("YOUR READING ROOM").font(.system(size: 8, weight: .bold)).tracking(2.1).foregroundStyle(Color(red: 0.88, green: 0.66, blue: 0.42))
-                    Text("Your story, uninterrupted.").font(.system(size: 25, design: .serif)).foregroundStyle(Color(red: 0.95, green: 0.90, blue: 0.80))
-                    Text("Turn a page. Leave the world behind.").font(.system(size: 12, design: .serif)).italic().foregroundStyle(.white.opacity(0.62))
-                }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 25).padding(.top, 28)
+                HStack(alignment: .lastTextBaseline) {
+                    Text("NOW READING").font(.system(size: 8, weight: .bold)).tracking(2.2).foregroundStyle(Color(red: 0.86, green: 0.67, blue: 0.44))
+                    Spacer()
+                    Text(isOpen ? "OPEN EDITION" : "CLOTHBOUND EDITION").font(.system(size: 8, weight: .medium)).tracking(1.5).foregroundStyle(.white.opacity(0.48))
+                }.padding(.horizontal, 25).padding(.top, 20)
                 if let document, total > 0 {
                     SceneBookStage(
                         leftPage: page > 1 ? renderedPage(page - 1, in: document) : nil,
@@ -352,18 +352,55 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(spine)
 
         func pageNode(_ name: String, x: Float) -> SCNNode {
-            let plane = SCNPlane(width: 1.49, height: 4.17)
+            // A tessellated leaf has a shallow gutter valley and a softly lifted
+            // fore-edge. This gives the real PDF texture a paper-like silhouette.
+            let columns = 18
+            let rows = 30
+            var vertices: [SCNVector3] = []
+            var normals: [SCNVector3] = []
+            var uv: [CGPoint] = []
+            var indices: [UInt32] = []
+            for row in 0...rows {
+                let v = Float(row) / Float(rows)
+                for column in 0...columns {
+                    let u = Float(column) / Float(columns)
+                    let localX = u * 1.49
+                    let gutter = sin(u * .pi) * 0.045
+                    let edgeLift = pow(u, 2.4) * 0.035
+                    let verticalBow = pow(abs(v - 0.5) * 2, 2) * 0.012
+                    let z = gutter + edgeLift + verticalBow
+                    let sideX = x < 0 ? -localX : localX
+                    vertices.append(SCNVector3(sideX, (0.5 - v) * 4.17, z))
+                    normals.append(SCNVector3(0, 0, 1))
+                    uv.append(CGPoint(x: u, y: 1 - v))
+                }
+            }
+            for row in 0..<rows {
+                for column in 0..<columns {
+                    let a = UInt32(row * (columns + 1) + column)
+                    let b = a + 1
+                    let c = a + UInt32(columns + 1)
+                    let d = c + 1
+                    indices.append(contentsOf: [a, c, b, b, c, d])
+                }
+            }
+            let vertexSource = SCNGeometrySource(vertices: vertices)
+            let normalSource = SCNGeometrySource(normals: normals)
+            let uvSource = SCNGeometrySource(textureCoordinates: uv)
+            let indexData = indices.withUnsafeBufferPointer { Data(buffer: $0) }
+            let element = SCNGeometryElement(data: indexData, primitiveType: .triangles, primitiveCount: indices.count / 3, bytesPerIndex: MemoryLayout<UInt32>.size)
+            let mesh = SCNGeometry(sources: [vertexSource, normalSource, uvSource], elements: [element])
             let material = SCNMaterial()
             material.diffuse.contents = paper
             material.isDoubleSided = true
-            material.lightingModel = .lambert
-            plane.materials = [material]
-            let node = SCNNode(geometry: plane)
+            material.lightingModel = .physicallyBased
+            material.roughness.contents = 0.94
+            material.metalness.contents = 0
+            mesh.materials = [material]
+            let node = SCNNode(geometry: mesh)
             node.name = name
-            // Keep the PDF artwork in front of the solid page block.
-            // At z=0 the block's front face occluded both page planes.
-            node.position = SCNVector3(x, 0, 0.165)
-            node.castsShadow = false
+            node.position.z = 0.165
+            node.castsShadow = true
             node.renderingOrder = 10
             root.addChildNode(node)
             return node
@@ -404,10 +441,36 @@ private struct SceneBookStage: UIViewRepresentable {
         gutter.position = SCNVector3(0, 0, 0.171)
         root.addChildNode(gutter)
 
+        // Dark walnut reading table: a broad physical surface catches the
+        // book's shadow and anchors the object in the room.
+        let deskMaterial = SCNMaterial()
+        deskMaterial.diffuse.contents = UIColor(red: 0.105, green: 0.061, blue: 0.038, alpha: 1)
+        deskMaterial.roughness.contents = 0.42
+        deskMaterial.metalness.contents = 0.04
+        let deskGeometry = SCNBox(width: 12, height: 0.16, length: 8, chamferRadius: 0.04)
+        deskGeometry.materials = Array(repeating: deskMaterial, count: 6)
+        let desk = SCNNode(geometry: deskGeometry)
+        desk.position = SCNVector3(0, -2.29, -0.46)
+        desk.castsShadow = false
+        root.addChildNode(desk)
+
+        // Fine brass tooling on the front board edge and a dark cloth spine.
+        let foilMaterial = SCNMaterial()
+        foilMaterial.diffuse.contents = UIColor(red: 0.69, green: 0.48, blue: 0.25, alpha: 1)
+        foilMaterial.metalness.contents = 0.72
+        foilMaterial.roughness.contents = 0.32
+        foilMaterial.lightingModel = .physicallyBased
+        for y in [-2.08 as Float, 2.08 as Float] {
+            let rule = SCNNode(geometry: SCNBox(width: 2.88, height: 0.012, length: 0.004, chamferRadius: 0.002))
+            rule.geometry?.materials = [foilMaterial]
+            rule.position = SCNVector3(0, y, 0.205)
+            root.addChildNode(rule)
+        }
+
         let ambient = SCNNode()
         let ambientLamp = SCNLight()
         ambientLamp.type = .ambient
-        ambientLamp.intensity = 260
+        ambientLamp.intensity = 190
         ambientLamp.color = UIColor(red: 0.78, green: 0.72, blue: 0.63, alpha: 1)
         ambient.light = ambientLamp
         root.addChildNode(ambient)
@@ -415,7 +478,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let light = SCNNode()
         let lamp = SCNLight()
         lamp.type = .directional
-        lamp.intensity = 1050
+        lamp.intensity = 1350
         lamp.color = UIColor(red: 1, green: 0.88, blue: 0.69, alpha: 1)
         lamp.castsShadow = true
         lamp.shadowRadius = 12
@@ -435,7 +498,7 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 39
+        camera.fieldOfView = 34
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
@@ -443,7 +506,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
-        cameraNode.position = SCNVector3(0.16, 0.78, 8.05)
+        cameraNode.position = SCNVector3(0.12, 1.05, 8.9)
         cameraNode.look(at: SCNVector3(0, 0, 0))
         root.addChildNode(cameraNode)
         return scene
