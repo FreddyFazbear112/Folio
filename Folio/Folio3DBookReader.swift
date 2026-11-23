@@ -317,6 +317,103 @@ private struct SceneBookStage: UIViewRepresentable {
         // Keep a deliberate stage behind the model if a page texture fails.
         scene.background.contents = UIColor.clear
         let root = scene.rootNode
+        // A complete fireside reading set: the book is staged in a room,
+        // not floating against a flat background image.
+        let roomWallMaterial = SCNMaterial()
+        roomWallMaterial.diffuse.contents = UIColor(red: 0.105, green: 0.061, blue: 0.043, alpha: 1)
+        roomWallMaterial.roughness.contents = 0.94
+        let roomWall = SCNNode(geometry: SCNBox(width: 16, height: 10, length: 0.18, chamferRadius: 0))
+        roomWall.geometry?.materials = Array(repeating: roomWallMaterial, count: 6)
+        roomWall.position = SCNVector3(0, 2.0, -3.15)
+        root.addChildNode(roomWall)
+
+        let stone = SCNMaterial()
+        stone.diffuse.contents = UIColor(red: 0.24, green: 0.19, blue: 0.15, alpha: 1)
+        stone.roughness.contents = 0.88
+        let darkFirebox = SCNMaterial()
+        darkFirebox.diffuse.contents = UIColor(red: 0.018, green: 0.012, blue: 0.009, alpha: 1)
+        darkFirebox.roughness.contents = 1
+        func roomBox(_ name: String, _ size: SCNVector3, _ position: SCNVector3, _ material: SCNMaterial, chamfer: CGFloat = 0.025) -> SCNNode {
+            let geometry = SCNBox(width: CGFloat(size.x), height: CGFloat(size.y), length: CGFloat(size.z), chamferRadius: chamfer)
+            geometry.materials = Array(repeating: material, count: 6)
+            let node = SCNNode(geometry: geometry)
+            node.name = name
+            node.position = position
+            root.addChildNode(node)
+            return node
+        }
+        // Fireplace opening and heavy stone surround.
+        roomBox("fireplace-shadow", SCNVector3(3.15, 1.95, 0.12), SCNVector3(-1.15, 2.12, -2.99), darkFirebox, chamfer: 0.12)
+        roomBox("fireplace-left-stone", SCNVector3(0.34, 2.25, 0.34), SCNVector3(-2.90, 2.15, -2.78), stone)
+        roomBox("fireplace-right-stone", SCNVector3(0.34, 2.25, 0.34), SCNVector3(0.60, 2.15, -2.78), stone)
+        roomBox("fireplace-lintel", SCNVector3(3.85, 0.34, 0.42), SCNVector3(-1.15, 3.32, -2.76), stone, chamfer: 0.06)
+        roomBox("fireplace-hearth", SCNVector3(4.25, 0.22, 0.72), SCNVector3(-1.15, 1.00, -2.62), stone, chamfer: 0.05)
+        let mantel = SCNMaterial()
+        mantel.diffuse.contents = UIColor(red: 0.16, green: 0.085, blue: 0.047, alpha: 1)
+        mantel.roughness.contents = 0.38
+        roomBox("walnut-mantel", SCNVector3(4.55, 0.16, 0.62), SCNVector3(-1.15, 3.56, -2.62), mantel, chamfer: 0.045)
+
+        let ember = SCNMaterial()
+        ember.diffuse.contents = UIColor(red: 0.11, green: 0.035, blue: 0.012, alpha: 1)
+        ember.emission.contents = UIColor(red: 0.35, green: 0.055, blue: 0.008, alpha: 1)
+        ember.roughness.contents = 1
+        for index in 0..<3 {
+            let log = SCNNode(geometry: SCNCylinder(radius: 0.075, height: 1.45))
+            log.geometry?.materials = [ember]
+            log.eulerAngles.z = index == 1 ? -.pi / 2.8 : .pi / 2.8
+            log.position = SCNVector3(-1.15 + Float(index - 1) * 0.12, 1.55 + Float(index) * 0.08, -2.70)
+            root.addChildNode(log)
+        }
+        // Layered emissive flame forms with a live, flickering fire light.
+        for index in 0..<5 {
+            let flameMaterial = SCNMaterial()
+            flameMaterial.diffuse.contents = UIColor(red: 1, green: 0.22 + CGFloat(index) * 0.035, blue: 0.018, alpha: 0.88)
+            flameMaterial.emission.contents = UIColor(red: 1, green: 0.16 + CGFloat(index) * 0.035, blue: 0.008, alpha: 1)
+            flameMaterial.transparency = 0.88
+            flameMaterial.isDoubleSided = true
+            flameMaterial.blendMode = .add
+            let flame = SCNNode(geometry: SCNSphere(radius: 0.30 + CGFloat(index % 2) * 0.08))
+            flame.geometry?.materials = [flameMaterial]
+            flame.scale = SCNVector3(0.52, 1.65 + Float(index % 3) * 0.22, 0.18)
+            flame.position = SCNVector3(-1.65 + Float(index) * 0.25, 1.92 + Float(index % 2) * 0.08, -2.52)
+            root.addChildNode(flame)
+            let dance = SCNAction.repeatForever(.sequence([
+                .group([
+                    .scale(to: CGFloat(0.82 + Double(index % 3) * 0.12), duration: 0.22 + Double(index) * 0.025),
+                    .moveBy(x: CGFloat(index % 2 == 0 ? 0.035 : -0.035), y: 0.12, z: 0, duration: 0.22 + Double(index) * 0.025)
+                ]),
+                .group([
+                    .scale(to: CGFloat(1.0), duration: 0.24),
+                    .moveBy(x: CGFloat(index % 2 == 0 ? -0.035 : 0.035), y: -0.12, z: 0, duration: 0.24)
+                ])
+            ]))
+            flame.runAction(dance)
+        }
+        let fireGlow = SCNNode()
+        let fireLamp = SCNLight()
+        fireLamp.type = .omni
+        fireLamp.color = UIColor(red: 1, green: 0.31, blue: 0.075, alpha: 1)
+        fireLamp.intensity = 850
+        fireLamp.attenuationStartDistance = 0.4
+        fireLamp.attenuationEndDistance = 8
+        fireGlow.light = fireLamp
+        fireGlow.position = SCNVector3(-1.15, 2.05, -1.95)
+        root.addChildNode(fireGlow)
+        let flicker = SCNAction.repeatForever(.sequence([
+            .customAction(duration: 0.18) { node, elapsed in
+                node.light?.intensity = 720 + CGFloat(sin(elapsed * 23) * 150 + cos(elapsed * 11) * 65)
+            },
+            .wait(duration: 0.04)
+        ]))
+        fireGlow.runAction(flicker)
+
+        // A few dark oak wall pilasters and brass sconces establish scale.
+        let oak = SCNMaterial()
+        oak.diffuse.contents = UIColor(red: 0.075, green: 0.041, blue: 0.028, alpha: 1)
+        oak.roughness.contents = 0.62
+        roomBox("left-wall-pilaster", SCNVector3(0.13, 6.4, 0.12), SCNVector3(-5.0, 2.1, -2.98), oak)
+        roomBox("right-wall-pilaster", SCNVector3(0.13, 6.4, 0.12), SCNVector3(4.6, 2.1, -2.98), oak)
+
         // A compact, substantial page block with a visible fore-edge.
         let paperBlock = SCNBox(width: 3.00, height: 2.18, length: 0.20, chamferRadius: 0.035)
         let blockMaterial = SCNMaterial()
@@ -502,7 +599,7 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 24
+        camera.fieldOfView = 34
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
@@ -510,7 +607,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
-        cameraNode.position = SCNVector3(0.04, 0.22, 6.6)
+        cameraNode.position = SCNVector3(0.04, 0.78, 8.4)
         cameraNode.look(at: SCNVector3(0, 0, 0))
         root.addChildNode(cameraNode)
         return scene
