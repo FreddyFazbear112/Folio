@@ -1,361 +1,292 @@
 import SwiftUI
-import VisionKit
+import UniformTypeIdentifiers
 
-private let cataloguePaper = Color(red: 0.955, green: 0.936, blue: 0.885)
-private let catalogueInk = Color(red: 0.19, green: 0.21, blue: 0.18)
-private let catalogueMuted = Color(red: 0.48, green: 0.47, blue: 0.42)
+struct FolioLibraryTab: View {
+    @EnvironmentObject var library: LibraryStore
+    var onSelect: (Book) -> Void
+    var onImport: () -> Void
 
-struct AddBookView: View {
-    @EnvironmentObject private var library: LibraryStore
-    @Environment(\.dismiss) private var dismiss
-    @State private var searchText = ""
-    @State private var isbn = ""
-    @State private var results: [CatalogueBook] = []
-    @State private var isSearching = false
-    @State private var searchingISBN = false
-    @State private var addingIDs: Set<String> = []
-    @State private var notice: String?
-    @State private var showingScanner = false
-    @State private var status: ReadingStatus = .toRead
-    @State private var showManualEntry = false
-    @State private var manualTitle = ""
-    @State private var manualAuthor = ""
+    @State private var query = ""
+    @State private var format: BookFileFormat = .all
+    @State private var showImportSheet = false
 
-    private let service = BookLookupService()
+    private var filtered: [Book] {
+        library.books.filter { book in
+            if format != .all && book.fileFormat != format { return false }
+            if !query.isEmpty {
+                let q = query.lowercased()
+                return book.title.lowercased().contains(q)
+                    || book.author.lowercased().contains(q)
+            }
+            return true
+        }
+    }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                cataloguePaper.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 22) {
-                        header
-                        searchField
-                        if let notice {
-                            Text(notice)
-                                .font(.system(size: 12, design: .serif))
-                                .foregroundStyle(catalogueMuted)
-                                .padding(.horizontal, 2)
-                        }
-                        if isSearching {
-                            HStack(spacing: 10) {
-                                ProgressView().tint(catalogueInk)
-                                Text("Looking through the shelves…")
-                                    .font(.system(size: 13, design: .serif).italic())
-                                    .foregroundStyle(catalogueMuted)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 30)
-                        } else if !results.isEmpty {
-                            VStack(alignment: .leading, spacing: 13) {
-                                HStack(alignment: .firstTextBaseline) {
-                                    Text("FOUND IN THE CATALOGUE")
-                                        .font(.system(size: 9, weight: .semibold)).tracking(1.8)
-                                    Spacer()
-                                    Text("\(results.count) EDITIONS")
-                                        .font(.system(size: 9, weight: .medium)).tracking(1.2).foregroundStyle(catalogueMuted)
-                                }
-                                ForEach(results) { book in resultRow(book) }
-                            }
-                        } else {
-                            discoveryNote
-                        }
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("YOUR SHELF")
-                                .font(.system(size: 9, weight: .semibold)).tracking(1.8).foregroundStyle(catalogueMuted)
-                            Picker("Reading status", selection: $status) {
-                                ForEach(ReadingStatus.allCases) { item in Text(item.rawValue).tag(item) }
-                            }
-                            .pickerStyle(.segmented)
-                        }
-
-                        Button {
-                            showManualEntry = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "pencil.line")
-                                Text("Add a book not in the catalogue")
-                                Spacer()
-                                Image(systemName: "arrow.right")
-                            }
-                            .font(.system(size: 12, weight: .medium, design: .serif))
-                            .foregroundStyle(catalogueInk)
-                            .padding(.vertical, 14)
-                            .overlay(alignment: .top) { Rectangle().fill(catalogueInk.opacity(0.13)).frame(height: 1) }
-                        }
-                    }
-                    .padding(.horizontal, 22)
-                    .padding(.top, 17)
-                    .padding(.bottom, 34)
-                }
-            }
-            .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                HStack {
-                    Button("Close") { dismiss() }
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(catalogueInk)
-                    Spacer()
-                    Text("THE FOLIO CATALOGUE")
-                        .font(.system(size: 9, weight: .semibold)).tracking(2)
-                        .foregroundStyle(catalogueMuted)
-                    Spacer()
-                    Image(systemName: "book.closed")
-                        .foregroundStyle(catalogueInk)
-                        .frame(width: 42)
-                }
-                .padding(.horizontal, 22)
-                .padding(.vertical, 13)
-                .background(cataloguePaper)
-            }
-            .sheet(isPresented: $showingScanner) {
-                NavigationStack {
-                    ISBNScannerView(onScan: { code in
-                        isbn = code
-                        showingScanner = false
-                        Task { await findISBN() }
-                    }, onCancel: { showingScanner = false })
-                    .ignoresSafeArea()
-                    .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel") { showingScanner = false } } }
-                }
-            }
-            .alert("Add a book", isPresented: $showManualEntry) {
-                TextField("Title", text: $manualTitle)
-                TextField("Author", text: $manualAuthor)
-                Button("Cancel", role: .cancel) {}
-                Button("Add") {
-                    let title = manualTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !title.isEmpty else {
-                        notice = "A book needs a title before it can be added."
-                        return
-                    }
-                    _ = library.add(title: title, author: manualAuthor, status: status)
-                    SoundEffects.addBook()
-                    dismiss()
-                }
-            } message: {
-                Text("Add its details to your shelf. Folio will keep looking for a digital edition when one is available.")
-            }
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("A NEW STORY")
-                .font(.system(size: 9, weight: .semibold)).tracking(2.2).foregroundStyle(catalogueMuted)
-            Text("Find your next\nworld to wander.")
-                .font(.system(size: 34, weight: .regular, design: .serif))
-                .tracking(-1.1).lineSpacing(-3).foregroundStyle(catalogueInk)
-            Text("Search once. Folio will find the book—and add a free digital edition when one is available.")
-                .font(.system(size: 13, design: .serif)).lineSpacing(3)
-                .foregroundStyle(catalogueMuted).fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var searchField: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass").foregroundStyle(catalogueMuted)
-                TextField("Title, author, or series", text: $searchText)
-                    .font(.system(size: 15, design: .serif))
-                    .submitLabel(.search)
-                    .onSubmit { Task { await search() } }
-                if !searchText.isEmpty {
-                    Button { searchText = ""; results = [] } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(catalogueMuted.opacity(0.7))
-                    }
-                }
-                Button { Task { await search() } } label: {
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(cataloguePaper)
-                        .frame(width: 34, height: 34)
-                        .background(catalogueInk)
-                        .clipShape(Circle())
-                }
-                .disabled(isSearching || searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            .padding(.horizontal, 13).padding(.vertical, 8)
-            .background(Color.white.opacity(0.72))
-            .overlay(RoundedRectangle(cornerRadius: 7).stroke(catalogueInk.opacity(0.12), lineWidth: 1))
-            HStack(spacing: 9) {
-                Image(systemName: "barcode.viewfinder")
-                TextField("Or enter an ISBN", text: $isbn).keyboardType(.numberPad)
-                Button("Find") { Task { await findISBN() } }
-                    .font(.system(size: 12, weight: .semibold))
-                    .disabled(isbn.isEmpty || searchingISBN)
-                Button { showingScanner = true } label: {
-                    Image(systemName: "camera.viewfinder").font(.system(size: 17))
-                }
-                .disabled(!DataScannerViewController.isSupported || !DataScannerViewController.isAvailable)
-            }
-            .font(.system(size: 12))
-            .foregroundStyle(catalogueMuted)
-            .padding(.horizontal, 4)
-        }
-    }
-
-    private var discoveryNote: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "sparkle").foregroundStyle(Color(red: 0.62, green: 0.43, blue: 0.30))
-                Text("A LIBRARY WITHOUT LIMITS")
-                    .font(.system(size: 9, weight: .semibold)).tracking(1.6)
-            }
-            Text("Thousands of classics are ready to read.")
-                .font(.system(size: 19, design: .serif))
-                .foregroundStyle(catalogueInk)
-            Text("Folio searches the general book catalogue and a public-domain library. When a free EPUB or PDF is available, it can be added straight to your reading shelf.")
-                .font(.system(size: 12, design: .serif)).lineSpacing(3)
-                .foregroundStyle(catalogueMuted)
-        }
-        .padding(17)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.43))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private func resultRow(_ book: CatalogueBook) -> some View {
-        HStack(alignment: .top, spacing: 13) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 3).fill(Color(red: 0.38, green: 0.31, blue: 0.26))
-                if let address = book.coverURL, let url = URL(string: address) {
-                    AsyncImage(url: url) { phase in
-                        if let image = phase.image { image.resizable().scaledToFill() }
-                        else { fallbackCover(book) }
-                    }
-                } else {
-                    fallbackCover(book)
-                }
-            }
-            .frame(width: 65, height: 96)
-            .clipShape(RoundedRectangle(cornerRadius: 3))
-            .shadow(color: .black.opacity(0.16), radius: 5, x: 2, y: 3)
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(book.title)
-                    .font(.system(size: 15, weight: .regular, design: .serif))
-                    .foregroundStyle(catalogueInk).lineLimit(2)
-                Text(book.author)
-                    .font(.system(size: 11, design: .serif))
-                    .foregroundStyle(catalogueMuted).lineLimit(1)
-                Text(book.sourceLabel.uppercased())
-                    .font(.system(size: 8, weight: .medium)).tracking(1)
-                    .foregroundStyle(catalogueMuted.opacity(0.85)).lineLimit(1)
-                if book.canReadNow {
-                    Label("FREE \(book.format ?? "DIGITAL") EDITION", systemImage: "book.pages")
-                        .font(.system(size: 8, weight: .semibold)).tracking(0.6)
-                        .foregroundStyle(Color(red: 0.28, green: 0.43, blue: 0.32))
-                } else {
-                    Text("Catalogue record")
-                        .font(.system(size: 9, design: .serif)).italic()
-                        .foregroundStyle(catalogueMuted.opacity(0.8))
-                }
-                Spacer(minLength: 2)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Library")
+                    .font(.system(size: 34, design: .serif))
+                    .foregroundStyle(FolioPalette.cream)
+                Spacer()
                 Button {
-                    Task { await add(book) }
+                    showImportSheet = true
+                    onImport()
                 } label: {
-                    HStack(spacing: 6) {
-                        if addingIDs.contains(book.id) { ProgressView().tint(.white).scaleEffect(0.75) }
-                        Text(addingIDs.contains(book.id) ? "Adding…" : book.canReadNow ? "Add & download" : "Add to shelf")
-                        Image(systemName: "arrow.right").font(.system(size: 9, weight: .semibold))
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(FolioPalette.gold)
+                        .frame(width: 38, height: 38)
+                        .background(FolioPalette.cardElevated, in: Circle())
+                }
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(FolioPalette.muted)
+                TextField("Search your library...", text: $query)
+                    .foregroundStyle(FolioPalette.cream)
+            }
+            .padding(11)
+            .background(FolioPalette.card, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(FolioPalette.border, lineWidth: 1))
+
+            HStack(spacing: 8) {
+                ForEach(BookFileFormat.allCases) { item in
+                    let active = format == item
+                    Button { format = item } label: {
+                        Text(item.rawValue)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(active ? .black : FolioPalette.cream)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(active ? FolioPalette.gold : FolioPalette.card, in: Capsule())
+                            .overlay(Capsule().strokeBorder(FolioPalette.border, lineWidth: active ? 0 : 1))
                     }
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(cataloguePaper)
-                    .padding(.horizontal, 11).padding(.vertical, 8)
-                    .background(catalogueInk)
-                    .clipShape(Capsule())
+                    .buttonStyle(.plain)
                 }
-                .disabled(addingIDs.contains(book.id))
+                Spacer()
             }
-            Spacer(minLength: 0)
-        }
-        .padding(12)
-        .background(Color.white.opacity(0.57))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
 
-    private func fallbackCover(_ book: CatalogueBook) -> some View {
-        VStack(spacing: 5) {
-            Rectangle().fill(.white.opacity(0.45)).frame(height: 1)
-            Spacer(minLength: 0)
-            Text(book.title).font(.system(size: 10, design: .serif))
-                .multilineTextAlignment(.center).lineLimit(5).foregroundStyle(.white)
-            Spacer(minLength: 0)
-            Text(book.author.uppercased()).font(.system(size: 5, weight: .medium))
-                .tracking(0.7).multilineTextAlignment(.center).lineLimit(2).foregroundStyle(.white.opacity(0.8))
-            Rectangle().fill(.white.opacity(0.45)).frame(height: 1)
-        }
-        .padding(6)
-    }
-
-    @MainActor
-    private func search() async {
-        isSearching = true
-        notice = nil
-        defer { isSearching = false }
-        do {
-            results = try await service.searchCatalogue(query: searchText)
-            if results.isEmpty { notice = "No matches yet. Try a title, author, or ISBN." }
-        } catch {
-            notice = "The catalogue couldn't be reached. Check your connection and try again."
-        }
-    }
-
-    @MainActor
-    private func findISBN() async {
-        searchingISBN = true
-        notice = nil
-        defer { searchingISBN = false }
-        do {
-            guard BookLookupService.isValidISBN(isbn) else {
-                notice = "Enter a valid 10- or 13-digit ISBN, including its check digit."
-                return
-            }
-            if let match = try await service.lookup(isbn: isbn) {
-                results = [match]
-            } else {
-                notice = "We couldn't find that edition. Try searching by title."
-            }
-        } catch {
-            notice = "The catalogue couldn't be reached. Try again in a moment."
-        }
-    }
-
-    @MainActor
-    private func add(_ book: CatalogueBook) async {
-        let cleanISBN = book.isbn?.uppercased().filter { $0.isNumber || $0 == "X" }
-        let alreadyOnShelf = library.books.contains { saved in
-            if let cleanISBN, !cleanISBN.isEmpty {
-                return saved.isbn?.uppercased() == cleanISBN || saved.ownedISBN?.uppercased() == cleanISBN
-            }
-            return saved.title.localizedCaseInsensitiveCompare(book.title) == .orderedSame
-                && saved.author.localizedCaseInsensitiveCompare(book.author) == .orderedSame
-        }
-        if alreadyOnShelf {
-            notice = "That book is already on your shelf."
-            return
-        }
-        addingIDs.insert(book.id)
-        defer { addingIDs.remove(book.id) }
-        guard let id = library.add(title: book.title, author: book.author, status: status, coverURL: book.coverURL, isbn: book.isbn) else { return }
-        if book.canReadNow {
-            let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let destination = folder.appendingPathComponent(id.uuidString)
-            do {
-                if let filename = try await service.download(book, to: destination),
-                   let saved = library.books.first(where: { $0.id == id }) {
-                    library.attachDigitalCopy(saved, fileName: filename)
-                    notice = "Your free digital edition is ready on your shelf."
+            ScrollView(showsIndicators: false) {
+                LazyVStack(spacing: 12) {
+                    ForEach(filtered) { book in
+                        Button { onSelect(book) } label: {
+                            HStack(spacing: 14) {
+                                FolioCoverCard(book: book, width: 54, height: 80)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(book.title)
+                                        .font(.system(size: 17, weight: .semibold, design: .serif))
+                                        .foregroundStyle(FolioPalette.cream)
+                                        .lineLimit(1)
+                                    Text(book.author)
+                                        .font(.caption)
+                                        .foregroundStyle(FolioPalette.muted)
+                                        .lineLimit(1)
+                                    Text(book.timeLeftLabel)
+                                        .font(.caption2)
+                                        .foregroundStyle(FolioPalette.gold)
+                                }
+                                Spacer()
+                                Menu {
+                                    Button {
+                                        library.toggleFavorite(book)
+                                    } label: {
+                                        Label(
+                                            book.isFavorite ? "Remove Favorite" : "Add to Favorites",
+                                            systemImage: book.isFavorite ? "heart.slash" : "heart"
+                                        )
+                                    }
+                                    Button(role: .destructive) {
+                                        library.remove(book)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                } label: {
+                                    Image(systemName: "ellipsis")
+                                        .foregroundStyle(FolioPalette.muted)
+                                        .padding(8)
+                                }
+                            }
+                            .padding(10)
+                            .background(FolioPalette.card, in: RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(FolioPalette.border, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-            } catch {
-                notice = "The book is on your shelf, but its download didn't finish. You can try again later."
+                .padding(.bottom, 20)
             }
-        } else {
-            notice = "Added to your shelf. A downloadable edition isn't currently listed for this title."
         }
-        SoundEffects.addBook()
-        if book.canReadNow { dismiss() }
+        .padding(.horizontal, 18)
+        .padding(.top, 12)
+        .sheet(isPresented: $showImportSheet) {
+            FolioImportModal()
+        }
     }
+}
+
+struct FolioStatsTab: View {
+    @EnvironmentObject var library: LibraryStore
+
+    private var pagesRead: Int {
+        library.books.reduce(0) { $0 + ($1.currentPage ?? 0) }
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Stats")
+                    .font(.system(size: 34, design: .serif))
+                    .foregroundStyle(FolioPalette.cream)
+
+                HStack(spacing: 12) {
+                    metricCard("\(library.books.count)", "Books")
+                    metricCard("\(library.books(for: .finished).count)", "Finished")
+                    metricCard("\(pagesRead)", "Pages Read")
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 12)
+        }
+    }
+
+    private func metricCard(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 6) {
+            Text(value)
+                .font(.system(size: 24, weight: .semibold, design: .serif))
+                .foregroundStyle(FolioPalette.gold)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(FolioPalette.muted)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .background(FolioPalette.card, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(FolioPalette.border, lineWidth: 1))
+    }
+}
+
+struct FolioImportModal: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var library: LibraryStore
+    @State private var showPicker = false
+    @State private var errorText: String?
+
+    var body: some View {
+        ZStack {
+            FolioPalette.bg.ignoresSafeArea()
+            VStack(spacing: 18) {
+                HStack {
+                    Button { dismiss() } label: {
+                        Image(systemName: "chevron.left")
+                            .foregroundStyle(FolioPalette.cream)
+                            .frame(width: 36, height: 36)
+                            .background(FolioPalette.cardElevated, in: Circle())
+                    }
+                    Spacer()
+                    Text("Import Books")
+                        .font(.system(size: 20, design: .serif))
+                        .foregroundStyle(FolioPalette.cream)
+                    Spacer()
+                    Color.clear.frame(width: 36, height: 36)
+                }
+                .padding(.top, 12)
+
+                Button { showPicker = true } label: {
+                    VStack(spacing: 10) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 28, weight: .light))
+                            .foregroundStyle(FolioPalette.gold)
+                        Text("Tap to Import")
+                            .font(.headline)
+                            .foregroundStyle(FolioPalette.cream)
+                        Text("Supports EPUB, PDF, TXT,\nand more...")
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(FolioPalette.muted)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 185)
+                    .background(FolioPalette.card, in: RoundedRectangle(cornerRadius: 20))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .strokeBorder(FolioPalette.gold.opacity(0.35), style: StrokeStyle(lineWidth: 1.2, dash: [6]))
+                    )
+                }
+                .buttonStyle(.plain)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Or choose a source:")
+                        .font(.subheadline)
+                        .foregroundStyle(FolioPalette.muted)
+
+                    sourceRow("folder.fill", .blue, "Files")
+                    sourceRow("icloud.fill", .cyan, "iCloud Drive")
+                    sourceRow("square.grid.2x2.fill", FolioPalette.gold, "Other Apps")
+                }
+
+                if let errorText {
+                    Text(errorText).font(.caption).foregroundStyle(.red)
+                }
+
+                Spacer()
+
+Text("Imported books will be stored\nin your Folio library.")
+.font(.caption)
+.multilineTextAlignment(.center)
+.foregroundStyle(FolioPalette.muted)
+.padding(.bottom, 16)
+}
+.padding(.horizontal, 20)
+}
+.fileImporter(
+isPresented: $showPicker,
+allowedContentTypes: [.pdf, .epub, .plainText],
+allowsMultipleSelection: false
+) { result in
+importFile(result)
+}
+}
+private func sourceRow(_ icon: String, _ color: Color, _ title: String) -> some View {
+Button { showPicker = true } label: {
+HStack(spacing: 14) {
+Image(systemName: icon).foregroundStyle(color).frame(width: 26)
+Text(title).font(.subheadline.weight(.medium)).foregroundStyle(FolioPalette.cream)
+Spacer()
+Image(systemName: "chevron.right").font(.caption).foregroundStyle(FolioPalette.muted)
+}
+.padding(14)
+.background(FolioPalette.card, in: RoundedRectangle(cornerRadius: 14))
+.overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(FolioPalette.border, lineWidth: 1))
+}
+.buttonStyle(.plain)
+}
+private func importFile(_ result: Result<[URL], Error>) {
+switch result {
+case .failure(let err):
+errorText = err.localizedDescription
+case .success(let urls):
+guard let src = urls.first else { return }
+let scoped = src.startAccessingSecurityScopedResource()
+defer { if scoped { src.stopAccessingSecurityScopedResource() } }
+do {
+let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+let name = "(UUID().uuidString)-(src.lastPathComponent)"
+let dst = docs.appendingPathComponent(name)
+try FileManager.default.copyItem(at: src, to: dst)
+let cleanTitle = src.deletingPathExtension().lastPathComponent
+.replacingOccurrences(of: "_", with: " ")
+if let id = library.add(title: cleanTitle, author: "Imported Edition", status: .reading),
+let created = library.books.first(where: { $0.id == id }) {
+library.attachDigitalCopy(created, fileName: name)
+}
+dismiss()
+} catch {
+errorText = error.localizedDescription
+}
+}
+}
+}
+struct AddBookView: View {
+var body: some View { FolioImportModal() }
 }
