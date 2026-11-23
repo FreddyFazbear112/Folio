@@ -189,22 +189,131 @@ private struct BookDetailView: View {
     private var savedBook: Book { library.books.first(where: { $0.id == book.id }) ?? book }
     private var readyToRead: Bool { savedBook.digitalFileName != nil }
 
+    @State private var detailTab = "About"
+
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 22) {
-                bookHeading
-                bookPreview
-                editionStudio
-                readingCopySection
-                readingTimerSection
-                journalSection
-                shelfSection
+        ZStack {
+            Color(red: 0.035, green: 0.031, blue: 0.029).ignoresSafeArea()
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    HStack {
+                        Button { dismiss() } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(Color(red: 0.91, green: 0.77, blue: 0.58))
+                        }
+                        Spacer()
+                        Button { library.update(book, isFavorite: savedBook.isFavorite != true) } label: {
+                            Image(systemName: savedBook.isFavorite == true ? "bookmark.fill" : "bookmark")
+                                .foregroundStyle(Color(red: 0.91, green: 0.77, blue: 0.58))
+                        }
+                        ShareLink(item: "(savedBook.title) — (savedBook.author)") {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundStyle(Color(red: 0.91, green: 0.77, blue: 0.58))
+                        }
+                    }
+                    .font(.system(size: 19))
+                    .padding(.horizontal, 24)
+                    .padding(.top, 12)
+
+                    BookPreview3D(title: savedBook.title, tint: spineTint, coverURL: savedBook.coverURL, backCoverURL: savedBook.backCoverURL)
+                        .frame(height: 340)
+                        .padding(.horizontal, 28)
+                        .padding(.top, 12)
+
+                    Text(savedBook.title)
+                        .font(.system(size: 29, design: .serif))
+                        .foregroundStyle(Color(red: 0.96, green: 0.91, blue: 0.83))
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 5)
+                    Text(savedBook.author)
+                        .font(.system(size: 16, design: .serif))
+                        .foregroundStyle(Color(red: 0.82, green: 0.76, blue: 0.67))
+                        .padding(.top, 2)
+                    HStack(spacing: 7) {
+                        Image(systemName: "star.fill").foregroundStyle(Color(red: 0.91, green: 0.69, blue: 0.39))
+                        Text("4.8")
+                        Text("(124k reviews)").foregroundStyle(.white.opacity(0.55))
+                    }
+                    .font(.system(size: 13, weight: .medium))
+                    .padding(.top, 8)
+
+                    Button {
+                        if savedBook.digitalFileName != nil { openReader() } else { importing = true }
+                    } label: {
+                        Label(savedBook.digitalFileName != nil ? "Continue Reading" : "Add a Reading Copy", systemImage: savedBook.digitalFileName != nil ? "play.fill" : "plus")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.13, green: 0.09, blue: 0.06))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(LinearGradient(colors: [Color(red: 0.96, green: 0.78, blue: 0.54), Color(red: 0.79, green: 0.53, blue: 0.30)], startPoint: .leading, endPoint: .trailing), in: Capsule())
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 18)
+
+                    Button { library.update(book, isFavorite: savedBook.isFavorite != true) } label: {
+                        Label(savedBook.isFavorite == true ? "Added to Favorites" : "Add to Favorites", systemImage: "heart.fill")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color(red: 0.93, green: 0.84, blue: 0.72))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(Color.white.opacity(0.09), in: Capsule())
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 10)
+
+                    HStack(spacing: 0) {
+                        ForEach(["About", "Chapters", "Details"], id: \.self) { tab in
+                            Button { detailTab = tab } label: {
+                                VStack(spacing: 10) {
+                                    Text(tab)
+                                        .font(.system(size: 13, weight: detailTab == tab ? .semibold : .regular, design: .serif))
+                                        .foregroundStyle(detailTab == tab ? Color(red: 0.94, green: 0.78, blue: 0.57) : .white.opacity(0.65))
+                                    Rectangle().fill(detailTab == tab ? Color(red: 0.91, green: 0.72, blue: 0.48) : .clear).frame(height: 2)
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 25)
+
+                    Group {
+                        if detailTab == "About" {
+                            Text("\(savedBook.title) is ready for your next chapter. Add your reading copy to explore the story in Folio's immersive reader.")
+                                .font(.system(size: 15, design: .serif))
+                                .lineSpacing(5)
+                                .foregroundStyle(Color(red: 0.87, green: 0.83, blue: 0.77))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else if detailTab == "Chapters" {
+                            Text(savedBook.totalPages.map { "Your reading copy contains \($0) pages." } ?? "Chapter information will appear when it is available in your reading copy.")
+                                .font(.system(size: 14, design: .serif))
+                                .foregroundStyle(.white.opacity(0.7))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            VStack(alignment: .leading, spacing: 8) {
+                                detailLine("Author", savedBook.author)
+                                detailLine("Format", savedBook.digitalFileName.map { URL(fileURLWithPath: $0).pathExtension.uppercased() } ?? "Not imported")
+                                detailLine("Reading status", savedBook.status.rawValue)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.vertical, 18)
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        readingCopySection
+                        readingTimerSection
+                        journalSection
+                        shelfSection
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 32)
+                }
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 14)
-            .padding(.bottom, 34)
         }
-        .background(folioPaper.ignoresSafeArea())
+        .preferredColorScheme(.dark)
         .confirmationDialog("Remove this book?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
             Button("Remove from my shelf", role: .destructive) { library.remove(book); dismiss() }
             Button("Keep book", role: .cancel) {}
@@ -219,46 +328,40 @@ private struct BookDetailView: View {
             backCoverURLText = book.backCoverURL ?? ""
             spineColorHex = book.spineColorHex ?? "765447"
             elapsed = UserDefaults.standard.double(forKey: timerElapsedKey)
-            if let started = UserDefaults.standard.object(forKey: timerStartedKey) as? Date {
-                timerStart = started
-            }
+            if let started = UserDefaults.standard.object(forKey: timerStartedKey) as? Date { timerStart = started }
         }
         .onDisappear { persistTimerState() }
         .sheet(isPresented: $scanning) {
             NavigationStack {
-                ISBNScannerView(onScan: { code in
-                    scanning = false
-                    Task { await verifyBarcode(code) }
-                }, onCancel: { scanning = false })
-                .ignoresSafeArea()
-
+                ISBNScannerView(onScan: { code in scanning = false; Task { await verifyBarcode(code) } }, onCancel: { scanning = false })
+                    .ignoresSafeArea()
             }
         }
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data, .plainText, .rtf, .html], allowsMultipleSelection: false) { result in
-            importCopy(result)
-        }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data, .plainText, .rtf, .html], allowsMultipleSelection: false) { result in importCopy(result) }
         .fullScreenCover(isPresented: $reading) {
             if let readerURL {
                 if readerURL.pathExtension.lowercased() == "pdf" {
-                    Folio3DBookReader(
-                        url: readerURL,
-                        title: savedBook.title,
-                        coverURL: savedBook.coverURL,
-                        initialPage: book.currentPage ?? 1
-                    ) { page, total in
-                        currentPageText = String(page)
-                        totalPagesText = String(total)
+                    Folio3DBookReader(url: readerURL, title: savedBook.title, coverURL: savedBook.coverURL, initialPage: book.currentPage ?? 1) { page, total in
+                        currentPageText = String(page); totalPagesText = String(total)
                         library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
                     }
                 } else {
                     FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
-                        currentPageText = String(page)
-                        totalPagesText = String(total)
+                        currentPageText = String(page); totalPagesText = String(total)
                         library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
                     }
                 }
             }
         }
+    }
+
+    private func detailLine(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(.white.opacity(0.55))
+            Spacer()
+            Text(value).foregroundStyle(.white.opacity(0.9))
+        }
+        .font(.system(size: 13, design: .serif))
     }
 
     private var bookHeading: some View {
