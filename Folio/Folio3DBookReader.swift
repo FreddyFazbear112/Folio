@@ -100,8 +100,15 @@ struct Folio3DBookReader: View {
         }
         .preferredColorScheme(.dark)
         .task {
-            guard let loaded = PDFDocument(url: url), loaded.pageCount > 0 else {
-                loadError = "The PDF may be damaged, encrypted, or unavailable. Try importing it again."
+            // PDFKit can take noticeable time to parse large files. Never do
+            // that synchronous work on SwiftUI's main actor or the whole reader
+            // appears frozen on its loading state.
+            let loaded = await Task.detached(priority: .userInitiated) {
+                PDFDocument(url: url)
+            }.value
+            guard !Task.isCancelled else { return }
+            guard let loaded, loaded.pageCount > 0 else {
+                loadError = "Folio couldn't read this PDF. It may be damaged, encrypted, or unavailable. Re-import the file and try again."
                 return
             }
             document = loaded
