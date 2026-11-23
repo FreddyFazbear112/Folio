@@ -231,6 +231,74 @@ struct WelcomeView: View {
 }
 
 
+struct FolioLaunchView: View {
+    var onFinished: () -> Void
+    @State private var glow = false
+    @State private var appeared = false
+
+    private let ink = Color(red: 0.035, green: 0.025, blue: 0.055)
+    private let violet = Color(red: 0.42, green: 0.29, blue: 0.78)
+    private let lilac = Color(red: 0.78, green: 0.70, blue: 0.98)
+
+    var body: some View {
+        ZStack {
+            ink.ignoresSafeArea()
+            RadialGradient(colors: [violet.opacity(0.48), ink.opacity(0)], center: .center, startRadius: 8, endRadius: 390)
+                .ignoresSafeArea()
+            GeometryReader { proxy in
+                ForEach(0..<34, id: \\.self) { index in
+                    Circle()
+                        .fill(lilac.opacity(index.isMultiple(of: 3) ? 0.72 : 0.34))
+                        .frame(width: index.isMultiple(of: 5) ? 3 : 1.5)
+                        .position(
+                            x: CGFloat((index * 73 + 29) % 397) / 397 * proxy.size.width,
+                            y: CGFloat((index * 109 + 41) % 811) / 811 * proxy.size.height
+                        )
+                        .shadow(color: lilac.opacity(0.7), radius: 5)
+                }
+            }
+            VStack(spacing: 0) {
+                Spacer()
+                ZStack {
+                    Circle().fill(violet.opacity(glow ? 0.22 : 0.10)).frame(width: 240, height: 240).blur(radius: 24)
+                    Circle().stroke(lilac.opacity(0.22), lineWidth: 1).frame(width: 194, height: 194)
+                    Image(systemName: "book.pages.fill")
+                        .font(.system(size: 84, weight: .ultraLight))
+                        .foregroundStyle(LinearGradient(colors: [.white, lilac, violet], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .shadow(color: violet.opacity(glow ? 0.95 : 0.45), radius: glow ? 38 : 18)
+                        .rotation3DEffect(.degrees(glow ? -8 : 5), axis: (x: 0.2, y: 1, z: 0))
+                    Image(systemName: "sparkle").foregroundStyle(lilac).font(.system(size: 18)).offset(x: 91, y: -73)
+                    Image(systemName: "sparkle").foregroundStyle(.white.opacity(0.8)).font(.system(size: 12)).offset(x: -94, y: 70)
+                }
+                .scaleEffect(appeared ? 1 : 0.88)
+                .opacity(appeared ? 1 : 0)
+                Spacer().frame(height: 30)
+                Text("Folio")
+                    .font(.system(size: 58, design: .serif))
+                    .tracking(-1.4)
+                    .foregroundStyle(.white.opacity(0.94))
+                    .opacity(appeared ? 1 : 0)
+                Text("YOUR NEXT CHAPTER AWAITS")
+                    .font(.system(size: 9, weight: .medium))
+                    .tracking(3)
+                    .foregroundStyle(lilac.opacity(0.82))
+                    .padding(.top, 11)
+                    .opacity(appeared ? 1 : 0)
+                Spacer()
+                ProgressView().tint(lilac).frame(width: 92)
+                    .padding(.bottom, 58)
+            }
+        }
+        .preferredColorScheme(.dark)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) { glow = true }
+            withAnimation(.easeOut(duration: 0.9)) { appeared = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) { onFinished() }
+        }
+    }
+}
+
+
 private struct LibraryBackdrop: View {
     private let shelfColor = Color(red: 0.24, green: 0.14, blue: 0.085)
     private let bookColors: [Color] = [
