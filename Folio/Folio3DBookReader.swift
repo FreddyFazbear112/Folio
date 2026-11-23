@@ -364,30 +364,54 @@ private struct SceneBookStage: UIViewRepresentable {
             log.position = SCNVector3(-1.15 + Float(index - 1) * 0.12, 1.55 + Float(index) * 0.08, -2.70)
             root.addChildNode(log)
         }
-        // Layered emissive flame forms with a live, flickering fire light.
-        for index in 0..<5 {
+        // Individually sculpted tapered flame tongues. A stack of overlapping
+        // spheres reads as plastic blobs; narrow cone meshes create a pointed
+        // silhouette, with staggered motion and warm emissive cores.
+        for index in 0..<7 {
+            let height = CGFloat(0.48 + Double(index % 3) * 0.13)
+            let width = CGFloat(0.105 + Double(index % 2) * 0.035)
             let flameMaterial = SCNMaterial()
-            flameMaterial.diffuse.contents = UIColor(red: 1, green: 0.22 + CGFloat(index) * 0.035, blue: 0.018, alpha: 0.88)
-            flameMaterial.emission.contents = UIColor(red: 1, green: 0.16 + CGFloat(index) * 0.035, blue: 0.008, alpha: 1)
-            flameMaterial.transparency = 0.88
+            flameMaterial.diffuse.contents = UIColor(red: 0.95, green: 0.19 + CGFloat(index % 3) * 0.045, blue: 0.018, alpha: 1)
+            flameMaterial.emission.contents = UIColor(red: 1, green: 0.12 + CGFloat(index % 3) * 0.055, blue: 0.006, alpha: 1)
+            flameMaterial.roughness.contents = 0.72
             flameMaterial.isDoubleSided = true
-            flameMaterial.blendMode = .add
-            let flame = SCNNode(geometry: SCNSphere(radius: 0.30 + CGFloat(index % 2) * 0.08))
-            flame.geometry?.materials = [flameMaterial]
-            flame.scale = SCNVector3(0.52, 1.65 + Float(index % 3) * 0.22, 0.18)
-            flame.position = SCNVector3(-1.65 + Float(index) * 0.25, 1.92 + Float(index % 2) * 0.08, -2.52)
+            let flameGeometry = SCNCone(topRadius: 0.008, bottomRadius: width, height: height)
+            flameGeometry.radialSegmentCount = 18
+            flameGeometry.heightSegmentCount = 8
+            flameGeometry.materials = [flameMaterial]
+            let flame = SCNNode(geometry: flameGeometry)
+            flame.name = "fire-tongue-\\(index)"
+            flame.position = SCNVector3(-1.78 + Float(index) * 0.21, 1.72 + Float(index % 2) * 0.035, -2.49 + Float(index % 3) * 0.025)
+            flame.pivot = SCNMatrix4MakeTranslation(0, -Float(height) * 0.42, 0)
+            flame.eulerAngles.z = Float(index - 3) * 0.11
             root.addChildNode(flame)
+            let duration = 0.32 + Double(index % 4) * 0.055
             let dance = SCNAction.repeatForever(.sequence([
                 .group([
-                    .scale(to: CGFloat(0.82 + Double(index % 3) * 0.12), duration: 0.22 + Double(index) * 0.025),
-                    .moveBy(x: CGFloat(index % 2 == 0 ? 0.035 : -0.035), y: 0.12, z: 0, duration: 0.22 + Double(index) * 0.025)
+                    .scale(to: CGFloat(0.78 + Double(index % 3) * 0.10), duration: duration),
+                    .rotateTo(x: 0, y: 0, z: CGFloat(Float(index - 3) * 0.11 + (index % 2 == 0 ? 0.10 : -0.10)), duration: duration)
                 ]),
                 .group([
-                    .scale(to: CGFloat(1.0), duration: 0.24),
-                    .moveBy(x: CGFloat(index % 2 == 0 ? -0.035 : 0.035), y: -0.12, z: 0, duration: 0.24)
+                    .scale(to: 1, duration: duration * 0.9),
+                    .rotateTo(x: 0, y: 0, z: CGFloat(Float(index - 3) * 0.11), duration: duration * 0.9)
                 ])
             ]))
+            dance.timingMode = .easeInEaseOut
             flame.runAction(dance)
+        }
+        // Fine ember points at the base of the logs.
+        for index in 0..<12 {
+            let emberMaterial = SCNMaterial()
+            emberMaterial.diffuse.contents = UIColor(red: 0.95, green: 0.12, blue: 0.008, alpha: 1)
+            emberMaterial.emission.contents = UIColor(red: 1, green: 0.08, blue: 0.002, alpha: 1)
+            let ember = SCNNode(geometry: SCNSphere(radius: CGFloat(0.012 + Double(index % 3) * 0.006)))
+            ember.geometry?.materials = [emberMaterial]
+            ember.position = SCNVector3(-1.9 + Float(index) * 0.14, 1.53 + Float(index % 3) * 0.018, -2.47)
+            root.addChildNode(ember)
+            ember.runAction(.repeatForever(.sequence([
+                .fadeOpacity(to: 0.28, duration: 0.35 + Double(index % 4) * 0.07),
+                .fadeOpacity(to: 1, duration: 0.25 + Double(index % 3) * 0.06)
+            ])))
         }
         let fireGlow = SCNNode()
         let fireLamp = SCNLight()
