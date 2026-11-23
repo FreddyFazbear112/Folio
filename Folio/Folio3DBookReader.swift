@@ -345,9 +345,9 @@ private struct SceneBookStage: UIViewRepresentable {
             node.name = name
             // Keep the PDF artwork in front of the solid page block.
             // At z=0 the block's front face occluded both page planes.
-            node.position = SCNVector3(x, 0, 0.052)
+            node.position = SCNVector3(x, 0, 0.165)
             node.castsShadow = false
-            node.renderingOrder = 2
+            node.renderingOrder = 10
             root.addChildNode(node)
             return node
         }
@@ -384,7 +384,7 @@ private struct SceneBookStage: UIViewRepresentable {
         gutterMaterial.lightingModel = .constant
         gutterGeometry.materials = Array(repeating: gutterMaterial, count: 6)
         let gutter = SCNNode(geometry: gutterGeometry)
-        gutter.position = SCNVector3(0, 0, 0.060)
+        gutter.position = SCNVector3(0, 0, 0.171)
         root.addChildNode(gutter)
 
         let ambient = SCNNode()
@@ -418,7 +418,7 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 50
+        camera.fieldOfView = 43
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
@@ -426,7 +426,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
-        cameraNode.position = SCNVector3(0, 0.34, 7.8)
+        cameraNode.position = SCNVector3(0, 0.28, 8.2)
         cameraNode.look(at: SCNVector3(0, 0, 0))
         root.addChildNode(cameraNode)
         return scene
