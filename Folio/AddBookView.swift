@@ -210,7 +210,7 @@ struct FolioImportModal: View {
                     .background(FolioPalette.card, in: RoundedRectangle(cornerRadius: 20))
                     .overlay(
                         RoundedRectangle(cornerRadius: 20)
-                            .strokeBorder(FolioPalette.gold.opacity(0.35), style: StrokeStyle(lineWidth: 1.2, dash: [6]))
+                            .strokeBorder(FolioPalette.gold.opacity(0.35), style: StrokeStyle(lineWidth: 1.2, dash: [6, 4]))
                     )
                 }
                 .buttonStyle(.plain)
@@ -288,5 +288,9 @@ errorText = error.localizedDescription
 }
 }
 struct AddBookView: View {
+var initialStatus: ReadingStatus = .toRead
+var initialISBN: String = ""
+var initialTitle: String = ""
+var initialAuthor: String = ""
 var body: some View { FolioImportModal() }
 }
