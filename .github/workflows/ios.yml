@@ -16,7 +16,7 @@ concurrency:
 jobs:
   sideloadable-ipa:
     name: Sideloadable iPhone IPA (unsigned)
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 45
     if: github.event_name != 'pull_request'
     steps:
