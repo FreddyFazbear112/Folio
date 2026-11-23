@@ -1179,7 +1179,7 @@ private struct FolioLibraryHome: View {
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 22) {
                     header
                     greetingBlock
                     continueReading
@@ -1198,7 +1198,7 @@ private struct FolioLibraryHome: View {
     private var header: some View {
         HStack {
             Text("Folio")
-                .font(.system(size: 31, weight: .regular, design: .serif))
+                .font(.system(size: 34, weight: .regular, design: .serif))
                 .tracking(-0.8)
                 .foregroundStyle(FolioPalette.cream)
             Spacer()
@@ -1216,10 +1216,10 @@ private struct FolioLibraryHome: View {
     private var greetingBlock: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(greeting)
-                .font(.system(size: 17, design: .serif))
+                .font(.system(size: 18, design: .serif))
                 .foregroundStyle(FolioPalette.cream)
             Text("Reader. 👋")
-                .font(.system(size: 20, weight: .regular, design: .serif))
+                .font(.system(size: 22, weight: .regular, design: .serif))
                 .foregroundStyle(FolioPalette.cream)
         }
         .padding(.top, 0)
@@ -1233,7 +1233,7 @@ private struct FolioLibraryHome: View {
                 Button { selectBook(book) } label: {
                     HStack(spacing: 14) {
                         FolioBookCover(book: book)
-                            .frame(width: 76, height: 108)
+                            .frame(width: 78, height: 116)
                             .shadow(color: .black.opacity(0.35), radius: 9, x: 3, y: 5)
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Continue Reading")
@@ -1265,7 +1265,7 @@ private struct FolioLibraryHome: View {
                         Image(systemName: "play.fill")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(FolioPalette.background)
-                            .frame(width: 34, height: 34)
+                            .frame(width: 42, height: 42)
                             .background(FolioPalette.gold, in: Circle())
                     }
                      .padding(12)
@@ -1326,8 +1326,8 @@ private struct FolioLibraryHome: View {
                     .font(.system(size: 10, design: .rounded).monospacedDigit())
                     .foregroundStyle(FolioPalette.muted)
             }
-             .frame(maxWidth: .infinity, minHeight: 94, alignment: .center)
-            .padding(9)
+             .frame(maxWidth: .infinity, minHeight: 112, alignment: .center)
+            .padding(12)
             .background(Color(red: 0.105, green: 0.091, blue: 0.081), in: RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.055), lineWidth: 0.7))
         }
@@ -1357,14 +1357,14 @@ private struct FolioLibraryHome: View {
                             Button { selectBook(book) } label: {
                                 VStack(alignment: .leading, spacing: 7) {
                                     FolioBookCover(book: book)
-                                        .frame(width: 96, height: 140)
+                                        .frame(width: 100, height: 148)
                                         .shadow(color: .black.opacity(0.35), radius: 8, x: 3, y: 5)
                                     Text(book.title)
                                         .font(.system(size: 12, design: .serif))
                                         .foregroundStyle(FolioPalette.cream)
                                         .lineLimit(2)
                                         .multilineTextAlignment(.leading)
-                                        .frame(width: 96, alignment: .leading)
+                                        .frame(width: 100, alignment: .leading)
                                     Text(book.author)
                                         .font(.system(size: 9, design: .serif))
                                         .foregroundStyle(FolioPalette.muted)
