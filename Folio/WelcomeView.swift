@@ -246,7 +246,7 @@ struct FolioLaunchView: View {
             RadialGradient(colors: [violet.opacity(0.48), ink.opacity(0)], center: .center, startRadius: 8, endRadius: 390)
                 .ignoresSafeArea()
             GeometryReader { proxy in
-                ForEach(0..<34, id: \\.self) { index in
+                ForEach(0..<34, id: \.self) { index in
                     Circle()
                         .fill(lilac.opacity(index.isMultiple(of: 3) ? 0.72 : 0.34))
                         .frame(width: index.isMultiple(of: 5) ? 3 : 1.5)
