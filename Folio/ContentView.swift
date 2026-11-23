@@ -1190,6 +1190,42 @@ private enum FolioPalette {
     static let line = Color.white.opacity(0.09)
 }
 
+private struct FolioShelfAtmosphere: View {
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.105, green: 0.079, blue: 0.060), Color(red: 0.045, green: 0.040, blue: 0.036), Color(red: 0.025, green: 0.024, blue: 0.023)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Canvas { context, size in
+                    let shelfY = [size.height * 0.18, size.height * 0.37, size.height * 0.57]
+                    for (row, shelfYPosition) in shelfY.enumerated() {
+                        let widths: [CGFloat] = [18,25,15,31,21,17,27,14,23,19,29,16]
+                        var x: CGFloat = -8
+                        for (index, width) in widths.enumerated() {
+                            let height = CGFloat(42 + ((index * 17 + row * 11) % 38))
+                            let rect = CGRect(x: x, y: shelfYPosition-height, width: width, height: height)
+                            let shades: [Color] = [Color(red:0.24,green:0.15,blue:0.10),Color(red:0.16,green:0.20,blue:0.18),Color(red:0.28,green:0.22,blue:0.14),Color(red:0.20,green:0.12,blue:0.11)]
+                            context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(shades[(index+row)%shades.count].opacity(0.34)))
+                            x += width + 4
+                        }
+                        var shelf = Path()
+                        shelf.move(to: CGPoint(x:0,y:shelfYPosition+2))
+                        shelf.addLine(to: CGPoint(x:size.width,y:shelfYPosition+2))
+                        context.stroke(shelf, with: .color(Color(red:0.55,green:0.38,blue:0.23).opacity(0.23)), lineWidth: 5)
+                        context.stroke(shelf, with: .color(.black.opacity(0.35)), lineWidth: 1)
+                    }
+                }
+                LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.36), .black.opacity(0.78)], startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [FolioPalette.gold.opacity(0.10), .clear], center: .topTrailing, startRadius: 10, endRadius: proxy.size.width * 0.9)
+            }
+            .overlay(alignment: .bottom) {
+                LinearGradient(colors: [.clear, FolioPalette.background.opacity(0.96)], startPoint: .top, endPoint: .bottom)
+                    .frame(height: proxy.size.height * 0.56)
+            }
+        }
+        .background(FolioPalette.background)
+    }
+}
+
 private struct FolioLibraryHome: View {
     @EnvironmentObject private var library: LibraryStore
     let selectBook: (Book) -> Void
@@ -1209,7 +1245,9 @@ private struct FolioLibraryHome: View {
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                ScrollView(showsIndicators: false) {
+                ZStack(alignment: .top) {
+                    FolioShelfAtmosphere().ignoresSafeArea()
+                    ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 0) {
                         header
                             .padding(.top, 10)
@@ -1227,8 +1265,8 @@ private struct FolioLibraryHome: View {
                     .frame(maxWidth: 620)
                     .frame(maxWidth: .infinity, alignment: .top)
                     .frame(minHeight: geometry.size.height, alignment: .top)
+                    }
                 }
-                .background(FolioPalette.background.ignoresSafeArea())
             }
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -1236,10 +1274,13 @@ private struct FolioLibraryHome: View {
 
     private var header: some View {
         HStack(alignment: .center) {
-            Text("Folio")
-                .font(.system(size: 43, weight: .regular, design: .serif))
-                .tracking(-1.3)
-                .foregroundStyle(FolioPalette.cream)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("FOLIO").font(.system(size: 9, weight: .bold)).tracking(4.2).foregroundStyle(FolioPalette.gold)
+                Text("Folio")
+                    .font(.system(size: 43, weight: .regular, design: .serif))
+                    .tracking(-1.3)
+                    .foregroundStyle(FolioPalette.cream)
+            }
             Spacer()
             Button(action: openMore) {
                 Image(systemName: "person.crop.circle")
@@ -1260,13 +1301,20 @@ private struct FolioLibraryHome: View {
             Text("Reader. 👋")
                 .font(.system(size: 31, weight: .regular, design: .serif))
                 .foregroundStyle(FolioPalette.cream)
+            Text("A little space for the stories you love.")
+                .font(.system(size: 13, design: .serif)).italic()
+                .foregroundStyle(FolioPalette.muted).padding(.top, 7)
         }
     }
 
     @ViewBuilder
     private var continueReading: some View {
         VStack(alignment: .leading, spacing: 16) {
-            sectionTitle("Continue Reading", action: nil)
+            HStack {
+                Text("PICK UP WHERE YOU LEFT OFF").font(.system(size: 9, weight: .bold)).tracking(2.3).foregroundStyle(FolioPalette.gold)
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(FolioPalette.muted)
+            }
             if let book = currentlyReading {
                 Button { selectBook(book) } label: {
                     HStack(spacing: 17) {
