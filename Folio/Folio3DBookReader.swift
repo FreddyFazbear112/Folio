@@ -183,6 +183,8 @@ private struct SceneBookStage: UIViewRepresentable {
         view.allowsCameraControl = false
         view.antialiasingMode = .multisampling4X
         view.rendersContinuously = true
+        view.isJitteringEnabled = true
+        view.antialiasingMode = .multisampling4X
         view.preferredFramesPerSecond = 60
         view.isPlaying = true
         if let camera = scene.rootNode.childNode(withName: "folio-camera", recursively: true) {
@@ -220,6 +222,10 @@ private struct SceneBookStage: UIViewRepresentable {
             SCNTransaction.begin()
             SCNTransaction.animationDuration = 0.65
             hinge.eulerAngles.y = isOpen ? -.pi : 0
+            // When open, tuck the front board behind the left page leaf.
+            // Without this depth change the thick cover sits in front of and
+            // completely masks the left-hand PDF page from the camera.
+            hinge.position.z = isOpen ? -0.245 : 0.105
             SCNTransaction.commit()
         }
     }
@@ -403,7 +409,7 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 38
+        camera.fieldOfView = 34
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
@@ -411,8 +417,8 @@ private struct SceneBookStage: UIViewRepresentable {
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
-        cameraNode.position = SCNVector3(0, 0, 7.8)
-        cameraNode.look(at: SCNVector3Zero)
+        cameraNode.position = SCNVector3(0, 0.45, 9.4)
+        cameraNode.look(at: SCNVector3(0, 0, 0))
         root.addChildNode(cameraNode)
         return scene
     }
