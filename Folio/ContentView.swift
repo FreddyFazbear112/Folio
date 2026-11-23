@@ -1199,60 +1199,24 @@ private enum FolioPalette {
 private struct FolioShelfAtmosphere: View {
     var body: some View {
         GeometryReader { proxy in
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.15, green: 0.105, blue: 0.070),
-                        Color(red: 0.075, green: 0.052, blue: 0.039),
-                        Color(red: 0.025, green: 0.022, blue: 0.020)
-                    ],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-                Canvas { context, size in
-                    // Deep walnut shelving, built as architectural layers rather than flat
-                    // repeated rectangles. The foreground fade keeps text legible.
-                    let rows: [CGFloat] = [size.height * 0.235, size.height * 0.49, size.height * 0.755]
-                    let palette: [Color] = [
-                        Color(red: 0.22, green: 0.105, blue: 0.065),
-                        Color(red: 0.105, green: 0.15, blue: 0.13),
-                        Color(red: 0.30, green: 0.19, blue: 0.105),
-                        Color(red: 0.16, green: 0.085, blue: 0.075),
-                        Color(red: 0.19, green: 0.16, blue: 0.115),
-                        Color(red: 0.085, green: 0.105, blue: 0.105),
-                        Color(red: 0.27, green: 0.13, blue: 0.085)
-                    ]
-                    for (row, shelfY) in rows.enumerated() {
-                        var x: CGFloat = -12
-                        var index = 0
-                        while x < size.width + 12 {
-                            let width = CGFloat([18, 25, 31, 21, 28, 16, 35, 23, 19, 29][(index + row * 3) % 10])
-                            let height = CGFloat([108, 132, 94, 145, 118, 86, 138, 104, 126][(index * 3 + row) % 9])
-                            let rect = CGRect(x: x, y: shelfY - height, width: width, height: height)
-                            let color = palette[(index * 2 + row) % palette.count]
-                            context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color.opacity(0.66)))
-                            context.fill(Path(CGRect(x: x + 2, y: rect.minY + 4, width: 2, height: height - 8)), with: .color(.white.opacity(0.055)))
-                            context.fill(Path(CGRect(x: x + width - 3, y: rect.minY + 3, width: 2, height: height - 6)), with: .color(.black.opacity(0.25)))
-                            if index % 3 == 0 {
-                                context.fill(Path(CGRect(x: x + 5, y: rect.minY + 15, width: max(3, width - 10), height: 1)), with: .color(Color(red: 0.73, green: 0.54, blue: 0.31).opacity(0.42)))
-                                context.fill(Path(CGRect(x: x + 5, y: rect.maxY - 17, width: max(3, width - 10), height: 1)), with: .color(.white.opacity(0.12)))
-                            }
-                            x += width + CGFloat([3, 5, 4][index % 3])
-                            index += 1
-                        }
-                        let board = CGRect(x: -4, y: shelfY + 1, width: size.width + 8, height: 9)
-                        context.fill(Path(board), with: .color(Color(red: 0.19, green: 0.105, blue: 0.065).opacity(0.9)))
-                        context.fill(Path(CGRect(x: 0, y: shelfY + 1, width: size.width, height: 1.5)), with: .color(Color(red: 0.72, green: 0.49, blue: 0.28).opacity(0.38)))
-                        context.fill(Path(CGRect(x: 0, y: shelfY + 9, width: size.width, height: 2)), with: .color(.black.opacity(0.55)))
-                    }
-                    // Soft pools of lamplight in the room.
-                    let glow = CGRect(x: size.width * 0.57, y: size.height * 0.02, width: size.width * 0.55, height: size.height * 0.62)
-                    context.fill(Path(ellipseIn: glow), with: .color(Color(red: 0.78, green: 0.48, blue: 0.22).opacity(0.075)))
+            Image("ReadingRoom")
+                .resizable()
+                .scaledToFill()
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .clipped()
+                .overlay {
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color(red: 0.035, green: 0.025, blue: 0.018).opacity(0.22), location: 0),
+                            .init(color: Color(red: 0.035, green: 0.025, blue: 0.018).opacity(0.34), location: 0.42),
+                            .init(color: Color(red: 0.025, green: 0.021, blue: 0.018).opacity(0.94), location: 1)
+                        ],
+                        startPoint: .top, endPoint: .bottom
+                    )
                 }
-                LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.24), .black.opacity(0.72)], startPoint: .top, endPoint: .bottom)
-                RadialGradient(colors: [Color(red: 0.78, green: 0.52, blue: 0.29).opacity(0.16), .clear], center: .topTrailing, startRadius: 8, endRadius: proxy.size.width * 0.85)
-                LinearGradient(colors: [.clear, FolioPalette.background.opacity(0.96)], startPoint: .top, endPoint: .bottom)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-            }
+                .overlay(alignment: .top) {
+                    RadialGradient(colors: [FolioPalette.gold.opacity(0.15), .clear], center: .topTrailing, startRadius: 5, endRadius: proxy.size.width)
+                }
         }
         .background(FolioPalette.background)
     }
@@ -1264,119 +1228,242 @@ private struct FolioLibraryHome: View {
     let addBook: () -> Void
     let openLibrary: () -> Void
     let openMore: () -> Void
+
     private var current: Book? { library.books.first(where: { $0.status == .reading }) }
     private var recent: [Book] { Array(library.books.prefix(10)) }
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
         return hour < 12 ? "Good morning" : (hour < 18 ? "Good afternoon" : "Good evening")
     }
+
     var body: some View {
         NavigationStack {
             ZStack {
                 FolioShelfAtmosphere().ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 28) {
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("F O L I O").font(.system(size: 9, weight: .bold)).foregroundStyle(FolioPalette.gold)
-                                Text("Your reading room").font(.system(size: 34, design: .serif)).foregroundStyle(FolioPalette.cream)
+                    VStack(alignment: .leading, spacing: 30) {
+                        masthead
+                        greetingBlock
+                        continueSection
+                        librarySection
+                        recentSection
+                        Button(action: addBook) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "plus.circle")
+                                Text("ADD A BOOK TO YOUR SHELVES")
+                                    .font(.system(size: 9, weight: .bold)).tracking(1.6)
                             }
-                            Spacer()
-                            Button(action: openMore) {
-                                Image(systemName: "person.crop.circle").font(.system(size: 27, weight: .light))
-                                    .foregroundStyle(FolioPalette.cream).frame(width: 46, height: 46)
-                                    .background(.white.opacity(0.07), in: Circle())
-                            }
+                            .foregroundStyle(FolioPalette.gold)
+                            .frame(maxWidth: .infinity).padding(.vertical, 18)
+                            .overlay(alignment: .top) { Rectangle().fill(FolioPalette.gold.opacity(0.18)).frame(height: 1) }
                         }
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(greeting + ",").font(.system(size: 30, design: .serif)).foregroundStyle(FolioPalette.cream)
-                            Text("make yourself at home.").font(.system(size: 30, design: .serif)).italic().foregroundStyle(FolioPalette.gold)
-                            Text("A quiet place for the stories you love.").font(.system(size: 13, design: .serif)).foregroundStyle(FolioPalette.muted).padding(.top, 4)
-                        }
-                        VStack(alignment: .leading, spacing: 13) {
-                            sectionEyebrow("CONTINUE READING", trailing: "YOUR CURRENT CHAPTER")
-                            if let book = current {
-                                Button { selectBook(book) } label: {
-                                    HStack(spacing: 17) {
-                                        FolioBookCover(book: book).frame(width: 116, height: 166)
-                                            .shadow(color: .black.opacity(0.55), radius: 15, x: 5, y: 9)
-                                        VStack(alignment: .leading, spacing: 9) {
-                                            Text("BACK TO YOUR STORY").font(.system(size: 8, weight: .bold)).tracking(1.8).foregroundStyle(FolioPalette.gold)
-                                            Text(book.title).font(.system(size: 23, design: .serif)).foregroundStyle(FolioPalette.cream).multilineTextAlignment(.leading).lineLimit(3)
-                                            Text(book.author).font(.system(size: 13, design: .serif)).foregroundStyle(FolioPalette.muted).lineLimit(1)
-                                            Spacer(minLength: 2)
-                                            if let page=book.currentPage, let total=book.totalPages, total>0 {
-                                                ProgressView(value: Double(page), total: Double(total)).tint(FolioPalette.gold)
-                                                Text("PAGE \(page) OF \(total)").font(.system(size: 8, weight: .semibold)).tracking(1.3).foregroundStyle(FolioPalette.muted)
-                                            } else { Text("READY WHEN YOU ARE").font(.system(size: 8, weight: .semibold)).tracking(1.2).foregroundStyle(FolioPalette.muted) }
-                                        }
-                                        Spacer(minLength: 0)
-                                        Image(systemName: "play.fill").font(.system(size: 15)).foregroundStyle(FolioPalette.background)
-                                            .frame(width: 43, height: 43).background(FolioPalette.gold, in: Circle())
-                                    }
-                                    .padding(17).frame(maxWidth: .infinity, minHeight: 198, alignment: .leading)
-                                    .background(LinearGradient(colors: [Color(red:0.17,green:0.13,blue:0.10),Color(red:0.075,green:0.065,blue:0.057)], startPoint: .topLeading,endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 18))
-                                    .overlay(RoundedRectangle(cornerRadius:18).stroke(FolioPalette.gold.opacity(0.28),lineWidth:1))
-                                }.buttonStyle(.plain)
-                            } else {
-                                Button(action:addBook) {
-                                    HStack(spacing:15) {
-                                        Image(systemName:"book.closed").font(.system(size:32,weight:.ultraLight)).foregroundStyle(FolioPalette.gold).frame(width:76,height:102).background(FolioPalette.raised,in:RoundedRectangle(cornerRadius:8))
-                                        VStack(alignment:.leading,spacing:7) {
-                                            Text("Your next chapter").font(.system(size:22,design:.serif)).foregroundStyle(FolioPalette.cream)
-                                            Text("Add a book and make this room yours.").font(.system(size:13,design:.serif)).foregroundStyle(FolioPalette.muted)
-                                        }
-                                        Spacer()
-                                        Image(systemName:"plus").foregroundStyle(FolioPalette.gold)
-                                    }.padding(17).background(FolioPalette.surface,in:RoundedRectangle(cornerRadius:18))
-                                }.buttonStyle(.plain)
-                            }
-                        }
-                        VStack(alignment:.leading,spacing:13) {
-                            sectionEyebrow("YOUR LIBRARY", trailing:"A SHELF FOR EVERY STORY")
-                            HStack(spacing:10) {
-                                homeShortcut("All books",value:library.books.count,symbol:"books.vertical",action:openLibrary)
-                                homeShortcut("Favorites",value:library.books.filter{$0.isFavorite == true}.count,symbol:"heart",action:openLibrary)
-                                homeShortcut("Finished",value:library.books(for:.finished).count,symbol:"bookmark",action:openLibrary)
-                            }
-                        }
-                        VStack(alignment:.leading,spacing:14) {
-                            HStack { Text("Recently added").font(.system(size:23,design:.serif)).foregroundStyle(FolioPalette.cream); Spacer(); Button("VIEW ALL  ›",action:openLibrary).font(.system(size:8,weight:.bold)).tracking(1.3).foregroundStyle(FolioPalette.gold) }
-                            if recent.isEmpty {
-                                Text("Your shelves are waiting for their first story.").font(.system(size:14,design:.serif)).foregroundStyle(FolioPalette.muted).padding(.vertical,24)
-                            } else {
-                                ScrollView(.horizontal,showsIndicators:false) {
-                                    HStack(alignment:.top,spacing:16) {
-                                        ForEach(recent) { book in Button { selectBook(book) } label: {
-                                            VStack(alignment:.leading,spacing:7) {
-                                                FolioBookCover(book:book).frame(width:112,height:162).shadow(color:.black.opacity(0.5),radius:10,x:3,y:6)
-                                                Text(book.title).font(.system(size:13,design:.serif)).foregroundStyle(FolioPalette.cream).lineLimit(2).frame(width:112,alignment:.leading)
-                                                Text(book.author.uppercased()).font(.system(size:7,weight:.medium)).tracking(0.8).foregroundStyle(FolioPalette.muted).lineLimit(1).frame(width:112,alignment:.leading)
-                                            }
-                                        }.buttonStyle(.plain) }
-                                    }
-                                }
-                            }
-                        }
-                    }.padding(.horizontal,24).padding(.top,22).padding(.bottom,38)
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 12)
+                    .padding(.bottom, 42)
                 }
-            }.toolbar(.hidden,for:.navigationBar)
+            }
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
-    private func sectionEyebrow(_ title:String,trailing:String)->some View {
-        HStack { Text(title).font(.system(size:9,weight:.bold)).tracking(1.8).foregroundStyle(FolioPalette.gold); Spacer(); Text(trailing).font(.system(size:7,weight:.medium)).tracking(1).foregroundStyle(FolioPalette.muted) }
+
+    private var masthead: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("F O L I O").font(.system(size: 10, weight: .bold)).tracking(3.2).foregroundStyle(FolioPalette.gold)
+                Text("Your reading room")
+                    .font(.system(size: 35, design: .serif)).tracking(-1.1)
+                    .foregroundStyle(FolioPalette.cream)
+                    .minimumScaleFactor(0.8).lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Button(action: openMore) {
+                Image(systemName: "person.crop.circle")
+                    .font(.system(size: 27, weight: .ultraLight))
+                    .foregroundStyle(FolioPalette.cream)
+                    .frame(width: 48, height: 48)
+                    .background(.black.opacity(0.28), in: Circle())
+                    .overlay(Circle().stroke(FolioPalette.gold.opacity(0.28), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.bottom, 3)
     }
-    private func homeShortcut(_ title:String,value:Int,symbol:String,action:@escaping()->Void)->some View {
-        Button(action:action) {
-            VStack(alignment:.leading,spacing:10) {
-                Image(systemName:symbol).font(.system(size:19,weight:.light)).foregroundStyle(FolioPalette.gold)
-                Spacer(minLength:2)
-                Text(title).font(.system(size:13,design:.serif)).foregroundStyle(FolioPalette.cream).lineLimit(1).minimumScaleFactor(0.8)
-                Text(String(value)).font(.system(size:11,design:.serif).monospacedDigit()).foregroundStyle(FolioPalette.muted)
-            }.frame(maxWidth:.infinity,minHeight:93,alignment:.leading).padding(12)
-                .background(Color.white.opacity(0.055),in:RoundedRectangle(cornerRadius:12))
-                .overlay(RoundedRectangle(cornerRadius:12).stroke(Color.white.opacity(0.09),lineWidth:1))
-        }.buttonStyle(.plain)
+
+    private var greetingBlock: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(greeting + ",")
+                .font(.system(size: 31, design: .serif))
+                .foregroundStyle(FolioPalette.cream)
+            Text("make yourself at home.")
+                .font(.system(size: 31, design: .serif)).italic()
+                .foregroundStyle(Color(red: 0.83, green: 0.65, blue: 0.44))
+                .fixedSize(horizontal: false, vertical: true)
+            Text("A quiet place for the stories you love.")
+                .font(.system(size: 14, design: .serif))
+                .foregroundStyle(FolioPalette.cream.opacity(0.68))
+                .padding(.top, 7)
+        }
+        .padding(.top, 2)
+        .padding(.bottom, 3)
+    }
+
+    private var continueSection: some View {
+        VStack(alignment: .leading, spacing: 13) {
+            sectionEyebrow("CONTINUE READING", trailing: "YOUR CURRENT CHAPTER")
+            if let book = current {
+                Button { selectBook(book) } label: {
+                    HStack(alignment: .center, spacing: 17) {
+                        FolioBookCover(book: book)
+                            .frame(width: 116, height: 174)
+                            .clipShape(RoundedRectangle(cornerRadius: 7))
+                            .overlay(RoundedRectangle(cornerRadius: 7).stroke(.white.opacity(0.18), lineWidth: 1))
+                            .shadow(color: .black.opacity(0.72), radius: 18, x: 7, y: 11)
+                        VStack(alignment: .leading, spacing: 9) {
+                            Text("BACK TO YOUR STORY")
+                                .font(.system(size: 9, weight: .bold)).tracking(2.1)
+                                .foregroundStyle(FolioPalette.gold)
+                            Text(book.title)
+                                .font(.system(size: 27, design: .serif)).tracking(-0.4)
+                                .foregroundStyle(FolioPalette.cream)
+                                .multilineTextAlignment(.leading).lineLimit(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(book.author)
+                                .font(.system(size: 14, design: .serif))
+                                .foregroundStyle(FolioPalette.muted).lineLimit(1)
+                            Spacer(minLength: 0)
+                            if let page = book.currentPage, let total = book.totalPages, total > 0 {
+                                ProgressView(value: Double(page), total: Double(total)).tint(FolioPalette.gold)
+                                Text("PAGE \(page) OF \(total)")
+                                    .font(.system(size: 8, weight: .semibold)).tracking(1.4)
+                                    .foregroundStyle(FolioPalette.muted)
+                            } else {
+                                Text("READY WHEN YOU ARE")
+                                    .font(.system(size: 8, weight: .semibold)).tracking(1.5)
+                                    .foregroundStyle(FolioPalette.muted)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.13, green: 0.08, blue: 0.045))
+                            .frame(width: 48, height: 48)
+                            .background(LinearGradient(colors: [Color(red: 0.91, green: 0.72, blue: 0.49), Color(red: 0.72, green: 0.48, blue: 0.28)], startPoint: .topLeading, endPoint: .bottomTrailing), in: Circle())
+                            .shadow(color: FolioPalette.gold.opacity(0.25), radius: 12, y: 4)
+                    }
+                    .padding(17)
+                    .frame(maxWidth: .infinity, minHeight: 210, alignment: .leading)
+                    .background {
+                        ZStack {
+                            LinearGradient(colors: [Color(red: 0.12, green: 0.085, blue: 0.06).opacity(0.97), Color(red: 0.045, green: 0.038, blue: 0.032).opacity(0.98)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            RadialGradient(colors: [FolioPalette.gold.opacity(0.13), .clear], center: .topTrailing, startRadius: 0, endRadius: 250)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 23))
+                    .overlay(RoundedRectangle(cornerRadius: 23).stroke(FolioPalette.gold.opacity(0.34), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.5), radius: 22, x: 0, y: 14)
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button(action: addBook) {
+                    HStack(spacing: 16) {
+                        Image(systemName: "book.closed")
+                            .font(.system(size: 35, weight: .ultraLight)).foregroundStyle(FolioPalette.gold)
+                            .frame(width: 78, height: 112)
+                            .background(FolioPalette.raised, in: RoundedRectangle(cornerRadius: 9))
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Your next chapter").font(.system(size: 24, design: .serif)).foregroundStyle(FolioPalette.cream)
+                            Text("Add a book and make this room yours.").font(.system(size: 13, design: .serif)).foregroundStyle(FolioPalette.muted)
+                        }
+                        Spacer()
+                        Image(systemName: "plus").foregroundStyle(FolioPalette.gold)
+                    }
+                    .padding(17)
+                    .background(Color.black.opacity(0.56), in: RoundedRectangle(cornerRadius: 20))
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(FolioPalette.gold.opacity(0.24), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var librarySection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionEyebrow("YOUR LIBRARY", trailing: "A SHELF FOR EVERY STORY")
+            HStack(spacing: 10) {
+                homeShortcut("All books", value: library.books.count, symbol: "books.vertical", action: openLibrary)
+                homeShortcut("Favorites", value: library.books.filter { $0.isFavorite == true }.count, symbol: "heart", action: openLibrary)
+                homeShortcut("Finished", value: library.books(for: .finished).count, symbol: "bookmark", action: openLibrary)
+            }
+        }
+    }
+
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Recently added")
+                    .font(.system(size: 27, design: .serif)).tracking(-0.5)
+                    .foregroundStyle(FolioPalette.cream)
+                Spacer()
+                Button("VIEW ALL  ›", action: openLibrary)
+                    .font(.system(size: 9, weight: .bold)).tracking(1.6)
+                    .foregroundStyle(FolioPalette.gold)
+            }
+            if recent.isEmpty {
+                Text("Your shelves are waiting for their first story.")
+                    .font(.system(size: 14, design: .serif)).foregroundStyle(FolioPalette.muted)
+                    .padding(.vertical, 24)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 17) {
+                        ForEach(recent) { book in
+                            Button { selectBook(book) } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    FolioBookCover(book: book)
+                                        .frame(width: 116, height: 170)
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(.white.opacity(0.16), lineWidth: 1))
+                                        .shadow(color: .black.opacity(0.62), radius: 12, x: 4, y: 8)
+                                    Text(book.title).font(.system(size: 14, design: .serif))
+                                        .foregroundStyle(FolioPalette.cream).lineLimit(2)
+                                        .frame(width: 116, alignment: .leading)
+                                    Text(book.author.uppercased()).font(.system(size: 7, weight: .medium))
+                                        .tracking(1).foregroundStyle(FolioPalette.muted).lineLimit(1)
+                                        .frame(width: 116, alignment: .leading)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 3)
+                }
+            }
+        }
+    }
+
+    private func sectionEyebrow(_ title: String, trailing: String) -> some View {
+        HStack {
+            Text(title).font(.system(size: 9, weight: .bold)).tracking(2.0).foregroundStyle(FolioPalette.gold)
+            Spacer()
+            Text(trailing).font(.system(size: 7, weight: .medium)).tracking(1.1).foregroundStyle(FolioPalette.cream.opacity(0.54))
+        }
+    }
+
+    private func homeShortcut(_ title: String, value: Int, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 11) {
+                Image(systemName: symbol).font(.system(size: 25, weight: .ultraLight)).foregroundStyle(FolioPalette.gold)
+                Spacer(minLength: 5)
+                Text(title).font(.system(size: 15, design: .serif)).foregroundStyle(FolioPalette.cream).lineLimit(1).minimumScaleFactor(0.8)
+                Text(String(value)).font(.system(size: 12, design: .serif).monospacedDigit()).foregroundStyle(FolioPalette.muted)
+            }
+            .frame(maxWidth: .infinity, minHeight: 122, alignment: .leading)
+            .padding(15)
+            .background(LinearGradient(colors: [Color.white.opacity(0.075), Color.black.opacity(0.38)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 17))
+            .overlay(RoundedRectangle(cornerRadius: 17).stroke(Color.white.opacity(0.13), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 }
 
