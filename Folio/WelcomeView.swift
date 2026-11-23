@@ -23,6 +23,9 @@ struct WelcomeView: View {
     var body: some View {
         ZStack {
             ink.ignoresSafeArea()
+            LibraryBackdrop()
+                .ignoresSafeArea()
+                .opacity(phase == .splash ? 0.48 : 0.13)
             RadialGradient(colors: [Color(red: 0.31, green: 0.19, blue: 0.11).opacity(0.72), ink.opacity(0)], center: .top, startRadius: 10, endRadius: 520)
                 .ignoresSafeArea()
 
@@ -49,7 +52,7 @@ struct WelcomeView: View {
             ZStack {
                 Circle().stroke(gold.opacity(0.18), lineWidth: 1).frame(width: 270, height: 270)
                 Circle().stroke(gold.opacity(0.10), lineWidth: 1).frame(width: 218, height: 218)
-                Image(systemName: "book.closed.fill")
+                Image(systemName: "book.fill")
                     .font(.system(size: 78, weight: .ultraLight))
                     .foregroundStyle(LinearGradient(colors: [cream, gold], startPoint: .topLeading, endPoint: .bottomTrailing))
                     .shadow(color: gold.opacity(0.45), radius: glow ? 32 : 14)
@@ -224,5 +227,48 @@ struct WelcomeView: View {
                 }.foregroundStyle(cream).padding(9)
             }
             .shadow(color: .black.opacity(0.28), radius: 8, x: 3, y: 5)
+    }
+}
+
+
+private struct LibraryBackdrop: View {
+    private let wood = Color(red: 0.24, green: 0.14, blue: 0.085)
+    private let bookColors: [Color] = [
+        Color(red: 0.28, green: 0.12, blue: 0.09),
+        Color(red: 0.18, green: 0.22, blue: 0.18),
+        Color(red: 0.35, green: 0.24, blue: 0.14),
+        Color(red: 0.12, green: 0.16, blue: 0.19),
+        Color(red: 0.30, green: 0.18, blue: 0.16)
+    ]
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.16, green: 0.105, blue: 0.07), Color(red: 0.035, green: 0.027, blue: 0.022)], startPoint: .top, endPoint: .bottom)
+                HStack(spacing: 0) {
+                    ForEach(0..<6, id: \\.self) { column in
+                        VStack(spacing: 0) {
+                            ForEach(0..<4, id: \\.self) { shelf in
+                                HStack(alignment: .bottom, spacing: 3) {
+                                    ForEach(0..<5, id: \\.self) { book in
+                                        RoundedRectangle(cornerRadius: 2)
+                                            .fill(bookColors[(column + shelf + book) % bookColors.count].opacity(0.82))
+                                            .frame(width: max(7, (proxy.size.width / 6 - 18) / 5), height: CGFloat(28 + ((column * 13 + shelf * 7 + book * 9) % 42)))
+                                            .overlay(alignment: .leading) {
+                                                Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
+                                            }
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                                Rectangle().fill(wood).frame(height: 7)
+                            }
+                        }
+                        .padding(.horizontal, 3)
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                LinearGradient(colors: [.black.opacity(0.18), .black.opacity(0.68)], startPoint: .top, endPoint: .bottom)
+            }
+        }
     }
 }
