@@ -209,9 +209,8 @@ private struct BookDetailView: View {
     @State private var confirmingRemoval = false
     @State private var scanning = false
     @State private var importing = false
-    @State private var reading = false
     @State private var message: String?
-    @State private var readerURL: URL?
+    @State private var readerDestination: FolioReaderDestination?
     @State private var timerStart: Date?
     @State private var elapsed: TimeInterval = 0
     let book: Book
@@ -374,27 +373,18 @@ private struct BookDetailView: View {
             }
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, UTType(filenameExtension: "epub") ?? .data, .plainText, .rtf, .html], allowsMultipleSelection: false) { result in importCopy(result) }
-        .fullScreenCover(isPresented: $reading, onDismiss: { readerURL = nil }) {
+        .fullScreenCover(item: $readerDestination) { destination in
             ZStack {
                 Color(red: 0.035, green: 0.032, blue: 0.030).ignoresSafeArea()
-                if let readerURL {
-                    if readerURL.pathExtension.lowercased() == "pdf" {
-                        Folio3DBookReader(url: readerURL, title: savedBook.title, coverURL: savedBook.coverURL, initialPage: book.currentPage ?? 1) { page, total in
-                            currentPageText = String(page); totalPagesText = String(total)
-                            library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
-                        }
-                    } else {
-                        FolioReadingCopyView(url: readerURL, initialPage: book.currentPage ?? 1) { page, total in
-                            currentPageText = String(page); totalPagesText = String(total)
-                            library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
-                        }
+                if destination.url.pathExtension.lowercased() == "pdf" {
+                    Folio3DBookReader(url: destination.url, title: savedBook.title, coverURL: savedBook.coverURL, initialPage: book.currentPage ?? 1) { page, total in
+                        currentPageText = String(page); totalPagesText = String(total)
+                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
                     }
                 } else {
-                    VStack(spacing: 14) {
-                        ProgressView().tint(Color(red: 0.94, green: 0.78, blue: 0.53))
-                        Text("Preparing your reading space…")
-                            .font(.system(size: 15, design: .serif))
-                            .foregroundStyle(Color(red: 0.94, green: 0.90, blue: 0.82))
+                    FolioReadingCopyView(url: destination.url, initialPage: book.currentPage ?? 1) { page, total in
+                        currentPageText = String(page); totalPagesText = String(total)
+                        library.updateReadingDetails(book, currentPage: page, totalPages: total, note: readingNote)
                     }
                 }
             }
@@ -781,14 +771,13 @@ private struct BookDetailView: View {
         guard let name = savedBook.digitalFileName else { return }
         let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(name)
         guard FileManager.default.fileExists(atPath: url.path) else { message = "That file is missing. Please import it again."; return }
-        // Publish the URL before presenting the cover. Presenting both state
-        // changes in the same update could briefly create an empty full-screen view.
-        readerURL = url
-        DispatchQueue.main.async {
-            guard readerURL == url else { return }
-            reading = true
-        }
+        readerDestination = FolioReaderDestination(url: url)
     }
+}
+
+private struct FolioReaderDestination: Identifiable {
+    let id = UUID()
+    let url: URL
 }
 
 private struct FolioReadingCopyView: View {
