@@ -3,8 +3,8 @@ import PDFKit
 import UniformTypeIdentifiers
 import QuickLook
 
-private let folioPaper = Color(red: 0.96, green: 0.94, blue: 0.89)
-private let folioInk = Color(red: 0.18, green: 0.20, blue: 0.17)
+private let folioPaper = Color(red: 0.055, green: 0.048, blue: 0.043)
+private let folioInk = Color(red: 0.94, green: 0.90, blue: 0.82)
 
 struct ContentView: View {
     @AppStorage("folio.hasCompletedOnboarding.v2") private var hasWelcomed = false
@@ -289,7 +289,7 @@ private struct BookDetailView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.30))
+                .background(FolioPalette.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
@@ -331,7 +331,7 @@ private struct BookDetailView: View {
                     .font(.system(size: 13, weight: .medium, design: .serif))
                 }
                 .padding(16)
-                .background(Color.white.opacity(0.48))
+                .background(FolioPalette.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
@@ -388,7 +388,7 @@ private struct BookDetailView: View {
                                 .foregroundStyle(Color(red: 0.34, green: 0.43, blue: 0.34))
                         }
                         .padding(13)
-                        .background(Color.white.opacity(0.52), in: RoundedRectangle(cornerRadius: 9))
+                        .background(FolioPalette.raised, in: RoundedRectangle(cornerRadius: 9))
                         actionRow("Read this book", symbol: "book.pages", prominent: true) { openReader() }
                         actionRow("Replace digital copy", symbol: "arrow.triangle.2.circlepath") { importing = true }
                     } else {
@@ -480,7 +480,7 @@ private struct BookDetailView: View {
                     }
                 }
                 .padding(16)
-                .background(Color.white.opacity(0.56))
+                .background(FolioPalette.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
@@ -499,7 +499,7 @@ private struct BookDetailView: View {
                         .lineLimit(2...4)
                         .font(.system(size: 14, design: .serif))
                         .padding(12)
-                        .background(Color.white.opacity(0.58))
+                        .background(FolioPalette.raised)
                         .clipShape(RoundedRectangle(cornerRadius: 7))
                     Button {
                         let current = Int(currentPageText)
