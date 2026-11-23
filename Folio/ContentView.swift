@@ -57,6 +57,20 @@ private struct FolioTabs: View {
                 .tabItem { Label("More", systemImage: "ellipsis") }
                 .tag(4)
         }
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HStack(spacing: 0) {
+                folioTab("Home", icon: "house.fill", index: 0)
+                folioTab("Library", icon: "books.vertical.fill", index: 1)
+                folioTab("Discover", icon: "sparkle.magnifyingglass", index: 2)
+                folioTab("Stats", icon: "chart.bar.fill", index: 3)
+                folioTab("More", icon: "ellipsis", index: 4)
+            }
+            .padding(.top, 10)
+            .padding(.bottom, 5)
+            .background(Color(red: 0.035, green: 0.032, blue: 0.030).opacity(0.98))
+            .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.055)).frame(height: 1) }
+        }
         .tint(gold)
         .preferredColorScheme(.dark)
         .sheet(item: $selectedBook) { book in
@@ -71,6 +85,22 @@ private struct FolioTabs: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
+    }
+
+    private func folioTab(_ title: String, icon: String, index: Int) -> some View {
+        Button { selectedTab = index } label: {
+            VStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: index == 0 ? 27 : 25, weight: .medium))
+                    .frame(height: 30)
+                Text(title)
+                    .font(.system(size: 10, weight: .medium))
+            }
+            .foregroundStyle(selectedTab == index ? gold : Color.white.opacity(0.20))
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
