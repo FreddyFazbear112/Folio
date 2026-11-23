@@ -73,8 +73,8 @@ private struct FolioTabs: View {
             }
             .padding(.top, 10)
             .padding(.bottom, 5)
-            .background(Color(red: 0.035, green: 0.032, blue: 0.030).opacity(0.98))
-            .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.055)).frame(height: 1) }
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .top) { Rectangle().fill(LinearGradient(colors: [FolioPalette.gold.opacity(0.34), Color.white.opacity(0.04), FolioPalette.gold.opacity(0.18)], startPoint: .leading, endPoint: .trailing)).frame(height: 1) }
         }
         .tint(gold)
         .preferredColorScheme(.dark)
@@ -96,12 +96,12 @@ private struct FolioTabs: View {
         Button { selectedTab = index } label: {
             VStack(spacing: 5) {
                 Image(systemName: icon)
-                    .font(.system(size: index == 0 ? 27 : 25, weight: .medium))
+                    .font(.system(size: index == 0 ? 27 : 24, weight: .regular))
                     .frame(height: 30)
                 Text(title)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 10, weight: selectedTab == index ? .semibold : .medium))
             }
-            .foregroundStyle(selectedTab == index ? gold : Color.white.opacity(0.20))
+            .foregroundStyle(selectedTab == index ? gold : Color(red: 0.78, green: 0.72, blue: 0.64).opacity(0.56))
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
         }
