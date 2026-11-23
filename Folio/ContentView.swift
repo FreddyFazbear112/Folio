@@ -1200,32 +1200,58 @@ private struct FolioShelfAtmosphere: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                LinearGradient(colors: [Color(red: 0.105, green: 0.079, blue: 0.060), Color(red: 0.045, green: 0.040, blue: 0.036), Color(red: 0.025, green: 0.024, blue: 0.023)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.15, green: 0.105, blue: 0.070),
+                        Color(red: 0.075, green: 0.052, blue: 0.039),
+                        Color(red: 0.025, green: 0.022, blue: 0.020)
+                    ],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
                 Canvas { context, size in
-                    let shelfY = [size.height * 0.18, size.height * 0.37, size.height * 0.57]
-                    for (row, shelfYPosition) in shelfY.enumerated() {
-                        let widths: [CGFloat] = [18,25,15,31,21,17,27,14,23,19,29,16]
-                        var x: CGFloat = -8
-                        for (index, width) in widths.enumerated() {
-                            let height = CGFloat(42 + ((index * 17 + row * 11) % 38))
-                            let rect = CGRect(x: x, y: shelfYPosition-height, width: width, height: height)
-                            let shades: [Color] = [Color(red:0.24,green:0.15,blue:0.10),Color(red:0.16,green:0.20,blue:0.18),Color(red:0.28,green:0.22,blue:0.14),Color(red:0.20,green:0.12,blue:0.11)]
-                            context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(shades[(index+row)%shades.count].opacity(0.34)))
-                            x += width + 4
+                    // Deep walnut shelving, built as architectural layers rather than flat
+                    // repeated rectangles. The foreground fade keeps text legible.
+                    let rows: [CGFloat] = [size.height * 0.235, size.height * 0.49, size.height * 0.755]
+                    let palette: [Color] = [
+                        Color(red: 0.22, green: 0.105, blue: 0.065),
+                        Color(red: 0.105, green: 0.15, blue: 0.13),
+                        Color(red: 0.30, green: 0.19, blue: 0.105),
+                        Color(red: 0.16, green: 0.085, blue: 0.075),
+                        Color(red: 0.19, green: 0.16, blue: 0.115),
+                        Color(red: 0.085, green: 0.105, blue: 0.105),
+                        Color(red: 0.27, green: 0.13, blue: 0.085)
+                    ]
+                    for (row, shelfY) in rows.enumerated() {
+                        var x: CGFloat = -12
+                        var index = 0
+                        while x < size.width + 12 {
+                            let width = CGFloat([18, 25, 31, 21, 28, 16, 35, 23, 19, 29][(index + row * 3) % 10])
+                            let height = CGFloat([108, 132, 94, 145, 118, 86, 138, 104, 126][(index * 3 + row) % 9])
+                            let rect = CGRect(x: x, y: shelfY - height, width: width, height: height)
+                            let color = palette[(index * 2 + row) % palette.count]
+                            context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color.opacity(0.66)))
+                            context.fill(Path(CGRect(x: x + 2, y: rect.minY + 4, width: 2, height: height - 8)), with: .color(.white.opacity(0.055)))
+                            context.fill(Path(CGRect(x: x + width - 3, y: rect.minY + 3, width: 2, height: height - 6)), with: .color(.black.opacity(0.25)))
+                            if index % 3 == 0 {
+                                context.fill(Path(CGRect(x: x + 5, y: rect.minY + 15, width: max(3, width - 10), height: 1)), with: .color(Color(red: 0.73, green: 0.54, blue: 0.31).opacity(0.42)))
+                                context.fill(Path(CGRect(x: x + 5, y: rect.maxY - 17, width: max(3, width - 10), height: 1)), with: .color(.white.opacity(0.12)))
+                            }
+                            x += width + CGFloat([3, 5, 4][index % 3])
+                            index += 1
                         }
-                        var shelf = Path()
-                        shelf.move(to: CGPoint(x:0,y:shelfYPosition+2))
-                        shelf.addLine(to: CGPoint(x:size.width,y:shelfYPosition+2))
-                        context.stroke(shelf, with: .color(Color(red:0.55,green:0.38,blue:0.23).opacity(0.23)), lineWidth: 5)
-                        context.stroke(shelf, with: .color(.black.opacity(0.35)), lineWidth: 1)
+                        let board = CGRect(x: -4, y: shelfY + 1, width: size.width + 8, height: 9)
+                        context.fill(Path(board), with: .color(Color(red: 0.19, green: 0.105, blue: 0.065).opacity(0.9)))
+                        context.fill(Path(CGRect(x: 0, y: shelfY + 1, width: size.width, height: 1.5)), with: .color(Color(red: 0.72, green: 0.49, blue: 0.28).opacity(0.38)))
+                        context.fill(Path(CGRect(x: 0, y: shelfY + 9, width: size.width, height: 2)), with: .color(.black.opacity(0.55)))
                     }
+                    // Soft pools of lamplight in the room.
+                    let glow = CGRect(x: size.width * 0.57, y: size.height * 0.02, width: size.width * 0.55, height: size.height * 0.62)
+                    context.fill(Path(ellipseIn: glow), with: .color(Color(red: 0.78, green: 0.48, blue: 0.22).opacity(0.075)))
                 }
-                LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.36), .black.opacity(0.78)], startPoint: .top, endPoint: .bottom)
-                RadialGradient(colors: [FolioPalette.gold.opacity(0.10), .clear], center: .topTrailing, startRadius: 10, endRadius: proxy.size.width * 0.9)
-            }
-            .overlay(alignment: .bottom) {
+                LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.24), .black.opacity(0.72)], startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [Color(red: 0.78, green: 0.52, blue: 0.29).opacity(0.16), .clear], center: .topTrailing, startRadius: 8, endRadius: proxy.size.width * 0.85)
                 LinearGradient(colors: [.clear, FolioPalette.background.opacity(0.96)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: proxy.size.height * 0.56)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
         .background(FolioPalette.background)
@@ -1253,7 +1279,7 @@ private struct FolioLibraryHome: View {
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("F O L I O").font(.system(size: 9, weight: .bold)).foregroundStyle(FolioPalette.gold)
-                                Text("Your reading room").font(.system(size: 31, design: .serif)).foregroundStyle(FolioPalette.cream)
+                                Text("Your reading room").font(.system(size: 34, design: .serif)).foregroundStyle(FolioPalette.cream)
                             }
                             Spacer()
                             Button(action: openMore) {
@@ -1263,8 +1289,8 @@ private struct FolioLibraryHome: View {
                             }
                         }
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(greeting + ",").font(.system(size: 27, design: .serif)).foregroundStyle(FolioPalette.cream)
-                            Text("make yourself at home.").font(.system(size: 27, design: .serif)).italic().foregroundStyle(FolioPalette.gold)
+                            Text(greeting + ",").font(.system(size: 30, design: .serif)).foregroundStyle(FolioPalette.cream)
+                            Text("make yourself at home.").font(.system(size: 30, design: .serif)).italic().foregroundStyle(FolioPalette.gold)
                             Text("A quiet place for the stories you love.").font(.system(size: 13, design: .serif)).foregroundStyle(FolioPalette.muted).padding(.top, 4)
                         }
                         VStack(alignment: .leading, spacing: 13) {
@@ -1332,7 +1358,7 @@ private struct FolioLibraryHome: View {
                                 }
                             }
                         }
-                    }.padding(.horizontal,22).padding(.top,18).padding(.bottom,32)
+                    }.padding(.horizontal,24).padding(.top,22).padding(.bottom,38)
                 }
             }.toolbar(.hidden,for:.navigationBar)
         }
