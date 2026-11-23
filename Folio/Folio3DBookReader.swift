@@ -255,7 +255,9 @@ private struct SceneBookStage: UIViewRepresentable {
         guard let front else { return }
         let frontMaterial = SCNMaterial()
         frontMaterial.diffuse.contents = front
-        frontMaterial.lightingModel = .lambert
+        frontMaterial.lightingModel = .physicallyBased
+        frontMaterial.roughness.contents = 0.88
+        frontMaterial.isDoubleSided = false
         frontMaterial.roughness.contents = 0.92
 
         // The pivot stays on the spine; the page itself is offset to the
@@ -273,12 +275,14 @@ private struct SceneBookStage: UIViewRepresentable {
         if let reverse {
             let backMaterial = SCNMaterial()
             backMaterial.diffuse.contents = reverse
-            backMaterial.lightingModel = .lambert
+            backMaterial.lightingModel = .physicallyBased
+            backMaterial.isDoubleSided = false
             backMaterial.roughness.contents = 0.92
-            let back = SCNNode(geometry: SCNPlane(width: 2.85, height: 4.17))
+            let back = SCNNode(geometry: SCNPlane(width: 1.49, height: 2.10))
             back.geometry?.materials = [backMaterial]
             back.position.z = -0.002
             back.eulerAngles.y = .pi
+            back.castsShadow = true
             leaf.addChildNode(back)
         }
         scene.rootNode.addChildNode(hinge)
@@ -287,7 +291,7 @@ private struct SceneBookStage: UIViewRepresentable {
             x: 0,
             y: movingForward ? -.pi : .pi,
             z: 0,
-            duration: 0.64,
+            duration: 0.92,
             usesShortestUnitArc: false
         )
         flip.timingMode = .easeInEaseOut
@@ -295,10 +299,10 @@ private struct SceneBookStage: UIViewRepresentable {
         // Lift the sheet off the paper block as it crosses the gutter. The
         // small roll and fore-edge compression keep the turn from looking
         // like a rigid card rotating in a flat plane.
-        let curl = SCNAction.customAction(duration: 0.64) { node, elapsed in
-            let progress = CGFloat(min(max(elapsed / 0.64, 0), 1))
+        let curl = SCNAction.customAction(duration: 0.92) { node, elapsed in
+            let progress = CGFloat(min(max(elapsed / 0.92, 0), 1))
             let lift = Float(sin(progress * .pi))
-            node.position.z = 0.075 + lift * 0.24
+            node.position.z = 0.075 + lift * 0.34
             leaf.eulerAngles.z = Float(sin(progress * .pi)) * (movingForward ? 0.045 : -0.045)
             leaf.scale.x = 1 - Float(sin(progress * .pi)) * 0.035
         }
