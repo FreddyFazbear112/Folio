@@ -26,7 +26,7 @@ struct Folio3DBookReader: View {
     var body: some View {
         ZStack {
             ZStack {
-                LinearGradient(colors: [Color(red: 0.11, green: 0.075, blue: 0.052), Color(red: 0.035, green: 0.029, blue: 0.025), .black], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Image("ReadingRoom").resizable().scaledToFill().overlay(LinearGradient(colors: [Color.black.opacity(0.42), Color.black.opacity(0.68), Color.black.opacity(0.94)], startPoint: .top, endPoint: .bottom))
                 RadialGradient(colors: [Color(red: 0.48, green: 0.28, blue: 0.14).opacity(0.24), .clear], center: .top, startRadius: 10, endRadius: 520)
             }.ignoresSafeArea()
             VStack(spacing: 0) {
@@ -51,8 +51,8 @@ struct Folio3DBookReader: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text("YOUR READING ROOM").font(.system(size: 8, weight: .bold)).tracking(2.1).foregroundStyle(Color(red: 0.88, green: 0.66, blue: 0.42))
-                    Text("A story, beautifully told.").font(.system(size: 27, design: .serif)).foregroundStyle(Color(red: 0.95, green: 0.90, blue: 0.80))
-                    Text("Settle in and lose yourself for a while.").font(.system(size: 12, design: .serif)).italic().foregroundStyle(.white.opacity(0.55))
+                    Text("Your story, uninterrupted.").font(.system(size: 25, design: .serif)).foregroundStyle(Color(red: 0.95, green: 0.90, blue: 0.80))
+                    Text("Turn a page. Leave the world behind.").font(.system(size: 12, design: .serif)).italic().foregroundStyle(.white.opacity(0.62))
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 25).padding(.top, 28)
                 if let document, total > 0 {
                     SceneBookStage(
@@ -64,12 +64,11 @@ struct Folio3DBookReader: View {
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
                     )
-                    .frame(maxWidth: .infinity).frame(height: 490)
+                    .frame(maxWidth: .infinity).frame(height: 470)
                     .padding(.horizontal, 2)
-                    .background(LinearGradient(colors: [Color(red: 0.19, green: 0.13, blue: 0.09), Color(red: 0.07, green: 0.05, blue: 0.04)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 26))
-                    .overlay(RoundedRectangle(cornerRadius: 26).stroke(Color(red: 0.72, green: 0.51, blue: 0.31).opacity(0.22), lineWidth: 1))
-                    .shadow(color: .black.opacity(0.5), radius: 25, x: 0, y: 18)
-                    .padding(.horizontal, 14)
+                    .background(Color.clear)
+                    .shadow(color: .black.opacity(0.72), radius: 30, x: 0, y: 24)
+                    .padding(.horizontal, 8)
                     .gesture(DragGesture(minimumDistance: 24).onEnded { value in
                         guard isOpen else { withAnimation(.easeInOut(duration: 0.8)) { isOpen = true }; return }
                         if value.translation.width < -35 { turn(1) }
@@ -193,8 +192,8 @@ private struct SceneBookStage: UIViewRepresentable {
 
     func makeUIView(context: Context) -> SCNView {
         let view = SCNView()
-        view.backgroundColor = UIColor(red: 0.055, green: 0.048, blue: 0.043, alpha: 1)
-        view.isOpaque = true
+        view.backgroundColor = .clear
+        view.isOpaque = false
         view.contentMode = .scaleAspectFit
         let scene = makeScene()
         view.scene = scene
@@ -312,7 +311,7 @@ private struct SceneBookStage: UIViewRepresentable {
     private func makeScene() -> SCNScene {
         let scene = SCNScene()
         // Keep a deliberate stage behind the model if a page texture fails.
-        scene.background.contents = UIColor(red: 0.055, green: 0.048, blue: 0.043, alpha: 1)
+        scene.background.contents = UIColor.clear
         let root = scene.rootNode
         // A compact, substantial page block with a visible fore-edge.
         let paperBlock = SCNBox(width: 3.00, height: 4.28, length: 0.245, chamferRadius: 0.035)
