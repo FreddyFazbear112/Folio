@@ -203,7 +203,7 @@ private struct BookDetailView: View {
                                 .foregroundStyle(Color(red: 0.91, green: 0.77, blue: 0.58))
                         }
                         Spacer()
-                        Button { library.update(book, isFavorite: savedBook.isFavorite != true) } label: {
+                        Button { library.updateFavorite(book, isFavorite: savedBook.isFavorite != true) } label: {
                             Image(systemName: savedBook.isFavorite == true ? "bookmark.fill" : "bookmark")
                                 .foregroundStyle(Color(red: 0.91, green: 0.77, blue: 0.58))
                         }
@@ -251,7 +251,7 @@ private struct BookDetailView: View {
                     .padding(.horizontal, 22)
                     .padding(.top, 18)
 
-                    Button { library.update(book, isFavorite: savedBook.isFavorite != true) } label: {
+                    Button { library.updateFavorite(book, isFavorite: savedBook.isFavorite != true) } label: {
                         Label(savedBook.isFavorite == true ? "Added to Favorites" : "Add to Favorites", systemImage: "heart.fill")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(Color(red: 0.93, green: 0.84, blue: 0.72))
