@@ -232,7 +232,7 @@ struct WelcomeView: View {
 
 
 private struct LibraryBackdrop: View {
-    private let wood = Color(red: 0.24, green: 0.14, blue: 0.085)
+    private let shelfColor = Color(red: 0.24, green: 0.14, blue: 0.085)
     private let bookColors: [Color] = [
         Color(red: 0.28, green: 0.12, blue: 0.09),
         Color(red: 0.18, green: 0.22, blue: 0.18),
@@ -242,33 +242,60 @@ private struct LibraryBackdrop: View {
     ]
 
     var body: some View {
-        GeometryReader { proxy in
+        GeometryReader { geometry in
+            let columnWidth = max(7.0, (geometry.size.width / 6.0 - 18.0) / 5.0)
             ZStack {
-                LinearGradient(colors: [Color(red: 0.16, green: 0.105, blue: 0.07), Color(red: 0.035, green: 0.027, blue: 0.022)], startPoint: .top, endPoint: .bottom)
+                LinearGradient(
+                    colors: [Color(red: 0.16, green: 0.105, blue: 0.07), Color(red: 0.035, green: 0.027, blue: 0.022)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
                 HStack(spacing: 0) {
-                    ForEach(0..<6, id: \.self) { column in
-                        VStack(spacing: 0) {
-                            ForEach(0..<4, id: \.self) { shelf in
-                                HStack(alignment: .bottom, spacing: 3) {
-                                    ForEach(0..<5, id: \.self) { book in
-                                        RoundedRectangle(cornerRadius: 2)
-                                            .fill(bookColors[(column + shelf + book) % bookColors.count].opacity(0.82))
-                                            .frame(width: max(7, (proxy.size.width / 6 - 18) / 5), height: CGFloat(28 + ((column * 13 + shelf * 7 + book * 9) % 42)))
-                                            .overlay(alignment: .leading) {
-                                                Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
-                                            }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                                Rectangle().fill(wood).frame(height: 7)
-                            }
-                        }
-                        .padding(.horizontal, 3)
-                        .frame(maxWidth: .infinity)
-                    }
+                    shelfColumn(index: 0, bookWidth: columnWidth)
+                    shelfColumn(index: 1, bookWidth: columnWidth)
+                    shelfColumn(index: 2, bookWidth: columnWidth)
+                    shelfColumn(index: 3, bookWidth: columnWidth)
+                    shelfColumn(index: 4, bookWidth: columnWidth)
+                    shelfColumn(index: 5, bookWidth: columnWidth)
                 }
                 LinearGradient(colors: [.black.opacity(0.18), .black.opacity(0.68)], startPoint: .top, endPoint: .bottom)
             }
         }
+    }
+
+    private func shelfColumn(index: Int, bookWidth: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            shelfRow(column: index, shelf: 0, bookWidth: bookWidth)
+            shelfRow(column: index, shelf: 1, bookWidth: bookWidth)
+            shelfRow(column: index, shelf: 2, bookWidth: bookWidth)
+            shelfRow(column: index, shelf: 3, bookWidth: bookWidth)
+        }
+        .padding(.horizontal, 3)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func shelfRow(column: Int, shelf: Int, bookWidth: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .bottom, spacing: 3) {
+                shelfBook(column: column, shelf: shelf, book: 0, width: bookWidth)
+                shelfBook(column: column, shelf: shelf, book: 1, width: bookWidth)
+                shelfBook(column: column, shelf: shelf, book: 2, width: bookWidth)
+                shelfBook(column: column, shelf: shelf, book: 3, width: bookWidth)
+                shelfBook(column: column, shelf: shelf, book: 4, width: bookWidth)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            Rectangle().fill(shelfColor).frame(height: 7)
+        }
+    }
+
+    private func shelfBook(column: Int, shelf: Int, book: Int, width: CGFloat) -> some View {
+        let colorIndex = (column + shelf + book) % bookColors.count
+        let bookHeight = CGFloat(28 + ((column * 13 + shelf * 7 + book * 9) % 42))
+        return RoundedRectangle(cornerRadius: 2)
+            .fill(bookColors[colorIndex].opacity(0.82))
+            .frame(width: width, height: bookHeight)
+            .overlay(alignment: .leading) {
+                Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
+            }
     }
 }
