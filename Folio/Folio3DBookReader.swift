@@ -25,7 +25,10 @@ struct Folio3DBookReader: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.035, green: 0.032, blue: 0.030).ignoresSafeArea()
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.11, green: 0.075, blue: 0.052), Color(red: 0.035, green: 0.029, blue: 0.025), .black], startPoint: .topLeading, endPoint: .bottomTrailing)
+                RadialGradient(colors: [Color(red: 0.48, green: 0.28, blue: 0.14).opacity(0.24), .clear], center: .top, startRadius: 10, endRadius: 520)
+            }.ignoresSafeArea()
             VStack(spacing: 0) {
                 HStack {
                     Button { dismiss() } label: {
@@ -46,7 +49,11 @@ struct Folio3DBookReader: View {
                 .foregroundStyle(Color(red: 0.94, green: 0.89, blue: 0.78))
                 .padding(.horizontal, 20).padding(.top, 12)
 
-                Spacer(minLength: 12)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("YOUR READING ROOM").font(.system(size: 8, weight: .bold)).tracking(2.1).foregroundStyle(Color(red: 0.88, green: 0.66, blue: 0.42))
+                    Text("A story, beautifully told.").font(.system(size: 27, design: .serif)).foregroundStyle(Color(red: 0.95, green: 0.90, blue: 0.80))
+                    Text("Settle in and lose yourself for a while.").font(.system(size: 12, design: .serif)).italic().foregroundStyle(.white.opacity(0.55))
+                }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 25).padding(.top, 28)
                 if let document, total > 0 {
                     SceneBookStage(
                         leftPage: page > 1 ? renderedPage(page - 1, in: document) : nil,
@@ -57,8 +64,12 @@ struct Folio3DBookReader: View {
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
                     )
-                    .frame(maxWidth: .infinity).frame(height: 470)
+                    .frame(maxWidth: .infinity).frame(height: 490)
                     .padding(.horizontal, 2)
+                    .background(LinearGradient(colors: [Color(red: 0.19, green: 0.13, blue: 0.09), Color(red: 0.07, green: 0.05, blue: 0.04)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 26))
+                    .overlay(RoundedRectangle(cornerRadius: 26).stroke(Color(red: 0.72, green: 0.51, blue: 0.31).opacity(0.22), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.5), radius: 25, x: 0, y: 18)
+                    .padding(.horizontal, 14)
                     .gesture(DragGesture(minimumDistance: 24).onEnded { value in
                         guard isOpen else { withAnimation(.easeInOut(duration: 0.8)) { isOpen = true }; return }
                         if value.translation.width < -35 { turn(1) }
@@ -190,11 +201,11 @@ private struct SceneBookStage: UIViewRepresentable {
         view.autoenablesDefaultLighting = false
         view.allowsCameraControl = false
         view.antialiasingMode = .multisampling4X
-        view.rendersContinuously = true
+        view.rendersContinuously = false
         view.isJitteringEnabled = true
         view.antialiasingMode = .multisampling4X
         view.preferredFramesPerSecond = 60
-        view.isPlaying = true
+        view.isPlaying = false
         if let camera = scene.rootNode.childNode(withName: "folio-camera", recursively: true) {
             camera.look(at: SCNVector3Zero)
             view.pointOfView = camera
@@ -425,7 +436,7 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 43
+        camera.fieldOfView = 39
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
@@ -433,7 +444,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
-        cameraNode.position = SCNVector3(0, 0.28, 8.2)
+        cameraNode.position = SCNVector3(0.16, 0.78, 8.05)
         cameraNode.look(at: SCNVector3(0, 0, 0))
         root.addChildNode(cameraNode)
         return scene
