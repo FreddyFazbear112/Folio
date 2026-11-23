@@ -25,7 +25,7 @@ struct Folio3DBookReader: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.12, green: 0.13, blue: 0.12).ignoresSafeArea()
+            Color(red: 0.035, green: 0.032, blue: 0.030).ignoresSafeArea()
             VStack(spacing: 0) {
                 HStack {
                     Button { dismiss() } label: {
@@ -57,8 +57,8 @@ struct Folio3DBookReader: View {
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
                     )
-                    .frame(height: 390)
-                    .padding(.horizontal, 8)
+                    .frame(maxWidth: .infinity).frame(height: 470)
+                    .padding(.horizontal, 2)
                     .gesture(DragGesture(minimumDistance: 24).onEnded { value in
                         guard isOpen else { withAnimation(.easeInOut(duration: 0.8)) { isOpen = true }; return }
                         if value.translation.width < -35 { turn(1) }
@@ -175,12 +175,20 @@ private struct SceneBookStage: UIViewRepresentable {
 
     func makeUIView(context: Context) -> SCNView {
         let view = SCNView()
-        view.backgroundColor = .clear
-        view.scene = makeScene()
-        view.autoenablesDefaultLighting = true
+        view.backgroundColor = UIColor(red: 0.035, green: 0.032, blue: 0.030, alpha: 1)
+        view.isOpaque = true
+        let scene = makeScene()
+        view.scene = scene
+        view.autoenablesDefaultLighting = false
         view.allowsCameraControl = false
         view.antialiasingMode = .multisampling4X
+        view.rendersContinuously = true
+        view.preferredFramesPerSecond = 60
         view.isPlaying = true
+        if let camera = scene.rootNode.childNode(withName: "folio-camera", recursively: true) {
+            camera.look(at: SCNVector3Zero)
+            view.pointOfView = camera
+        }
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapped))
         view.addGestureRecognizer(tap)
         context.coordinator.onTap = onTapCover
@@ -395,12 +403,16 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 31
+        camera.fieldOfView = 38
+        camera.zNear = 0.1
+        camera.zFar = 100
         camera.wantsHDR = true
         camera.bloomIntensity = 0.12
         let cameraNode = SCNNode()
         cameraNode.camera = camera
-        cameraNode.position = SCNVector3(0, 0, 12.2)
+        cameraNode.name = "folio-camera"
+        cameraNode.position = SCNVector3(0, 0, 7.8)
+        cameraNode.look(at: SCNVector3Zero)
         root.addChildNode(cameraNode)
         return scene
     }
