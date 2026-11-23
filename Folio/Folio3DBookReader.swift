@@ -64,7 +64,7 @@ struct Folio3DBookReader: View {
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
                     )
-                    .frame(maxWidth: .infinity).frame(height: 340)
+                    .frame(maxWidth: .infinity).frame(height: 500)
                     .padding(.horizontal, 2)
                     .background(Color.clear)
                     .shadow(color: .black.opacity(0.72), radius: 30, x: 0, y: 24)
@@ -376,7 +376,7 @@ private struct SceneBookStage: UIViewRepresentable {
                     let sideX = x < 0 ? -localX : localX
                     vertices.append(SCNVector3(sideX, (0.5 - v) * 2.10, z))
                     normals.append(SCNVector3(0, 0, 1))
-                    uv.append(CGPoint(x: CGFloat(x < 0 ? 1 - u : u), y: CGFloat(1 - v)))
+                    uv.append(CGPoint(x: CGFloat(x < 0 ? 1 - u : u), y: CGFloat(v)))
                 }
             }
             for row in 0..<rows {
@@ -502,7 +502,7 @@ private struct SceneBookStage: UIViewRepresentable {
         root.addChildNode(fill)
 
         let camera = SCNCamera()
-        camera.fieldOfView = 29
+        camera.fieldOfView = 24
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
@@ -510,7 +510,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
-        cameraNode.position = SCNVector3(0.08, 0.34, 7.4)
+        cameraNode.position = SCNVector3(0.04, 0.22, 6.6)
         cameraNode.look(at: SCNVector3(0, 0, 0))
         root.addChildNode(cameraNode)
         return scene
