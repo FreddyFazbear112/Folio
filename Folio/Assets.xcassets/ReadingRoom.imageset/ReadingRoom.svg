@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="2400" viewBox="0 0 1200 2400">
+<defs>
+ <linearGradient id="wall" x2="0" y2="1"><stop stop-color="#28190f"/><stop offset=".42" stop-color="#17100c"/><stop offset="1" stop-color="#080706"/></linearGradient>
+ <linearGradient id="wood" x2="0" y2="1"><stop stop-color="#70462b"/><stop offset=".18" stop-color="#382317"/><stop offset=".55" stop-color="#1c120d"/><stop offset="1" stop-color="#090706"/></linearGradient>
+ <linearGradient id="leather" x2="1" y2="1"><stop stop-color="#80553a"/><stop offset=".45" stop-color="#3c2419"/><stop offset="1" stop-color="#160e0b"/></linearGradient>
+ <radialGradient id="lamp"><stop stop-color="#f2bd72" stop-opacity=".52"/><stop offset=".35" stop-color="#c17a3f" stop-opacity=".18"/><stop offset="1" stop-color="#c17a3f" stop-opacity="0"/></radialGradient>
+ <linearGradient id="shade" x2="0" y2="1"><stop stop-color="#070605" stop-opacity=".1"/><stop offset=".55" stop-color="#070605" stop-opacity=".35"/><stop offset="1" stop-color="#050403" stop-opacity=".96"/></linearGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="36"/></filter>
+ <filter id="soft"><feGaussianBlur stdDeviation="10"/></filter>
+</defs>
+<rect width="1200" height="2400" fill="url(#wall)"/>
+<ellipse cx="850" cy="460" rx="620" ry="760" fill="url(#lamp)" filter="url(#blur)"/>
+<!-- Tall walnut bookcases -->
+<g opacity=".98">
+ <rect x="36" y="180" width="1128" height="1260" rx="8" fill="#100b08" stroke="#65422a" stroke-width="18"/>
+ <rect x="68" y="210" width="1064" height="1190" fill="#21150f"/>
+ <path d="M68 590H1132 M68 980H1132 M68 1370H1132" stroke="url(#wood)" stroke-width="30"/>
+ <path d="M68 572H1132 M68 962H1132 M68 1352H1132" stroke="#a06b3e" stroke-opacity=".28" stroke-width="5"/>
+ <path d="M390 210V1400 M805 210V1400" stroke="#4b2e1c" stroke-width="20"/>
+</g>
+<!-- Books shelf 1 -->
+<g>
+ <g transform="translate(95 250)">
+ <rect x="0" y="35" width="64" height="285" rx="7" fill="#27322c"/><path d="M10 52V300" stroke="#b68b57" stroke-opacity=".5" stroke-width="4"/>
+ <rect x="75" y="0" width="88" height="320" rx="7" fill="#51251d"/><path d="M87 20V300" stroke="#d3a46b" stroke-opacity=".38" stroke-width="4"/>
+ <rect x="174" y="48" width="58" height="272" rx="5" fill="#8b5c31"/>
+ <rect x="244" y="12" width="70" height="308" rx="6" fill="#1e2b2c"/><path d="M256 28V300" stroke="#d1b27b" stroke-opacity=".3" stroke-width="4"/>
+ <rect x="328" y="30" width="50" height="290" rx="5" fill="#663a2c"/>
+ <rect x="420" y="60" width="74" height="260" rx="5" fill="#30251b"/>
+ <rect x="508" y="5" width="82" height="315" rx="6" fill="#7b3e29"/>
+ <rect x="603" y="38" width="54" height="282" rx="5" fill="#26332a"/>
+ <rect x="671" y="0" width="86" height="320" rx="5" fill="#4a2a20"/>
+ <rect x="774" y="42" width="65" height="278" rx="5" fill="#9a6a3d"/>
+ <rect x="854" y="18" width="80" height="302" rx="6" fill="#243035"/>
+ </g>
+</g>
+<!-- Books shelf 2 -->
+<g transform="translate(95 650)">
+ <rect x="0" y="15" width="78" height="300" rx="6" fill="#713b2c"/>
+ <rect x="91" y="48" width="55" height="267" rx="5" fill="#28372d"/>
+ <rect x="160" y="0" width="95" height="315" rx="6" fill="#4a3022"/>
+ <rect x="270" y="35" width="61" height="280" rx="5" fill="#8a623b"/>
+ <rect x="346" y="12" width="82" height="303" rx="5" fill="#263039"/>
+ <rect x="445" y="60" width="58" height="255" rx="5" fill="#6a3027"/>
+ <rect x="520" y="0" width="90" height="315" rx="6" fill="#384032"/>
+ <rect x="625" y="28" width="65" height="287" rx="5" fill="#8b4e2e"/>
+ <rect x="704" y="8" width="80" height="307" rx="5" fill="#30221b"/>
+ <rect x="798" y="52" width="58" height="263" rx="5" fill="#344047"/>
+ <rect x="870" y="0" width="78" height="315" rx="5" fill="#5b3026"/>
+ </g>
+<!-- Books shelf 3 -->
+<g transform="translate(95 1050)">
+ <rect x="0" y="0" width="60" height="300" rx="5" fill="#3b5145"/>
+ <rect x="74" y="40" width="92" height="260" rx="6" fill="#7b482e"/>
+ <rect x="180" y="0" width="62" height="300" rx="5" fill="#2d3438"/>
+ <rect x="256" y="22" width="82" height="278" rx="6" fill="#583023"/>
+ <rect x="352" y="0" width="58" height="300" rx="5" fill="#a17445"/>
+ <rect x="424" y="48" width="88" height="252" rx="5" fill="#273c36"/>
+ <rect x="526" y="0" width="64" height="300" rx="5" fill="#573329"/>
+ <rect x="604" y="25" width="92" height="275" rx="5" fill="#29313a"/>
+ <rect x="710" y="0" width="62" height="300" rx="5" fill="#7c4c31"/>
+ <rect x="786" y="35" width="82" height="265" rx="5" fill="#344037"/>
+ <rect x="880" y="0" width="66" height="300" rx="5" fill="#6b3026"/>
+</g>
+<!-- brass library lamp and reading chair -->
+<ellipse cx="950" cy="1630" rx="340" ry="300" fill="url(#lamp)" filter="url(#blur)"/>
+<path d="M1010 1420V1640" stroke="#87613a" stroke-width="17"/>
+<path d="M1010 1420L870 1490" stroke="#a77b48" stroke-width="12"/>
+<path d="M825 1458Q870 1350 990 1400L1050 1495H790Z" fill="#302017" stroke="#986b3c" stroke-width="12"/>
+<path d="M720 1730Q740 1570 930 1580Q1100 1600 1120 1770L1080 2020H740Z" fill="url(#leather)" stroke="#6b452c" stroke-width="18"/>
+<path d="M770 1780Q900 1700 1065 1790" fill="none" stroke="#bd8a58" stroke-opacity=".35" stroke-width="9"/>
+<path d="M780 2000L740 2220 M1060 2000L1110 2220" stroke="#26170f" stroke-width="32"/>
+<!-- side table -->
+<ellipse cx="265" cy="2030" rx="260" ry="60" fill="#050403" opacity=".7"/>
+<path d="M70 1820H460L420 1880H110Z" fill="url(#wood)" stroke="#845a37" stroke-width="9"/>
+<path d="M135 1870L110 2180 M400 1870L435 2180" stroke="#3a2418" stroke-width="24"/>
+<path d="M175 1820Q180 1720 260 1680Q340 1720 350 1820Z" fill="#b07b43" opacity=".7"/>
+<rect width="1200" height="2400" fill="url(#shade)"/>
+<path d="M0 2190Q600 2130 1200 2200V2400H0Z" fill="#080605"/>
+</svg>
