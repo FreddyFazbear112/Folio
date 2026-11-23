@@ -1,240 +1,245 @@
 import SwiftUI
 import SceneKit
-import UIKit
 
-/// A tactile, proportionally modelled hardback. The page block, boards, spine
-/// and printed jackets are separate meshes so the book reads as an object,
-/// not a single textured cuboid.
-struct BookPreview3D: UIViewRepresentable {
-    let title: String
-    let tint: UIColor
-    var coverURL: String? = nil
-    var backCoverURL: String? = nil
+struct BookPreview3D: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var library: LibraryStore
+    let book: Book
+    var onOpenReader: (Book) -> Void
 
-    func makeUIView(context: Context) -> SCNView {
-        let view = SCNView()
-        view.backgroundColor = UIColor(red: 0.955, green: 0.936, blue: 0.888, alpha: 1)
-        view.scene = makeScene()
-        view.allowsCameraControl = true
-        view.cameraControlConfiguration.allowsTranslation = false
-        view.autoenablesDefaultLighting = false
-        view.antialiasingMode = .multisampling4X
-        view.isPlaying = true
-        view.preferredFramesPerSecond = 60
-        context.coordinator.view = view
-        context.coordinator.signature = signature
-        view.addGestureRecognizer(UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapBook(_:))))
-        return view
+    @State private var allow3DRotate = true
+    @State private var coverUIImage: UIImage?
+    @State private var detailTab = 0
+
+    private var liveBook: Book {
+        library.books.first(where: { $0.id == book.id }) ?? book
     }
 
-    func updateUIView(_ view: SCNView, context: Context) {
-        guard context.coordinator.signature != signature else { return }
-        view.scene = makeScene()
-        context.coordinator.signature = signature
-    }
+    var body: some View {
+        ZStack {
+            RadialGradient(
+                colors: [
+                    Color(red: 0.21, green: 0.15, blue: 0.10),
+                    FolioPalette.bg
+                ],
+                center: .center,
+                startRadius: 20,
+                endRadius: 460
+            )
+            .ignoresSafeArea()
 
-    private var signature: String {
-        [title, coverURL ?? "", backCoverURL ?? "", tint.description].joined(separator: "|")
-    }
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 14) {
+                    HStack {
+                        Button { dismiss() } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(FolioPalette.cream)
+                                .frame(width: 38, height: 38)
+                                .background(FolioPalette.cardElevated, in: Circle())
+                        }
+                        Spacer()
+                        Text("Book Preview")
+                            .font(.system(size: 18, design: .serif))
+                            .foregroundStyle(FolioPalette.cream)
+                        Spacer()
+                        Button { library.toggleFavorite(liveBook) } label: {
+                            Image(systemName: liveBook.isFavorite ? "bookmark.fill" : "bookmark")
+                                .foregroundStyle(FolioPalette.gold)
+                                .frame(width: 38, height: 38)
+                                .background(FolioPalette.cardElevated, in: Circle())
+                        }
+                    }
+                    .padding(.top, 10)
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+                    HardcoverStageView(
+                        coverImage: coverUIImage ?? fallbackCover,
+                        allowDrag: allow3DRotate
+                    )
+                    .frame(height: 300)
 
-    private func makeScene() -> SCNScene {
-        let scene = SCNScene()
-        scene.background.contents = UIColor(red: 0.955, green: 0.936, blue: 0.888, alpha: 1)
+                    Button { allow3DRotate.toggle() } label: {
+                        VStack(spacing: 4) {
+                            ZStack {
+                                Circle()
+                                    .strokeBorder(FolioPalette.gold, lineWidth: 1.5)
+                                    .frame(width: 42, height: 42)
+                                Text("3D")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundStyle(FolioPalette.gold)
+                            }
+                            Text(allow3DRotate ? "Drag book to rotate in 3D" : "Tap to view in 3D")
+                                .font(.caption2)
+                                .foregroundStyle(FolioPalette.muted)
+                        }
+                    }
+                    .buttonStyle(.plain)
 
-        let book = SCNNode()
-        book.name = "folio-book"
-        book.eulerAngles = SCNVector3(0.10, -0.43, 0.035)
+                    VStack(spacing: 4) {
+                        Text(liveBook.title)
+                            .font(.system(size: 26, design: .serif))
+                            .foregroundStyle(FolioPalette.cream)
+                            .multilineTextAlignment(.center)
+                        Text(liveBook.author)
+                            .font(.subheadline)
+                            .foregroundStyle(FolioPalette.muted)
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill").foregroundStyle(FolioPalette.gold)
+                            Text(String(format: "%.1f", liveBook.rating ?? 4.8))
+                                .fontWeight(.semibold)
+                                .foregroundStyle(FolioPalette.cream)
+                            Text("• \(liveBook.fileFormat.rawValue)")
+                                .foregroundStyle(FolioPalette.muted)
+                        }
+                        .font(.caption)
+                    }
 
-        // The warm paper block sits just inside the cover boards.
-        let pages = SCNBox(width: 0.975, height: 1.395, length: 0.174, chamferRadius: 0.012)
-        pages.materials = [
-            pageMaterial(), pageMaterial(), pageMaterial(),
-            pageMaterial(), pageMaterial(), pageMaterial()
-        ]
-        let pageNode = SCNNode(geometry: pages)
-        pageNode.position = SCNVector3(0.012, 0, 0)
-        book.addChildNode(pageNode)
+                    Button {
+                        library.markOpened(liveBook)
+                        onOpenReader(liveBook)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "play.fill")
+                            Text(liveBook.progressPercent > 0 ? "Continue Reading" : "Open 3D Book")
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(FolioPalette.gold, in: RoundedRectangle(cornerRadius: 14))
+                    }
 
-        // Front and rear boards create the subtle overhang of a real hardback.
-        let board = SCNBox(width: 1.055, height: 1.485, length: 0.025, chamferRadius: 0.018)
-        board.materials = Array(repeating: coverMaterial(), count: 6)
-        let frontBoard = SCNNode(geometry: board)
-        frontBoard.position = SCNVector3(0, 0, 0.103)
-        book.addChildNode(frontBoard)
+                    Button {
+                        library.toggleFavorite(liveBook)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: liveBook.isFavorite ? "heart.fill" : "heart")
+                                .foregroundStyle(FolioPalette.gold)
+                            Text(liveBook.isFavorite ? "In Favorites" : "Add to Favorites")
+                                .foregroundStyle(FolioPalette.cream)
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(FolioPalette.card, in: RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(FolioPalette.border, lineWidth: 1))
+                    }
 
-        let rearBoard = SCNNode(geometry: board)
-        rearBoard.position = SCNVector3(0, 0, -0.103)
-        book.addChildNode(rearBoard)
+                    HStack(spacing: 0) {
+                        tabSegment("About", 0)
+                        tabSegment("Chapters", 1)
+                        tabSegment("Details", 2)
+                    }
 
-        // The spine is a distinct rounded piece, visible at the left edge.
-        let spine = SCNBox(width: 0.055, height: 1.47, length: 0.222, chamferRadius: 0.022)
-        spine.materials = Array(repeating: coverMaterial(), count: 6)
-        let spineNode = SCNNode(geometry: spine)
-        spineNode.position = SCNVector3(-0.515, 0, 0)
-        book.addChildNode(spineNode)
-
-        let front = SCNPlane(width: 1.035, height: 1.465)
-        let frontPrint = SCNMaterial()
-        frontPrint.diffuse.contents = fallbackCover()
-        frontPrint.lightingModel = .constant
-        frontPrint.isDoubleSided = true
-        front.materials = [frontPrint]
-        let frontNode = SCNNode(geometry: front)
-        frontNode.position = SCNVector3(0, 0, 0.117)
-        book.addChildNode(frontNode)
-        loadCoverArtwork(coverURL, into: frontPrint)
-
-        let back = SCNPlane(width: 1.035, height: 1.465)
-        let backPrint = SCNMaterial()
-        backPrint.diffuse.contents = fallbackCover(isBack: true)
-        backPrint.lightingModel = .constant
-        backPrint.isDoubleSided = true
-        back.materials = [backPrint]
-        let backNode = SCNNode(geometry: back)
-        backNode.position = SCNVector3(0, 0, -0.117)
-        backNode.eulerAngles.y = .pi
-        book.addChildNode(backNode)
-        loadCoverArtwork(backCoverURL, into: backPrint)
-
-        // Fine page-edge rules catch the light along the top and fore edge.
-        let pageRule = SCNBox(width: 0.91, height: 0.003, length: 0.001, chamferRadius: 0)
-        pageRule.materials = Array(repeating: ruleMaterial(), count: 6)
-        for offset in [-0.004, 0.0, 0.004] {
-            let rule = SCNNode(geometry: pageRule)
-            rule.position = SCNVector3(0.012, 0.704 + offset, 0)
-            book.addChildNode(rule)
+                    Group {
+                        if detailTab == 0 {
+                            Text(liveBook.synopsis ?? liveBook.readingNote ?? "Ready to read in Folio's interactive 3D book reader.")
+                        } else if detailTab == 1 {
+                            Text("Page \(liveBook.currentPage ?? 1) of \(liveBook.totalPages ?? 1)")
+                        } else {
+                            Text("Format: \(liveBook.fileFormat.rawValue) • Status: \(liveBook.status.rawValue)")
+                        }
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(FolioPalette.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 26)
+            }
         }
-
-        scene.rootNode.addChildNode(book)
-
-        let ambient = SCNNode()
-        let ambientLight = SCNLight()
-        ambientLight.type = .ambient
-        ambientLight.color = UIColor(white: 0.72, alpha: 1)
-        ambient.light = ambientLight
-        scene.rootNode.addChildNode(ambient)
-
-        let key = SCNNode()
-        let keyLight = SCNLight()
-        keyLight.type = .directional
-        keyLight.intensity = 820
-        keyLight.color = UIColor(red: 1.0, green: 0.94, blue: 0.83, alpha: 1)
-        keyLight.castsShadow = true
-        keyLight.shadowRadius = 9
-        keyLight.shadowColor = UIColor.black.withAlphaComponent(0.22)
-        keyLight.shadowMode = .deferred
-        key.light = keyLight
-        key.eulerAngles = SCNVector3(-0.55, -0.45, 0)
-        scene.rootNode.addChildNode(key)
-
-        let fill = SCNNode()
-        let fillLight = SCNLight()
-        fillLight.type = .omni
-        fillLight.intensity = 150
-        fillLight.color = UIColor.white
-        fill.position = SCNVector3(2.2, 1.4, 2.5)
-        fill.light = fillLight
-        scene.rootNode.addChildNode(fill)
-
-        let camera = SCNCamera()
-        camera.fieldOfView = 34
-        camera.zNear = 0.1
-        camera.zFar = 30
-        let cameraNode = SCNNode()
-        cameraNode.camera = camera
-        cameraNode.position = SCNVector3(0, 0, 4.45)
-        scene.rootNode.addChildNode(cameraNode)
-        return scene
-    }
-
-    private func loadCoverArtwork(_ address: String?, into material: SCNMaterial) {
-        guard let address, let url = URL(string: address), url.scheme == "https" else { return }
-        URLSession.shared.dataTask(with: url) { data, response, _ in
-            guard let data, let image = UIImage(data: data),
-                  (response as? HTTPURLResponse)?.statusCode == 200 else { return }
-            DispatchQueue.main.async { material.diffuse.contents = image }
-        }.resume()
-    }
-
-    private func fallbackCover(isBack: Bool = false) -> UIImage {
-        let size = CGSize(width: 720, height: 1020)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { context in
-            let colors = isBack
-                ? [UIColor(red: 0.30, green: 0.23, blue: 0.19, alpha: 1), UIColor(red: 0.18, green: 0.16, blue: 0.14, alpha: 1)]
-                : [tint, tint.withAlphaComponent(0.76)]
-            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors.map(\.cgColor) as CFArray, locations: [0, 1])!
-            context.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
-            let inset = CGRect(x: 43, y: 43, width: size.width - 86, height: size.height - 86)
-            UIColor.white.withAlphaComponent(0.52).setStroke()
-            context.cgContext.setLineWidth(2)
-            context.cgContext.stroke(inset)
-            if !isBack {
-                let paragraph = NSMutableParagraphStyle()
-                paragraph.alignment = .center
-                paragraph.lineSpacing = 9
-                let titleAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont(name: "Georgia", size: 51) ?? UIFont.systemFont(ofSize: 51, weight: .regular),
-                    .foregroundColor: UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 1),
-                    .paragraphStyle: paragraph
-                ]
-                let imprintAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 17, weight: .medium),
-                    .foregroundColor: UIColor.white.withAlphaComponent(0.76),
-                    .kern: 4
-                ]
-                title.draw(in: CGRect(x: 78, y: 300, width: 564, height: 330), withAttributes: titleAttributes)
-                "A BOOK TO KEEP".draw(in: CGRect(x: 78, y: 850, width: 564, height: 40), withAttributes: imprintAttributes)
-            } else {
-                let paragraph = NSMutableParagraphStyle()
-                paragraph.alignment = .center
-                let copyAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont(name: "Georgia", size: 24) ?? UIFont.systemFont(ofSize: 24),
-                    .foregroundColor: UIColor.white.withAlphaComponent(0.68),
-                    .paragraphStyle: paragraph
-                ]
-                "A story belongs on a shelf\nand in the hands of a reader."
-                    .draw(in: CGRect(x: 85, y: 390, width: 550, height: 130), withAttributes: copyAttributes)
+        .task {
+            if let str = liveBook.coverURL,
+               let url = URL(string: str),
+               url.scheme == "https",
+               let (data, _) = try? await URLSession.shared.data(from: url),
+               let img = UIImage(data: data) {
+                coverUIImage = img
             }
         }
     }
 
-    private func pageMaterial() -> SCNMaterial {
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor(red: 0.91, green: 0.875, blue: 0.79, alpha: 1)
-        material.roughness.contents = 0.94
-        return material
+    private func tabSegment(_ title: String, _ idx: Int) -> some View {
+        let active = detailTab == idx
+        return Button { detailTab = idx } label: {
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.subheadline.weight(active ? .semibold : .regular))
+                    .foregroundStyle(active ? FolioPalette.gold : FolioPalette.muted)
+                Rectangle()
+                    .fill(active ? FolioPalette.gold : FolioPalette.border)
+                    .frame(height: active ? 2 : 1)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 
-    private func coverMaterial() -> SCNMaterial {
-        let material = SCNMaterial()
-        material.diffuse.contents = tint
-        material.roughness.contents = 0.82
-        return material
-    }
-
-    private func ruleMaterial() -> SCNMaterial {
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor(red: 0.72, green: 0.67, blue: 0.58, alpha: 1)
-        material.lightingModel = .constant
-        return material
-    }
-
-    final class Coordinator: NSObject {
-        weak var view: SCNView?
-        var signature = ""
-
-        @objc func tapBook(_ recognizer: UITapGestureRecognizer) {
-            guard let view,
-                  let book = view.scene?.rootNode.childNode(withName: "folio-book", recursively: true) else { return }
-            let current = book.eulerAngles
-            SCNTransaction.begin()
-            SCNTransaction.animationDuration = 0.42
-            SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            book.eulerAngles = SCNVector3(current.x, current.y + 0.28, current.z)
-            SCNTransaction.commit()
+    private var fallbackCover: UIImage {
+        let size = CGSize(width: 800, height: 1200)
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 1).setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            let style = NSMutableParagraphStyle()
+            style.alignment = .center
+            liveBook.title.draw(
+                in: CGRect(x: 70, y: 420, width: 660, height: 340),
+                withAttributes: [
+                    .font: UIFont(name: "Georgia-Bold", size: 64) ?? UIFont.boldSystemFont(ofSize: 64),
+                    .foregroundColor: UIColor(red: 0.90, green: 0.77, blue: 0.55, alpha: 1),
+                    .paragraphStyle: style
+                ]
+            )
         }
     }
+}
+
+private struct HardcoverStageView: UIViewRepresentable {
+    let coverImage: UIImage
+    let allowDrag: Bool
+
+    func makeUIView(context: Context) -> SCNView {
+        let view = SCNView()
+        view.backgroundColor = .clear
+        view.antialiasingMode = .multisampling4X
+        view.allowsCameraControl = allowDrag
+
+        let scene = SCNScene()
+        let box = SCNBox(width: 2.25, height: 3.35, length: 0.40, chamferRadius: 0.04)
+
+        let front = SCNMaterial()
+        front.diffuse.contents = coverImage
+        let spine = SCNMaterial()
+        spine.diffuse.contents = UIColor(red: 0.14, green: 0.10, blue: 0.08, alpha: 1)
+        let pages = SCNMaterial()
+        pages.diffuse.contents = UIColor(red: 0.89, green: 0.83, blue: 0.72, alpha: 1)
+
+        box.materials = [front, pages, spine, spine, pages, pages]
+
+        let node = SCNNode(geometry: box)
+        node.name = "hardcover"
+        node.eulerAngles = SCNVector3(-0.08, 0.42, 0.03)
+        scene.rootNode.addChildNode(node)
+
+        let light = SCNNode()
+        light.light = SCNLight()
+        light.light?.type = .omni
+        light.light?.intensity = 1100
+        light.light?.color = UIColor(red: 1.0, green: 0.90, blue: 0.74, alpha: 1)
+        light.position = SCNVector3(-2.4, 3.0, 5.5)
+        scene.rootNode.addChildNode(light)
+
+let cam = SCNNode()
+cam.camera = SCNCamera()
+cam.camera?.fieldOfView = 35
+cam.position = SCNVector3(0, 0, 7.6)
+scene.rootNode.addChildNode(cam)
+view.scene = scene
+return view
+}
+func updateUIView(_ view: SCNView, context: Context) {
+view.allowsCameraControl = allowDrag
+view.scene?.rootNode.childNode(withName: "hardcover", recursively: true)?
+.geometry?.materials.first?.diffuse.contents = coverImage
+}
 }
