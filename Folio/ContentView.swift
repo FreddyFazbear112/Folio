@@ -207,7 +207,7 @@ private struct BookDetailView: View {
                             Image(systemName: savedBook.isFavorite == true ? "bookmark.fill" : "bookmark")
                                 .foregroundStyle(Color(red: 0.91, green: 0.77, blue: 0.58))
                         }
-                        ShareLink(item: "(savedBook.title) — (savedBook.author)") {
+                        ShareLink(item: "\(savedBook.title) — \(savedBook.author)") {
                             Image(systemName: "square.and.arrow.up")
                                 .foregroundStyle(Color(red: 0.91, green: 0.77, blue: 0.58))
                         }
@@ -431,7 +431,7 @@ private struct BookDetailView: View {
                                 editionMessage = "Your edition design has been saved."
                             }
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(folioPaper).padding(.horizontal, 15).padding(.vertical, 11)
+                            .foregroundStyle(folioPaper).padding(.horizontal, 15).padding(.vertical, 8)
                             .background(folioInk, in: Capsule())
                             if let editionMessage { Text(editionMessage).font(.system(size: 10, design: .serif)).foregroundStyle(.secondary) }
                         }
@@ -1268,9 +1268,9 @@ private struct FolioLibraryHome: View {
                             .frame(width: 34, height: 34)
                             .background(FolioPalette.gold, in: Circle())
                     }
-                    .padding(14)
-                    .background(FolioPalette.surface, in: RoundedRectangle(cornerRadius: 15))
-                    .overlay(RoundedRectangle(cornerRadius: 15).stroke(FolioPalette.line, lineWidth: 1))
+                     .padding(12)
+                    .background(LinearGradient(colors: [Color(red: 0.16, green: 0.13, blue: 0.11), Color(red: 0.075, green: 0.065, blue: 0.058)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 13))
+                    .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.white.opacity(0.13), lineWidth: 0.8))
                 }
                 .buttonStyle(.plain)
             } else {
@@ -1326,9 +1326,10 @@ private struct FolioLibraryHome: View {
                     .font(.system(size: 10, design: .rounded).monospacedDigit())
                     .foregroundStyle(FolioPalette.muted)
             }
-            .frame(maxWidth: .infinity, minHeight: 91, alignment: .center)
-            .padding(12)
-            .background(FolioPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+             .frame(maxWidth: .infinity, minHeight: 94, alignment: .center)
+            .padding(9)
+            .background(Color(red: 0.105, green: 0.091, blue: 0.081), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.055), lineWidth: 0.7))
         }
         .buttonStyle(.plain)
     }
@@ -1356,14 +1357,14 @@ private struct FolioLibraryHome: View {
                             Button { selectBook(book) } label: {
                                 VStack(alignment: .leading, spacing: 7) {
                                     FolioBookCover(book: book)
-                                        .frame(width: 104, height: 148)
+                                        .frame(width: 96, height: 140)
                                         .shadow(color: .black.opacity(0.35), radius: 8, x: 3, y: 5)
                                     Text(book.title)
                                         .font(.system(size: 12, design: .serif))
                                         .foregroundStyle(FolioPalette.cream)
                                         .lineLimit(2)
                                         .multilineTextAlignment(.leading)
-                                        .frame(width: 104, alignment: .leading)
+                                        .frame(width: 96, alignment: .leading)
                                     Text(book.author)
                                         .font(.system(size: 9, design: .serif))
                                         .foregroundStyle(FolioPalette.muted)
@@ -1439,8 +1440,10 @@ private struct FolioLibraryScreen: View {
                             .font(.system(size: 13))
                             .autocorrectionDisabled()
                     }
-                    .padding(13)
-                    .background(FolioPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, 13)
+                    .frame(height: 42)
+                    .background(Color(red: 0.12, green: 0.105, blue: 0.095), in: RoundedRectangle(cornerRadius: 11))
+                    .overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.white.opacity(0.07), lineWidth: 0.7))
                     HStack(spacing: 8) {
                         ForEach(formats, id: \.self) { item in
                             Button { format = item } label: {
@@ -1470,7 +1473,7 @@ private struct FolioLibraryScreen: View {
                             ForEach(filteredBooks) { book in
                                 Button { selectBook(book) } label: {
                                     HStack(spacing: 13) {
-                                        FolioBookCover(book: book).frame(width: 58, height: 82)
+                                        FolioBookCover(book: book).frame(width: 61, height: 86)
                                         VStack(alignment: .leading, spacing: 5) {
                                             Text(book.title).font(.system(size: 15, design: .serif)).foregroundStyle(FolioPalette.cream).lineLimit(2)
                                             Text(book.author).font(.system(size: 11, design: .serif)).foregroundStyle(FolioPalette.muted)
@@ -1491,7 +1494,7 @@ private struct FolioLibraryScreen: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20).padding(.top, 18).padding(.bottom, 30)
+                .padding(.horizontal, 17).padding(.top, 13).padding(.bottom, 30)
             }
             .background(FolioPalette.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
