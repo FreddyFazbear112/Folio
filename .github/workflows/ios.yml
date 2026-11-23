@@ -11,7 +11,7 @@ on:
 # Queue builds for this branch instead of terminating the active macOS runner.
 concurrency:
   group: folio-ios-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   sideloadable-ipa:
