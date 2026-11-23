@@ -39,8 +39,10 @@ final class LibraryStore: ObservableObject {
     }
 
     func digitalFileURL(for book: Book) -> URL? {
-        guard let fileName = book.digitalFileName else { return nil }
-        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        guard let fileName = book.digitalFileName,
+              let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
         let fileURL = documents.appendingPathComponent(fileName)
         return FileManager.default.fileExists(atPath: fileURL.path) ? fileURL : nil
     }
@@ -128,8 +130,8 @@ final class LibraryStore: ObservableObject {
     }
 
     func remove(_ book: Book) {
-        if let fileName = books.first(where: { $0.id == book.id })?.digitalFileName {
-            let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        if let fileName = books.first(where: { $0.id == book.id })?.digitalFileName,
+           let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             let fileURL = documents.appendingPathComponent(fileName).standardizedFileURL
             if fileURL.deletingLastPathComponent() == documents.standardizedFileURL {
                 try? FileManager.default.removeItem(at: fileURL)
