@@ -654,6 +654,22 @@ private struct SceneBookStage: UIViewRepresentable {
         applyMap(walnutMap, to: floorMat)
         roomBox("room-floor", SCNVector3(18, 0.16, 13), SCNVector3(0, -1.56, -0.35), floorMat, chamfer: 0.01)
 
+        // Enclose the camera in a real room volume. Side returns and ceiling
+        // beams prevent the set from reading as a single flat theatrical wall.
+        roomBox("left-room-return", SCNVector3(0.16, 8.0, 13.0), SCNVector3(-6.6, 2.35, 2.0), panelMat, chamfer: 0.02)
+        roomBox("right-room-return", SCNVector3(0.16, 8.0, 13.0), SCNVector3(6.6, 2.35, 2.0), panelMat, chamfer: 0.02)
+        roomBox("room-ceiling", SCNVector3(13.2, 0.18, 13.0), SCNVector3(0, 6.25, 2.0), oak, chamfer: 0.02)
+        for x in [-5.2 as Float, -2.6, 0, 2.6, 5.2] {
+            roomBox("ceiling-joist", SCNVector3(0.16, 0.22, 12.4), SCNVector3(x, 6.08, 2.0), mantel, chamfer: 0.025)
+        }
+        // Individual floor planks catch grazing light and break up the large
+        // featureless floor plane with subtle seams.
+        let floorSeam = SCNMaterial()
+        floorSeam.diffuse.contents = UIColor(red: 0.035, green: 0.021, blue: 0.014, alpha: 1)
+        for z in stride(from: -5.0 as Float, through: 8.0, by: 0.42) {
+            roomBox("floorboard-seam", SCNVector3(17.7, 0.004, 0.012), SCNVector3(0, -1.474, z), floorSeam, chamfer: 0)
+        }
+
         let panelMat = SCNMaterial()
         panelMat.diffuse.contents = UIColor(red: 0.12, green: 0.066, blue: 0.042, alpha: 1)
         panelMat.roughness.contents = 0.68
