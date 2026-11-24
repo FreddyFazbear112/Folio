@@ -452,7 +452,7 @@ private struct SceneBookStage: UIViewRepresentable {
         for x in stride(from: -4.5 as Float, through: 4.5, by: 0.75) {
             roomBox("wall-panel-stile", SCNVector3(0.025, 1.0, 0.035), SCNVector3(x, 0.04, -2.93), mantel, chamfer: 0.006)
         }
-        roomBox("chair-rail", SCNVector3(15.8, 0.055, 0.11), SCNVector3(0, 0.68, -2.91), foilMaterial)
+        roomBox("chair-rail", SCNVector3(15.8, 0.055, 0.11), SCNVector3(0, 0.68, -2.91), mantel)
         roomBox("baseboard", SCNVector3(15.8, 0.12, 0.13), SCNVector3(0, -0.56, -2.90), oak)
 
         let rugBase = SCNMaterial()
