@@ -1,9 +1,14 @@
 name: Folio iPhone sideload build
-run-name: Folio iPhone build retry
+run-name: Folio iPhone build
 
 on:
+  push:
+    branches:
+      - work/folio-main-ui
   workflow_dispatch:
 
+# Never cancel a device build just because another commit is pushed.
+# Queue builds for this branch instead of terminating the active macOS runner.
 concurrency:
   group: folio-ios-${{ github.ref }}
   cancel-in-progress: true
@@ -11,7 +16,8 @@ concurrency:
 jobs:
   sideloadable-ipa:
     name: Sideloadable iPhone IPA (unsigned)
-    runs-on: macos-15
+    runs-on: macos-15-intel
+    timeout-minutes: 45
     if: github.event_name != 'pull_request'
     steps:
       - name: Check out repository
@@ -58,4 +64,3 @@ jobs:
           name: Folio-iOS-Unsigned-IPA
           path: Folio-iOS-Unsigned.ipa
           if-no-files-found: error
-
