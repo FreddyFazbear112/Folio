@@ -654,6 +654,10 @@ private struct SceneBookStage: UIViewRepresentable {
         applyMap(walnutMap, to: floorMat)
         roomBox("room-floor", SCNVector3(18, 0.16, 13), SCNVector3(0, -1.56, -0.35), floorMat, chamfer: 0.01)
 
+        let panelMat = SCNMaterial()
+        panelMat.diffuse.contents = UIColor(red: 0.12, green: 0.066, blue: 0.042, alpha: 1)
+        panelMat.roughness.contents = 0.68
+        applyMap(walnutMap, to: panelMat)
         // Enclose the camera in a real room volume. Side returns and ceiling
         // beams prevent the set from reading as a single flat theatrical wall.
         roomBox("left-room-return", SCNVector3(0.16, 8.0, 13.0), SCNVector3(-6.6, 2.35, 2.0), panelMat, chamfer: 0.02)
@@ -670,10 +674,6 @@ private struct SceneBookStage: UIViewRepresentable {
             roomBox("floorboard-seam", SCNVector3(17.7, 0.004, 0.012), SCNVector3(0, -1.474, z), floorSeam, chamfer: 0)
         }
 
-        let panelMat = SCNMaterial()
-        panelMat.diffuse.contents = UIColor(red: 0.12, green: 0.066, blue: 0.042, alpha: 1)
-        panelMat.roughness.contents = 0.68
-        applyMap(walnutMap, to: panelMat)
         roomBox("lower-wall-wainscot", SCNVector3(15.8, 1.18, 0.12), SCNVector3(0, 0.05, -3.02), panelMat)
         for x in stride(from: -4.5 as Float, through: 4.5, by: 0.75) {
             roomBox("wall-panel-stile", SCNVector3(0.025, 1.0, 0.035), SCNVector3(x, 0.04, -2.93), mantel, chamfer: 0.006)
