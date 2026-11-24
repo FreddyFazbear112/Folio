@@ -342,6 +342,20 @@ private struct SceneBookStage: UIViewRepresentable {
         // Keep a deliberate stage behind the model if a page texture fails.
         scene.background.contents = UIColor.clear
         let root = scene.rootNode
+        // Low-frequency room illumination comes from a panoramic environment map,
+        // while the fire and reading lamp remain local realtime light sources.
+        let environmentImage = UIGraphicsImageRenderer(size: CGSize(width: 1024, height: 512)).image { renderer in
+            let colors = [
+                UIColor(red: 0.055, green: 0.075, blue: 0.12, alpha: 1).cgColor,
+                UIColor(red: 0.16, green: 0.095, blue: 0.055, alpha: 1).cgColor,
+                UIColor(red: 0.28, green: 0.16, blue: 0.075, alpha: 1).cgColor,
+                UIColor(red: 0.045, green: 0.035, blue: 0.032, alpha: 1).cgColor
+            ] as CFArray
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.34, 0.58, 1])!
+            renderer.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 1024, y: 512), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+        }
+        scene.lightingEnvironment.contents = environmentImage
+        scene.lightingEnvironment.intensity = 0.42
 
         // Runtime-built high-resolution surface maps. These are actual material
         // textures (not flat color swatches): directional wood grain, mottled
@@ -433,6 +447,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let roomWallMaterial = SCNMaterial()
         roomWallMaterial.diffuse.contents = UIColor(red: 0.105, green: 0.061, blue: 0.043, alpha: 1)
         roomWallMaterial.roughness.contents = 0.94
+        applyMap(walnutMap, to: roomWallMaterial)
         let roomWall = SCNNode(geometry: SCNBox(width: 16, height: 10, length: 0.18, chamferRadius: 0))
         roomWall.geometry?.materials = Array(repeating: roomWallMaterial, count: 6)
         roomWall.position = SCNVector3(0, 2.0, -3.15)
@@ -914,7 +929,13 @@ private struct SceneBookStage: UIViewRepresentable {
         camera.zNear = 0.1
         camera.zFar = 100
         camera.wantsHDR = true
-        camera.bloomIntensity = 0.12
+        camera.wantsExposureAdaptation = true
+        camera.exposureOffset = -0.35
+        camera.bloomThreshold = 0.82
+        camera.bloomIntensity = 0.24
+        camera.bloomBlurRadius = 14
+        camera.vignettingIntensity = 0.22
+        camera.vignettingPower = 1.15
         let cameraNode = SCNNode()
         cameraNode.camera = camera
         cameraNode.name = "folio-camera"
