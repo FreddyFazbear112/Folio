@@ -631,26 +631,6 @@ private struct SceneBookStage: UIViewRepresentable {
             dance.timingMode = .easeInEaseOut
             flame.runAction(dance)
         }
-        // Firelight is a moving source as well as a visible flame. Its
-        // intensity and reach fluctuate independently of the flame geometry.
-        let fireLightNode = SCNNode()
-        let fireLight = SCNLight()
-        fireLight.type = .omni
-        fireLight.color = UIColor(red: 1, green: 0.36, blue: 0.10, alpha: 1)
-        fireLight.intensity = 720
-        fireLight.attenuationStartDistance = 0.25
-        fireLight.attenuationEndDistance = 7.5
-        fireLight.castsShadow = true
-        fireLightNode.light = fireLight
-        fireLightNode.position = SCNVector3(-1.15, 2.05, -2.12)
-        root.addChildNode(fireLightNode)
-        let flicker = SCNAction.customAction(duration: 1.1) { node, elapsed in
-            let phase = CGFloat(elapsed) * 5.7
-            let pulse = 0.84 + 0.10 * sin(phase) + 0.06 * sin(phase * 2.37 + 0.8)
-            node.light?.intensity = CGFloat(720) * pulse
-        }
-        fireLightNode.runAction(.repeatForever(flicker))
-
         // Fine ember points at the base of the logs.
         for index in 0..<12 {
             let emberMaterial = SCNMaterial()
@@ -669,15 +649,16 @@ private struct SceneBookStage: UIViewRepresentable {
         let fireLamp = SCNLight()
         fireLamp.type = .omni
         fireLamp.color = UIColor(red: 1, green: 0.31, blue: 0.075, alpha: 1)
-        fireLamp.intensity = 850
+        fireLamp.intensity = 720
         fireLamp.attenuationStartDistance = 0.4
-        fireLamp.attenuationEndDistance = 8
+        fireLamp.attenuationEndDistance = 7.5
+        fireLamp.castsShadow = true
         fireGlow.light = fireLamp
         fireGlow.position = SCNVector3(-1.15, 2.05, -1.95)
         root.addChildNode(fireGlow)
         let flicker = SCNAction.repeatForever(.sequence([
             .customAction(duration: 0.18) { node, elapsed in
-                node.light?.intensity = 720 + CGFloat(sin(elapsed * 23) * 150 + cos(elapsed * 11) * 65)
+                node.light?.intensity = 720 + CGFloat(sin(elapsed * 23) * 110 + cos(elapsed * 11) * 48)
             },
             .wait(duration: 0.04)
         ]))
