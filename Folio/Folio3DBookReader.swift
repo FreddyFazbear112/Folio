@@ -477,6 +477,49 @@ private struct SceneBookStage: UIViewRepresentable {
             log.position = SCNVector3(-1.15 + Float(index - 1) * 0.12, 1.55 + Float(index) * 0.08, -2.70)
             root.addChildNode(log)
         }
+        // A flame is a curved, tapered volumetric mesh with an uneven centreline,
+        // not a cone. The changing cross-section gives it a living silhouette.
+        func flameTongue(width: CGFloat, height: CGFloat, phase: CGFloat, material: SCNMaterial) -> SCNGeometry {
+            let rings = 22
+            let segments = 14
+            var vertices: [SCNVector3] = []
+            var normals: [SCNVector3] = []
+            var uvs: [CGPoint] = []
+            var indices: [UInt32] = []
+            for ring in 0...rings {
+                let t = CGFloat(ring) / CGFloat(rings)
+                let envelope = pow(max(0, sin(t * .pi)), 0.72)
+                let radius = width * envelope * (1 - t * 0.26)
+                let drift = sin(t * 5.2 + phase) * width * 0.38 * t
+                for segment in 0...segments {
+                    let angle = CGFloat(segment) / CGFloat(segments) * .pi * 2
+                    let cx = drift + cos(angle) * radius
+                    let cz = sin(angle) * radius * 0.42
+                    vertices.append(SCNVector3(Float(cx), Float(t * height), Float(cz)))
+                    normals.append(SCNVector3(Float(cos(angle)), 0.25, Float(sin(angle) * 1.8)))
+                    uvs.append(CGPoint(x: CGFloat(segment) / CGFloat(segments), y: t))
+                }
+            }
+            for ring in 0..<rings {
+                for segment in 0..<segments {
+                    let a = UInt32(ring * (segments + 1) + segment)
+                    let b = a + 1
+                    let c = a + UInt32(segments + 1)
+                    let d = c + 1
+                    indices.append(contentsOf: [a, b, c, b, d, c])
+                }
+            }
+            let data = indices.withUnsafeBufferPointer { Data(buffer: $0) }
+            let element = SCNGeometryElement(data: data, primitiveType: .triangles, primitiveCount: indices.count / 3, bytesPerIndex: MemoryLayout<UInt32>.size)
+            let geometry = SCNGeometry(sources: [
+                SCNGeometrySource(vertices: vertices),
+                SCNGeometrySource(normals: normals),
+                SCNGeometrySource(textureCoordinates: uvs)
+            ], elements: [element])
+            geometry.materials = [material]
+            return geometry
+        }
+
         // Individually sculpted tapered flame tongues. A stack of overlapping
         // spheres reads as plastic blobs; narrow cone meshes create a pointed
         // silhouette, with staggered motion and warm emissive cores.
@@ -488,10 +531,7 @@ private struct SceneBookStage: UIViewRepresentable {
             flameMaterial.emission.contents = UIColor(red: 1, green: 0.12 + CGFloat(index % 3) * 0.055, blue: 0.006, alpha: 1)
             flameMaterial.roughness.contents = 0.72
             flameMaterial.isDoubleSided = true
-            let flameGeometry = SCNCone(topRadius: 0.008, bottomRadius: width, height: height)
-            flameGeometry.radialSegmentCount = 18
-            flameGeometry.heightSegmentCount = 8
-            flameGeometry.materials = [flameMaterial]
+            let flameGeometry = flameTongue(width: width, height: height, phase: CGFloat(index) * 0.83, material: flameMaterial)
             let flame = SCNNode(geometry: flameGeometry)
             flame.name = "fire-tongue-\\(index)"
             flame.position = SCNVector3(-1.78 + Float(index) * 0.21, 1.72 + Float(index % 2) * 0.035, -2.49 + Float(index % 3) * 0.025)
