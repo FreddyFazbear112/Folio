@@ -871,8 +871,11 @@ private struct SceneBookStage: UIViewRepresentable {
         rearBoard.position = SCNVector3(0, 0, -0.235)
         root.addChildNode(rearBoard)
 
-        let spineGeometry = SCNBox(width: 0.16, height: 2.24, length: 0.25, chamferRadius: 0.07)
-        spineGeometry.materials = Array(repeating: boardMaterial, count: 6)
+        // Rounded cloth spine: a cylindrical back gives the text block a
+        // believable book profile instead of the square-edged central post.
+        let spineGeometry = SCNCylinder(radius: 0.125, height: 2.24)
+        spineGeometry.radialSegmentCount = 32
+        spineGeometry.materials = [boardMaterial]
         let spine = SCNNode(geometry: spineGeometry)
         spine.position = SCNVector3(0, 0, -0.02)
         root.addChildNode(spine)
@@ -956,6 +959,36 @@ private struct SceneBookStage: UIViewRepresentable {
         coverNode.name = "front-cover"
         coverNode.position = SCNVector3(0.77, 0, 0.039)
         hinge.addChildNode(coverNode)
+
+        // Restrained gilt tooling on the cloth cover: fine perimeter rules
+        // and a small embossed centrepiece catch the warm room light.
+        let gilt = SCNMaterial()
+        gilt.diffuse.contents = UIColor(red: 0.62, green: 0.43, blue: 0.20, alpha: 1)
+        gilt.metalness.contents = 0.72
+        gilt.roughness.contents = 0.32
+        func coverRule(_ width: CGFloat, _ height: CGFloat, _ x: Float, _ y: Float) {
+            let geometry = SCNBox(width: width, height: height, length: 0.006, chamferRadius: 0.002)
+            geometry.materials = [gilt]
+            let rule = SCNNode(geometry: geometry)
+            rule.position = SCNVector3(x, y, 0.012)
+            coverNode.addChildNode(rule)
+        }
+        coverRule(1.30, 0.009, 0, 0.91)
+        coverRule(1.30, 0.009, 0, -0.91)
+        coverRule(0.009, 1.82, -0.65, 0)
+        coverRule(0.009, 1.82, 0.65, 0)
+        let sealGeometry = SCNTorus(ringRadius: 0.105, pipeRadius: 0.006)
+        sealGeometry.ringSegmentCount = 48
+        sealGeometry.pipeSegmentCount = 8
+        sealGeometry.materials = [gilt]
+        let seal = SCNNode(geometry: sealGeometry)
+        seal.position = SCNVector3(0, 0.12, 0.014)
+        coverNode.addChildNode(seal)
+        let sealCore = SCNSphere(radius: 0.025)
+        sealCore.materials = [gilt]
+        let core = SCNNode(geometry: sealCore)
+        core.position = SCNVector3(0, 0.12, 0.014)
+        coverNode.addChildNode(core)
         root.addChildNode(hinge)
 
         let gutterGeometry = SCNBox(width: 0.075, height: 2.08, length: 0.012, chamferRadius: 0.018)
