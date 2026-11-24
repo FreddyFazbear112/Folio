@@ -438,6 +438,134 @@ private struct SceneBookStage: UIViewRepresentable {
         roomBox("left-wall-pilaster", SCNVector3(0.13, 6.4, 0.12), SCNVector3(-5.0, 2.1, -2.98), oak)
         roomBox("right-wall-pilaster", SCNVector3(0.13, 6.4, 0.12), SCNVector3(4.6, 2.1, -2.98), oak)
 
+        // Full reading-lounge architecture: floor, wainscoting, ceiling beams,
+        // built-in bookcases, a moonlit window and a layered Persian-style rug.
+        let floorMat = SCNMaterial()
+        floorMat.diffuse.contents = UIColor(red: 0.105, green: 0.061, blue: 0.041, alpha: 1)
+        floorMat.roughness.contents = 0.76
+        roomBox("room-floor", SCNVector3(18, 0.16, 13), SCNVector3(0, -1.56, -0.35), floorMat, chamfer: 0.01)
+
+        let panelMat = SCNMaterial()
+        panelMat.diffuse.contents = UIColor(red: 0.12, green: 0.066, blue: 0.042, alpha: 1)
+        panelMat.roughness.contents = 0.68
+        roomBox("lower-wall-wainscot", SCNVector3(15.8, 1.18, 0.12), SCNVector3(0, 0.05, -3.02), panelMat)
+        for x in stride(from: -4.5 as Float, through: 4.5, by: 0.75) {
+            roomBox("wall-panel-stile", SCNVector3(0.025, 1.0, 0.035), SCNVector3(x, 0.04, -2.93), mantel, chamfer: 0.006)
+        }
+        roomBox("chair-rail", SCNVector3(15.8, 0.055, 0.11), SCNVector3(0, 0.68, -2.91), foilMaterial)
+        roomBox("baseboard", SCNVector3(15.8, 0.12, 0.13), SCNVector3(0, -0.56, -2.90), oak)
+
+        let rugBase = SCNMaterial()
+        rugBase.diffuse.contents = UIColor(red: 0.19, green: 0.055, blue: 0.035, alpha: 1)
+        rugBase.roughness.contents = 1
+        roomBox("rug-underlay", SCNVector3(7.4, 0.025, 4.2), SCNVector3(0, -1.445, 0.25), rugBase, chamfer: 0.10)
+        let rugBorder = SCNMaterial()
+        rugBorder.diffuse.contents = UIColor(red: 0.62, green: 0.39, blue: 0.18, alpha: 1)
+        rugBorder.metalness.contents = 0.12
+        rugBorder.roughness.contents = 0.8
+        for z in [-1.68 as Float, 2.18 as Float] {
+            roomBox("rug-border-long", SCNVector3(7.0, 0.008, 0.025), SCNVector3(0, -1.428, z), rugBorder, chamfer: 0.004)
+        }
+        for x in [-3.48 as Float, 3.48 as Float] {
+            roomBox("rug-border-short", SCNVector3(0.025, 0.008, 3.86), SCNVector3(x, -1.428, 0.25), rugBorder, chamfer: 0.004)
+        }
+
+        // Built-in library bays flanking the hearth. Each book is a separate
+        // clothbound volume with varied height, spine color and subtle foil.
+        let shelfWood = SCNMaterial()
+        shelfWood.diffuse.contents = UIColor(red: 0.105, green: 0.052, blue: 0.031, alpha: 1)
+        shelfWood.roughness.contents = 0.42
+        let bookPalette: [UIColor] = [
+            UIColor(red: 0.24, green: 0.075, blue: 0.055, alpha: 1),
+            UIColor(red: 0.12, green: 0.17, blue: 0.16, alpha: 1),
+            UIColor(red: 0.32, green: 0.20, blue: 0.095, alpha: 1),
+            UIColor(red: 0.17, green: 0.105, blue: 0.16, alpha: 1),
+            UIColor(red: 0.34, green: 0.29, blue: 0.19, alpha: 1)
+        ]
+        for side in [-1 as Float, 1 as Float] {
+            let shelfX = side * 3.05
+            roomBox("bookcase-side", SCNVector3(1.05, 4.55, 0.48), SCNVector3(shelfX, 1.65, -2.72), shelfWood, chamfer: 0.035)
+            for level in 0..<4 {
+                let y = 0.05 + Float(level) * 1.05
+                roomBox("bookcase-shelf", SCNVector3(1.18, 0.075, 0.62), SCNVector3(shelfX, y, -2.42), mantel, chamfer: 0.018)
+                for item in 0..<7 {
+                    let height = 0.48 + Float((item + level) % 4) * 0.10
+                    let width = 0.095 + Float(item % 2) * 0.025
+                    let material = SCNMaterial()
+                    material.diffuse.contents = bookPalette[(item + level * 2) % bookPalette.count]
+                    material.roughness.contents = 0.82
+                    let book = SCNNode(geometry: SCNBox(width: CGFloat(width), height: CGFloat(height), length: 0.30, chamferRadius: 0.012))
+                    book.geometry?.materials = [material]
+                    book.position = SCNVector3(shelfX - 0.47 + Float(item) * 0.145, y + 0.055 + height / 2, -2.40)
+                    book.eulerAngles.z = Float(item % 3 - 1) * 0.035
+                    root.addChildNode(book)
+                    let gilt = SCNMaterial()
+                    gilt.diffuse.contents = UIColor(red: 0.68, green: 0.48, blue: 0.23, alpha: 1)
+                    gilt.emission.contents = UIColor(red: 0.10, green: 0.045, blue: 0.012, alpha: 1)
+                    for offset in [-0.16 as Float, 0.16 as Float] {
+                        let band = SCNNode(geometry: SCNBox(width: CGFloat(width * 0.76), height: 0.012, length: 0.006, chamferRadius: 0))
+                        band.geometry?.materials = [gilt]
+                        band.position = SCNVector3(book.position.x, book.position.y + offset * min(height, 0.8), -2.238)
+                        root.addChildNode(band)
+                    }
+                }
+            }
+        }
+
+        // A tall mullioned window gives the room a cool secondary light source.
+        let windowFrame = SCNMaterial()
+        windowFrame.diffuse.contents = UIColor(red: 0.12, green: 0.075, blue: 0.05, alpha: 1)
+        windowFrame.roughness.contents = 0.38
+        let nightGlass = SCNMaterial()
+        nightGlass.diffuse.contents = UIColor(red: 0.018, green: 0.035, blue: 0.075, alpha: 1)
+        nightGlass.emission.contents = UIColor(red: 0.012, green: 0.025, blue: 0.065, alpha: 1)
+        nightGlass.roughness.contents = 0.18
+        roomBox("window-night", SCNVector3(1.42, 2.35, 0.045), SCNVector3(1.68, 2.25, -3.00), nightGlass, chamfer: 0.025)
+        for x in [0.94 as Float, 1.68, 2.42] {
+            roomBox("window-mullion", SCNVector3(0.075, 2.52, 0.12), SCNVector3(x, 2.25, -2.91), windowFrame)
+        }
+        for y in [1.05 as Float, 2.25, 3.45] {
+            roomBox("window-crossbar", SCNVector3(1.58, 0.075, 0.12), SCNVector3(1.68, y, -2.91), windowFrame)
+        }
+        let moonMat = SCNMaterial()
+        moonMat.diffuse.contents = UIColor(red: 0.66, green: 0.72, blue: 0.82, alpha: 1)
+        moonMat.emission.contents = UIColor(red: 0.16, green: 0.20, blue: 0.30, alpha: 1)
+        let moon = SCNNode(geometry: SCNSphere(radius: 0.16))
+        moon.geometry?.materials = [moonMat]
+        moon.position = SCNVector3(2.05, 2.86, -2.86)
+        root.addChildNode(moon)
+
+        // Reading chair and side table sit behind the book, grounding the lounge.
+        let leather = SCNMaterial()
+        leather.diffuse.contents = UIColor(red: 0.16, green: 0.045, blue: 0.035, alpha: 1)
+        leather.roughness.contents = 0.58
+        let chair = roomBox("reading-chair-seat", SCNVector3(1.55, 0.34, 1.05), SCNVector3(2.0, -0.82, -1.25), leather, chamfer: 0.16)
+        chair.eulerAngles.y = -0.18
+        roomBox("reading-chair-back", SCNVector3(1.55, 1.42, 0.32), SCNVector3(2.0, -0.12, -1.72), leather, chamfer: 0.20)
+        for side in [-1 as Float, 1 as Float] {
+            roomBox("chair-arm", SCNVector3(0.25, 0.64, 0.92), SCNVector3(2.0 + side * 0.78, -0.48, -1.25), leather, chamfer: 0.11)
+        }
+        roomBox("side-table-top", SCNVector3(0.82, 0.10, 0.72), SCNVector3(-2.45, -0.72, -1.45), mantel, chamfer: 0.035)
+        for x in [-2.76 as Float, -2.14 as Float] {
+            roomBox("side-table-leg", SCNVector3(0.07, 0.78, 0.07), SCNVector3(x, -1.12, -1.45), shelfWood)
+        }
+        let shade = SCNMaterial()
+        shade.diffuse.contents = UIColor(red: 0.72, green: 0.52, blue: 0.28, alpha: 1)
+        shade.emission.contents = UIColor(red: 0.10, green: 0.055, blue: 0.02, alpha: 1)
+        let lampShade = SCNNode(geometry: SCNCone(topRadius: 0.18, bottomRadius: 0.32, height: 0.42))
+        lampShade.geometry?.materials = [shade]
+        lampShade.position = SCNVector3(-2.45, -0.10, -1.45)
+        root.addChildNode(lampShade)
+        let lampNode = SCNNode()
+        let readingLamp = SCNLight()
+        readingLamp.type = .omni
+        readingLamp.color = UIColor(red: 1, green: 0.72, blue: 0.42, alpha: 1)
+        readingLamp.intensity = 260
+        readingLamp.attenuationEndDistance = 4
+        lampNode.light = readingLamp
+        lampNode.position = SCNVector3(-2.45, -0.35, -1.25)
+        root.addChildNode(lampNode)
+
         // A compact, substantial page block with a visible fore-edge.
         let paperBlock = SCNBox(width: 3.00, height: 2.18, length: 0.20, chamferRadius: 0.035)
         let blockMaterial = SCNMaterial()
