@@ -24,36 +24,10 @@ struct Folio3DBookReader: View {
     private var total: Int { document?.pageCount ?? 0 }
 
     var body: some View {
-        ZStack {
+        GeometryReader { proxy in
             ZStack {
-                Image("ReadingRoom").resizable().scaledToFill().overlay(LinearGradient(colors: [Color.black.opacity(0.42), Color.black.opacity(0.68), Color.black.opacity(0.94)], startPoint: .top, endPoint: .bottom))
-                RadialGradient(colors: [Color(red: 0.48, green: 0.28, blue: 0.14).opacity(0.24), .clear], center: .top, startRadius: 10, endRadius: 520)
-            }.ignoresSafeArea()
-            VStack(spacing: 0) {
-                HStack {
-                    Button { dismiss() } label: {
-                        Image(systemName: "chevron.down").font(.system(size: 14, weight: .semibold))
-                            .frame(width: 42, height: 42).background(.white.opacity(0.09), in: Circle())
-                    }
-                    Spacer()
-                    VStack(spacing: 3) {
-                        Text("FOLIO").font(.system(size: 9, weight: .bold)).tracking(2.5)
-                        Text(title).font(.system(size: 14, design: .serif)).lineLimit(1)
-                    }
-                    Spacer()
-                    Button { sepia.toggle(); refreshScene() } label: {
-                        Image(systemName: sepia ? "moon" : "sun.max").font(.system(size: 14))
-                            .frame(width: 42, height: 42).background(.white.opacity(0.09), in: Circle())
-                    }
-                }
-                .foregroundStyle(Color(red: 0.94, green: 0.89, blue: 0.78))
-                .padding(.horizontal, 20).padding(.top, 12)
-
-                HStack(alignment: .lastTextBaseline) {
-                    Text("NOW READING").font(.system(size: 8, weight: .bold)).tracking(2.2).foregroundStyle(Color(red: 0.86, green: 0.67, blue: 0.44))
-                    Spacer()
-                    Text(isOpen ? "OPEN EDITION" : "CLOTHBOUND EDITION").font(.system(size: 8, weight: .medium)).tracking(1.5).foregroundStyle(.white.opacity(0.48))
-                }.padding(.horizontal, 25).padding(.top, 20)
+                // The 3D lounge is the actual full-screen reading environment.
+                // The old 500pt stage left the lower half of the phone as dead black UI space.
                 if let document, total > 0 {
                     SceneBookStage(
                         leftPage: page > 1 ? renderedPage(page - 1, in: document) : nil,
@@ -64,55 +38,106 @@ struct Folio3DBookReader: View {
                         paper: sepia ? UIColor(red: 0.94, green: 0.90, blue: 0.81, alpha: 1) : UIColor(red: 0.15, green: 0.16, blue: 0.15, alpha: 1),
                         onTapCover: { withAnimation(.easeInOut(duration: 0.8)) { isOpen.toggle() } }
                     )
-                    .frame(maxWidth: .infinity).frame(height: 500)
-                    .padding(.horizontal, 2)
-                    .background(Color.clear)
-                    .shadow(color: .black.opacity(0.72), radius: 30, x: 0, y: 24)
-                    .padding(.horizontal, 8)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 24).onEnded { value in
                         guard isOpen else { withAnimation(.easeInOut(duration: 0.8)) { isOpen = true }; return }
                         if value.translation.width < -35 { turn(1) }
                         if value.translation.width > 35 { turn(-1) }
                     })
-                } else if let loadError {
-                    VStack(spacing: 12) {
-                        Image(systemName: "doc.badge.ellipsis").font(.system(size: 30, weight: .ultraLight))
-                        Text("This reading copy couldn't be opened").font(.system(size: 18, design: .serif))
-                        Text(loadError).font(.system(size: 11)).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
-                    }
-                    .foregroundStyle(.white).frame(height: 390).padding(.horizontal, 30)
+                    .ignoresSafeArea()
                 } else {
-                    ProgressView("Preparing your book…").tint(.white).foregroundStyle(.white)
-                        .frame(height: 390)
+                    ZStack {
+                        Color(red: 0.035, green: 0.022, blue: 0.016)
+                        Image("ReadingRoom").resizable().scaledToFill().opacity(0.22)
+                    }.ignoresSafeArea()
                 }
-                Spacer(minLength: 12)
-                VStack(spacing: 15) {
-                    HStack(spacing: 34) {
-                        Button { turn(-1) } label: { Image(systemName: "chevron.left") }
-                            .disabled(!isOpen || page <= 1)
-                        Text(total > 0 ? "PAGE \(page) OF \(total)" : "OPENING")
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1.4)
-                        Button { turn(1) } label: { Image(systemName: "chevron.right") }
-                            .disabled(!isOpen || page >= total)
+
+                // Subtle cinematic vignette keeps text legible without burying
+                // the modeled architecture in a black gradient.
+                LinearGradient(
+                    stops: [
+                        .init(color: Color.black.opacity(0.58), location: 0),
+                        .init(color: Color.clear, location: 0.23),
+                        .init(color: Color.clear, location: 0.72),
+                        .init(color: Color.black.opacity(0.72), location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ).ignoresSafeArea().allowsHitTesting(false)
+
+                VStack(spacing: 0) {
+                    HStack {
+                        Button { dismiss() } label: {
+                            Image(systemName: "chevron.down").font(.system(size: 14, weight: .semibold))
+                                .frame(width: 42, height: 42).background(.white.opacity(0.10), in: Circle())
+                        }
+                        Spacer()
+                        VStack(spacing: 3) {
+                            Text("FOLIO").font(.system(size: 9, weight: .bold)).tracking(2.5)
+                            Text(title).font(.system(size: 14, design: .serif)).lineLimit(1)
+                        }
+                        Spacer()
+                        Button { sepia.toggle(); refreshScene() } label: {
+                            Image(systemName: sepia ? "moon" : "sun.max").font(.system(size: 14))
+                                .frame(width: 42, height: 42).background(.white.opacity(0.10), in: Circle())
+                        }
                     }
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(Color(red: 0.94, green: 0.78, blue: 0.53))
-                    if total > 0 {
-                        ProgressView(value: Double(page), total: Double(total))
-                            .tint(Color(red: 0.78, green: 0.62, blue: 0.39))
+                    .foregroundStyle(Color(red: 0.96, green: 0.90, blue: 0.78))
+                    .padding(.horizontal, 20).padding(.top, proxy.safeAreaInsets.top + 8)
+
+                    HStack(alignment: .lastTextBaseline) {
+                        Text("NOW READING").font(.system(size: 8, weight: .bold)).tracking(2.2)
+                            .foregroundStyle(Color(red: 0.90, green: 0.69, blue: 0.43))
+                        Spacer()
+                        Text(isOpen ? "OPEN EDITION" : "CLOTHBOUND EDITION")
+                            .font(.system(size: 8, weight: .medium)).tracking(1.5).foregroundStyle(.white.opacity(0.62))
                     }
-                    Text(isOpen ? "SWIPE TO TURN THE PAGE" : "TAP THE COVER TO OPEN YOUR BOOK")
-                        .font(.system(size: 8, weight: .medium)).tracking(1.6)
-                        .foregroundStyle(.white.opacity(0.48))
+                    .padding(.horizontal, 25).padding(.top, 16)
+
+                    if let loadError {
+                        VStack(spacing: 12) {
+                            Image(systemName: "doc.badge.ellipsis").font(.system(size: 30, weight: .ultraLight))
+                            Text("This reading copy couldn't be opened").font(.system(size: 18, design: .serif))
+                            Text(loadError).font(.system(size: 11)).foregroundStyle(.white.opacity(0.7)).multilineTextAlignment(.center)
+                        }.foregroundStyle(.white).padding(.horizontal, 30)
+                        Spacer()
+                    } else if document == nil {
+                        Spacer()
+                        ProgressView("Preparing your book…").tint(.white).foregroundStyle(.white)
+                        Spacer()
+                    } else {
+                        Spacer(minLength: 0)
+                        VStack(spacing: 14) {
+                            HStack(spacing: 34) {
+                                Button { turn(-1) } label: { Image(systemName: "chevron.left") }
+                                    .disabled(!isOpen || page <= 1)
+                                Text(total > 0 ? "PAGE \\(page) OF \\(total)" : "OPENING")
+                                    .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1.4)
+                                Button { turn(1) } label: { Image(systemName: "chevron.right") }
+                                    .disabled(!isOpen || page >= total)
+                            }
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(Color(red: 0.96, green: 0.79, blue: 0.54))
+                            .padding(.vertical, 8)
+                            if total > 0 {
+                                ProgressView(value: Double(page), total: Double(total))
+                                    .tint(Color(red: 0.82, green: 0.64, blue: 0.39))
+                            }
+                            Text(isOpen ? "SWIPE TO TURN THE PAGE" : "TAP THE COVER TO OPEN YOUR BOOK")
+                                .font(.system(size: 8, weight: .medium)).tracking(1.8)
+                                .foregroundStyle(.white.opacity(0.58))
+                        }
+                        .padding(.horizontal, 30)
+                        .padding(.bottom, max(proxy.safeAreaInsets.bottom, 18) + 12)
+                    }
                 }
-                .padding(.horizontal, 28).padding(.bottom, 28)
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .ignoresSafeArea()
         }
         .preferredColorScheme(.dark)
         .task {
-            // PDFKit can take noticeable time to parse large files. Never do
-            // that synchronous work on SwiftUI's main actor or the whole reader
-            // appears frozen on its loading state.
             let loaded = await Task.detached(priority: .userInitiated) {
                 PDFDocument(url: url)
             }.value
