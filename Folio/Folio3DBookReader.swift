@@ -342,6 +342,92 @@ private struct SceneBookStage: UIViewRepresentable {
         // Keep a deliberate stage behind the model if a page texture fails.
         scene.background.contents = UIColor.clear
         let root = scene.rootNode
+
+        // Runtime-built high-resolution surface maps. These are actual material
+        // textures (not flat color swatches): directional wood grain, mottled
+        // stone, woven cloth and leather pores, generated once per scene.
+        func surfaceMap(_ size: Int = 1024, base: UIColor, kind: Int, seed: CGFloat) -> UIImage {
+            let canvas = CGSize(width: size, height: size)
+            return UIGraphicsImageRenderer(size: canvas).image { renderer in
+                let ctx = renderer.cgContext
+                ctx.setFillColor(base.cgColor)
+                ctx.fill(CGRect(origin: .zero, size: canvas))
+                func wave(_ value: CGFloat) -> CGFloat { (sin(value * 12.9898 + seed * 78.233) * 43758.5453).truncatingRemainder(dividingBy: 1).magnitude }
+                if kind == 0 { // sawn walnut
+                    for line in 0..<520 {
+                        let y = CGFloat(line) * canvas.height / 520
+                        let phase = CGFloat(line) * 0.071 + seed
+                        let path = UIBezierPath()
+                        path.move(to: CGPoint(x: 0, y: y))
+                        for step in 0...32 {
+                            let x = CGFloat(step) * canvas.width / 32
+                            let yy = y + sin(x * 0.012 + phase) * (2 + wave(phase) * 7)
+                            path.addLine(to: CGPoint(x: x, y: yy))
+                        }
+                        let alpha = 0.035 + wave(phase) * 0.10
+                        UIColor(white: wave(phase) > 0.5 ? 0.02 : 0.95, alpha: alpha).setStroke()
+                        path.lineWidth = 0.7 + wave(phase + 1) * 2.4
+                        path.stroke()
+                    }
+                    for knot in 0..<5 {
+                        let x = wave(CGFloat(knot) + seed) * canvas.width
+                        let y = wave(CGFloat(knot) * 2 + seed) * canvas.height
+                        for ring in 0..<8 {
+                            let radius = CGFloat(ring + 1) * (5 + wave(CGFloat(knot)) * 3)
+                            let oval = UIBezierPath(ovalIn: CGRect(x: x - radius * 1.8, y: y - radius * 0.55, width: radius * 3.6, height: radius * 1.1))
+                            UIColor(white: 0.02, alpha: 0.045).setStroke()
+                            oval.lineWidth = 1
+                            oval.stroke()
+                        }
+                    }
+                } else if kind == 1 { // limestone / hand-cut stone
+                    for i in 0..<18000 {
+                        let x = wave(CGFloat(i) * 1.13 + seed) * canvas.width
+                        let y = wave(CGFloat(i) * 2.31 + seed * 2) * canvas.height
+                        let radius = 0.6 + wave(CGFloat(i) * 3.7) * (kind == 1 ? 5 : 2)
+                        let alpha = 0.025 + wave(CGFloat(i) * 5.1) * 0.11
+                        UIColor(white: wave(CGFloat(i) * 7.7) > 0.5 ? 1 : 0, alpha: alpha).setFill()
+                        ctx.fillEllipse(in: CGRect(x: x, y: y, width: radius, height: radius))
+                    }
+                    for seam in 0..<18 {
+                        let y = CGFloat(seam) * canvas.height / 18 + wave(CGFloat(seam) + seed) * 18
+                        let p = UIBezierPath()
+                        p.move(to: CGPoint(x: 0, y: y))
+                        p.addLine(to: CGPoint(x: canvas.width, y: y + wave(CGFloat(seam) * 4) * 12 - 6))
+                        UIColor(white: 0.04, alpha: 0.12).setStroke()
+                        p.lineWidth = 2
+                        p.stroke()
+                    }
+                } else { // upholstery / book cloth / leather grain
+                    for i in 0..<22000 {
+                        let x = wave(CGFloat(i) * 1.13 + seed) * canvas.width
+                        let y = wave(CGFloat(i) * 2.31 + seed * 2) * canvas.height
+                        let alpha = 0.025 + wave(CGFloat(i) * 3.7) * 0.075
+                        UIColor(white: wave(CGFloat(i) * 5.1) > 0.5 ? 1 : 0, alpha: alpha).setFill()
+                        ctx.fillEllipse(in: CGRect(x: x, y: y, width: 1.2, height: 1.2))
+                    }
+                    for line in stride(from: 0, to: size, by: 8) {
+                        let p = UIBezierPath()
+                        p.move(to: CGPoint(x: line, y: 0))
+                        p.addLine(to: CGPoint(x: line, y: size))
+                        UIColor(white: 0.5, alpha: 0.035).setStroke()
+                        p.lineWidth = 1
+                        p.stroke()
+                    }
+                }
+            }
+        }
+        let walnutMap = surfaceMap(base: UIColor(red: 0.19, green: 0.095, blue: 0.052, alpha: 1), kind: 0, seed: 3.1)
+        let stoneMap = surfaceMap(base: UIColor(red: 0.34, green: 0.27, blue: 0.21, alpha: 1), kind: 1, seed: 7.4)
+        let clothMap = surfaceMap(base: UIColor(red: 0.17, green: 0.055, blue: 0.043, alpha: 1), kind: 2, seed: 11.2)
+        func applyMap(_ image: UIImage, to material: SCNMaterial) {
+            material.diffuse.contents = image
+            material.diffuse.wrapS = .repeat
+            material.diffuse.wrapT = .repeat
+            material.diffuse.magnificationFilter = .linear
+            material.diffuse.minificationFilter = .linear
+            material.roughness.contents = 0.78
+        }
         // A complete fireside reading set: the book is staged in a room,
         // not floating against a flat background image.
         let roomWallMaterial = SCNMaterial()
