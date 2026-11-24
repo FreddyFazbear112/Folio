@@ -290,7 +290,7 @@ private struct SceneBookStage: UIViewRepresentable {
         // than spin around its own centre.
         let hinge = SCNNode()
         hinge.position = SCNVector3(0, 0, 0.075)
-        func paperMesh(_ bend: CGFloat, _ twist: CGFloat) -> SCNGeometry {
+        func paperMesh(_ bend: CGFloat, _ twist: CGFloat, material: SCNMaterial = frontMaterial) -> SCNGeometry {
             let columns = 28
             let rows = 36
             var vertices: [SCNVector3] = []
@@ -323,7 +323,7 @@ private struct SceneBookStage: UIViewRepresentable {
             let data = indices.withUnsafeBufferPointer { Data(buffer: $0) }
             let element = SCNGeometryElement(data: data, primitiveType: .triangles, primitiveCount: indices.count / 3, bytesPerIndex: MemoryLayout<UInt32>.size)
             let geometry = SCNGeometry(sources: [SCNGeometrySource(vertices: vertices), SCNGeometrySource(normals: normals), SCNGeometrySource(textureCoordinates: uvs)], elements: [element])
-            geometry.materials = [frontMaterial]
+            geometry.materials = [material]
             return geometry
         }
         let leaf = SCNNode(geometry: paperMesh(0, 0))
@@ -338,8 +338,7 @@ private struct SceneBookStage: UIViewRepresentable {
             backMaterial.lightingModel = .physicallyBased
             backMaterial.isDoubleSided = false
             backMaterial.roughness.contents = 0.92
-            let back = SCNNode(geometry: SCNPlane(width: 1.49, height: 2.10))
-            back.geometry?.materials = [backMaterial]
+            let back = SCNNode(geometry: paperMesh(0, 0, material: backMaterial))
             back.position.z = -0.002
             back.eulerAngles.y = .pi
             back.castsShadow = true
@@ -368,7 +367,7 @@ private struct SceneBookStage: UIViewRepresentable {
             leaf.geometry = paperMesh(bend, CGFloat(progress) * .pi * 2)
             leaf.eulerAngles.z = Float(sin(progress * .pi)) * (movingForward ? 0.045 : -0.045)
             leaf.scale.x = 1 - Float(sin(progress * .pi)) * 0.035
-            leaf.childNode(withName: "reverse-sheet", recursively: false)?.geometry = paperMesh(bend, CGFloat(progress) * .pi * 2)
+            leaf.childNode(withName: "reverse-sheet", recursively: false)?.geometry = paperMesh(bend, CGFloat(progress) * .pi * 2, material: backMaterial)
         }
         curl.timingMode = .easeInEaseOut
         hinge.runAction(.group([flip, curl])) { [weak hinge] in
