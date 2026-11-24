@@ -290,9 +290,44 @@ private struct SceneBookStage: UIViewRepresentable {
         // than spin around its own centre.
         let hinge = SCNNode()
         hinge.position = SCNVector3(0, 0, 0.075)
-        let leaf = SCNNode(geometry: SCNPlane(width: 1.49, height: 2.10))
-        leaf.geometry?.materials = [frontMaterial]
-        leaf.position.x = movingForward ? 0.745 : -0.745
+        func paperMesh(_ bend: CGFloat, _ twist: CGFloat) -> SCNGeometry {
+            let columns = 28
+            let rows = 36
+            var vertices: [SCNVector3] = []
+            var normals: [SCNVector3] = []
+            var uvs: [CGPoint] = []
+            var indices: [UInt32] = []
+            for row in 0...rows {
+                let v = CGFloat(row) / CGFloat(rows)
+                for column in 0...columns {
+                    let u = CGFloat(column) / CGFloat(columns)
+                    let x = u * 1.49
+                    let edge = sin(u * .pi * 0.5)
+                    let curl = bend * edge * edge
+                    let z = sin(u * .pi) * bend * 0.20 + curl * 0.32 + sin(v * .pi * 2 + twist) * bend * 0.025
+                    let y = (0.5 - v) * 2.10 + sin(u * .pi) * bend * 0.055 * cos(v * .pi)
+                    vertices.append(SCNVector3(Float(x), Float(y), Float(z)))
+                    normals.append(SCNVector3(Float(-bend * 0.3), 0, 1))
+                    uvs.append(CGPoint(x: u, y: 1 - v))
+                }
+            }
+            for row in 0..<rows {
+                for column in 0..<columns {
+                    let a = UInt32(row * (columns + 1) + column)
+                    let b = a + 1
+                    let c = a + UInt32(columns + 1)
+                    let d = c + 1
+                    indices.append(contentsOf: [a, c, b, b, c, d])
+                }
+            }
+            let data = indices.withUnsafeBufferPointer { Data(buffer: $0) }
+            let element = SCNGeometryElement(data: data, primitiveType: .triangles, primitiveCount: indices.count / 3, bytesPerIndex: MemoryLayout<UInt32>.size)
+            let geometry = SCNGeometry(sources: [SCNGeometrySource(vertices: vertices), SCNGeometrySource(normals: normals), SCNGeometrySource(textureCoordinates: uvs)], elements: [element])
+            geometry.materials = [frontMaterial]
+            return geometry
+        }
+        let leaf = SCNNode(geometry: paperMesh(0, 0))
+        leaf.position.x = movingForward ? 0 : -1.49
         leaf.castsShadow = true
         leaf.renderingOrder = 10
         hinge.addChildNode(leaf)
@@ -308,6 +343,7 @@ private struct SceneBookStage: UIViewRepresentable {
             back.position.z = -0.002
             back.eulerAngles.y = .pi
             back.castsShadow = true
+            back.name = "reverse-sheet"
             leaf.addChildNode(back)
         }
         scene.rootNode.addChildNode(hinge)
@@ -328,8 +364,11 @@ private struct SceneBookStage: UIViewRepresentable {
             let progress = CGFloat(min(max(elapsed / 0.92, 0), 1))
             let lift = Float(sin(progress * .pi))
             node.position.z = 0.075 + lift * 0.34
+            let bend = CGFloat(sin(progress * .pi))
+            leaf.geometry = paperMesh(bend, CGFloat(progress) * .pi * 2)
             leaf.eulerAngles.z = Float(sin(progress * .pi)) * (movingForward ? 0.045 : -0.045)
             leaf.scale.x = 1 - Float(sin(progress * .pi)) * 0.035
+            leaf.childNode(withName: "reverse-sheet", recursively: false)?.geometry = paperMesh(bend, CGFloat(progress) * .pi * 2)
         }
         curl.timingMode = .easeInEaseOut
         hinge.runAction(.group([flip, curl])) { [weak hinge] in
