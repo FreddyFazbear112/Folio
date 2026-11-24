@@ -441,6 +441,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let stone = SCNMaterial()
         stone.diffuse.contents = UIColor(red: 0.24, green: 0.19, blue: 0.15, alpha: 1)
         stone.roughness.contents = 0.88
+        applyMap(stoneMap, to: stone)
         let darkFirebox = SCNMaterial()
         darkFirebox.diffuse.contents = UIColor(red: 0.018, green: 0.012, blue: 0.009, alpha: 1)
         darkFirebox.roughness.contents = 1
@@ -462,6 +463,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let mantel = SCNMaterial()
         mantel.diffuse.contents = UIColor(red: 0.16, green: 0.085, blue: 0.047, alpha: 1)
         mantel.roughness.contents = 0.38
+        applyMap(walnutMap, to: mantel)
         roomBox("walnut-mantel", SCNVector3(4.55, 0.16, 0.62), SCNVector3(-1.15, 3.56, -2.62), mantel, chamfer: 0.045)
 
         let ember = SCNMaterial()
@@ -546,6 +548,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let oak = SCNMaterial()
         oak.diffuse.contents = UIColor(red: 0.075, green: 0.041, blue: 0.028, alpha: 1)
         oak.roughness.contents = 0.62
+        applyMap(walnutMap, to: oak)
         roomBox("left-wall-pilaster", SCNVector3(0.13, 6.4, 0.12), SCNVector3(-5.0, 2.1, -2.98), oak)
         roomBox("right-wall-pilaster", SCNVector3(0.13, 6.4, 0.12), SCNVector3(4.6, 2.1, -2.98), oak)
 
@@ -554,11 +557,13 @@ private struct SceneBookStage: UIViewRepresentable {
         let floorMat = SCNMaterial()
         floorMat.diffuse.contents = UIColor(red: 0.105, green: 0.061, blue: 0.041, alpha: 1)
         floorMat.roughness.contents = 0.76
+        applyMap(walnutMap, to: floorMat)
         roomBox("room-floor", SCNVector3(18, 0.16, 13), SCNVector3(0, -1.56, -0.35), floorMat, chamfer: 0.01)
 
         let panelMat = SCNMaterial()
         panelMat.diffuse.contents = UIColor(red: 0.12, green: 0.066, blue: 0.042, alpha: 1)
         panelMat.roughness.contents = 0.68
+        applyMap(walnutMap, to: panelMat)
         roomBox("lower-wall-wainscot", SCNVector3(15.8, 1.18, 0.12), SCNVector3(0, 0.05, -3.02), panelMat)
         for x in stride(from: -4.5 as Float, through: 4.5, by: 0.75) {
             roomBox("wall-panel-stile", SCNVector3(0.025, 1.0, 0.035), SCNVector3(x, 0.04, -2.93), mantel, chamfer: 0.006)
@@ -586,6 +591,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let shelfWood = SCNMaterial()
         shelfWood.diffuse.contents = UIColor(red: 0.105, green: 0.052, blue: 0.031, alpha: 1)
         shelfWood.roughness.contents = 0.42
+        applyMap(walnutMap, to: shelfWood)
         let bookPalette: [UIColor] = [
             UIColor(red: 0.24, green: 0.075, blue: 0.055, alpha: 1),
             UIColor(red: 0.12, green: 0.17, blue: 0.16, alpha: 1),
@@ -650,6 +656,7 @@ private struct SceneBookStage: UIViewRepresentable {
         let leather = SCNMaterial()
         leather.diffuse.contents = UIColor(red: 0.16, green: 0.045, blue: 0.035, alpha: 1)
         leather.roughness.contents = 0.58
+        applyMap(clothMap, to: leather)
         let chair = roomBox("reading-chair-seat", SCNVector3(1.55, 0.34, 1.05), SCNVector3(2.0, -0.82, -1.25), leather, chamfer: 0.16)
         chair.eulerAngles.y = -0.18
         roomBox("reading-chair-back", SCNVector3(1.55, 1.42, 0.32), SCNVector3(2.0, -0.12, -1.72), leather, chamfer: 0.20)
@@ -811,6 +818,7 @@ private struct SceneBookStage: UIViewRepresentable {
         deskMaterial.diffuse.contents = UIColor(red: 0.105, green: 0.061, blue: 0.038, alpha: 1)
         deskMaterial.roughness.contents = 0.42
         deskMaterial.metalness.contents = 0.04
+        applyMap(walnutMap, to: deskMaterial)
         let deskGeometry = SCNBox(width: 12, height: 0.16, length: 8, chamferRadius: 0.04)
         deskGeometry.materials = Array(repeating: deskMaterial, count: 6)
         let desk = SCNNode(geometry: deskGeometry)
