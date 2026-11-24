@@ -514,6 +514,32 @@ private struct SceneBookStage: UIViewRepresentable {
         roomBox("fireplace-right-stone", SCNVector3(0.34, 2.25, 0.34), SCNVector3(0.60, 2.15, -2.78), stone)
         roomBox("fireplace-lintel", SCNVector3(3.85, 0.34, 0.42), SCNVector3(-1.15, 3.32, -2.76), stone, chamfer: 0.06)
         roomBox("fireplace-hearth", SCNVector3(4.25, 0.22, 0.72), SCNVector3(-1.15, 1.00, -2.62), stone, chamfer: 0.05)
+
+        // Individually laid ashlar blocks break the surround into real masonry
+        // courses. Each block has its own slight size and depth variation so
+        // the fireplace does not read as two featureless stone columns.
+        let masonryMortar = SCNMaterial()
+        masonryMortar.diffuse.contents = UIColor(red: 0.075, green: 0.057, blue: 0.045, alpha: 1)
+        masonryMortar.roughness.contents = 1
+        roomBox("masonry-recess", SCNVector3(4.08, 2.46, 0.075), SCNVector3(-1.15, 2.20, -2.575), masonryMortar, chamfer: 0)
+        for course in 0..<5 {
+            let y = 1.22 + Float(course) * 0.43
+            for side in 0..<2 {
+                for blockIndex in 0..<2 {
+                    let width: Float = blockIndex == 0 ? 0.39 : 0.34
+                    let x = side == 0 ? -3.00 + Float(blockIndex) * 0.37 : 0.70 - Float(blockIndex) * 0.37
+                    let depth = 0.37 + Float((course + blockIndex) % 3) * 0.025
+                    let block = roomBox("ashlar-\\(course)-\\(side)-\\(blockIndex)", SCNVector3(width, 0.39, depth), SCNVector3(x, y, -2.72), stone, chamfer: 0.035)
+                    block.eulerAngles.z = Float((course + blockIndex) % 3 - 1) * 0.006
+                }
+            }
+        }
+        for blockIndex in 0..<7 {
+            let width = 0.48 + Float(blockIndex % 3) * 0.035
+            let x = -2.86 + Float(blockIndex) * 0.57
+            _ = roomBox("lintel-ashlar-\\(blockIndex)", SCNVector3(width, 0.34, 0.39), SCNVector3(x, 3.31, -2.73), stone, chamfer: 0.035)
+        }
+
         let mantel = SCNMaterial()
         mantel.diffuse.contents = UIColor(red: 0.16, green: 0.085, blue: 0.047, alpha: 1)
         mantel.roughness.contents = 0.38
@@ -606,6 +632,26 @@ private struct SceneBookStage: UIViewRepresentable {
             dance.timingMode = .easeInEaseOut
             flame.runAction(dance)
         }
+        // Firelight is a moving source as well as a visible flame. Its
+        // intensity and reach fluctuate independently of the flame geometry.
+        let fireLightNode = SCNNode()
+        let fireLight = SCNLight()
+        fireLight.type = .omni
+        fireLight.color = UIColor(red: 1, green: 0.36, blue: 0.10, alpha: 1)
+        fireLight.intensity = 720
+        fireLight.attenuationStartDistance = 0.25
+        fireLight.attenuationEndDistance = 7.5
+        fireLight.castsShadow = true
+        fireLightNode.light = fireLight
+        fireLightNode.position = SCNVector3(-1.15, 2.05, -2.12)
+        root.addChildNode(fireLightNode)
+        let flicker = SCNAction.customAction(duration: 1.1) { node, elapsed in
+            let phase = CGFloat(elapsed) * 5.7
+            let pulse = 0.84 + 0.10 * sin(phase) + 0.06 * sin(phase * 2.37 + 0.8)
+            node.light?.intensity = CGFloat(720) * pulse
+        }
+        fireLightNode.runAction(.repeatForever(flicker))
+
         // Fine ember points at the base of the logs.
         for index in 0..<12 {
             let emberMaterial = SCNMaterial()
